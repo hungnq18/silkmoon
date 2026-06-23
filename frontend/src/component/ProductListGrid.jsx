@@ -1,0 +1,125 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import AddToCartModal from './AddToCartModal';
+
+export default function ProductListGrid({ products }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalProduct, setModalProduct] = useState(null);
+
+  const handleQuickAdd = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const specLabel = product.tag === 'NEW' ? 'CHAMPAGNE SILK / QUEEN' : 'WHITE CLOUD / STANDARD';
+
+    const newCartItem = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      productId: `shop-product-${product.id}`,
+      name: product.name,
+      spec: specLabel,
+      price: product.price,
+      quantity: 1,
+      image: product.image,
+      embroidery: null,
+    };
+
+    try {
+      const existingCart = JSON.parse(localStorage.getItem('silkmoon_cart') || '[]');
+      const existingItemIndex = existingCart.findIndex(
+        (item) => item.productId === newCartItem.productId && item.spec === newCartItem.spec
+      );
+
+      if (existingItemIndex > -1) {
+        existingCart[existingItemIndex].quantity += 1;
+      } else {
+        existingCart.push(newCartItem);
+      }
+
+      localStorage.setItem('silkmoon_cart', JSON.stringify(existingCart));
+      window.dispatchEvent(new Event('cart-updated'));
+
+      setModalProduct({
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        spec: specLabel
+      });
+      setModalOpen(true);
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
+    }
+  };
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-stack-lg border border-slate-deep/5 bg-bone/20 rounded-lg">
+        <span className="material-symbols-outlined text-[48px] opacity-40 mb-2">
+          search_off
+        </span>
+        <p className="font-body-lg text-on-surface-variant">
+          Không tìm thấy sản phẩm nào khớp với bộ lọc của bạn.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-gutter gap-y-10">
+      {products.map((product) => (
+        <Link
+          key={product.id}
+          to={`/product/${product.id}`}
+          className="product-card group cursor-pointer flex flex-col"
+        >
+          {/* Image Container */}
+          <div className="relative aspect-[4/5] bg-bone mb-stack-md overflow-hidden rounded-lg">
+            <img
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              src={product.image}
+              alt={product.name}
+            />
+
+            {/* Quick Add Overlay */}
+            <div className="absolute bottom-0 left-0 w-full p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+              <button
+                onClick={(e) => handleQuickAdd(e, product.name)}
+                className="w-full bg-slate-deep text-white py-3 font-button hover:bg-slate-deep/90 rounded shadow-sm active:scale-95 transition-transform"
+              >
+                THÊM VÀO GIỎ
+              </button>
+            </div>
+
+            {/* Tags */}
+            {product.tag && (
+              <div
+                className={`absolute top-4 ${product.tag === 'NEW' ? 'left-4 bg-white/90 text-slate-deep' : 'right-4 bg-error text-white'
+                  } px-3 py-1 text-label-caps font-semibold rounded-sm`}
+              >
+                {product.tag}
+              </div>
+            )}
+          </div>
+
+          {/* Product Details */}
+          <h4 className="font-headline-sm text-[20px] mb-1 group-hover:text-secondary transition-colors">
+            {product.name}
+          </h4>
+          <p className="text-on-surface-variant font-body-md mb-2">
+            {product.description}
+          </p>
+          <div className="flex items-center gap-3 mt-auto">
+            <span className="font-semibold text-slate-deep">
+              {product.price.toLocaleString('vi-VN')}₫
+            </span>
+            {product.originalPrice && (
+              <span className="text-on-surface-variant/50 line-through text-sm">
+                {product.originalPrice.toLocaleString('vi-VN')}₫
+              </span>
+            )}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
