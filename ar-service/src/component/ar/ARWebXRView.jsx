@@ -63,11 +63,11 @@ function ARBedMesh({ position, productImageUrl }) {
     <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>
       {/* 1.8m x 2.0m standard bed size */}
       <planeGeometry args={[1.8, 2.0, 32, 32]} />
-      <meshStandardMaterial 
-        map={texture} 
-        roughness={0.4} 
-        metalness={0.1} 
-        side={THREE.DoubleSide} 
+      <meshStandardMaterial
+        map={texture}
+        roughness={0.4}
+        metalness={0.1}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );
@@ -105,7 +105,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
     const generateUSDZ = async () => {
       try {
         // BoxGeometry to give it some thickness
-        const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
+        const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0);
         const material = new THREE.MeshStandardMaterial({
           map: loadedTexture,
           roughness: 0.4,
@@ -116,7 +116,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         mesh.name = 'BedMesh';
         // AR Quick Look standard orientation
         mesh.position.y = 0.1; // elevate half thickness
-        
+
         const group = new THREE.Group();
         group.name = 'BedGroup';
         group.add(mesh);
@@ -126,33 +126,14 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
 
         const exporter = new USDZExporter();
         const arraybuffer = await exporter.parse(scene);
-        
+
         if (!active) return;
 
-        // NEW FLOW: Upload to Backend Relay
-        const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-        const formData = new FormData();
-        formData.append('file', blob, 'model.usdz');
-
-        // Note: Make sure VITE_BACKEND_URL points to the NestJS backend
-        // Defaulting to port 3000 where NestJS runs
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
-        const res = await fetch(`${backendUrl}/api/v1/ar/upload-usdz`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Upload failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
-        if (data && data.url) {
-          if (!active) return;
-          // Set the final URL (including full backend host since ar-service and backend might be on different ports)
-          currentUrl = `${backendUrl}${data.url}`;
-          setUsdzUrl(currentUrl);
-        }
+        // CRITICAL FIX: iOS AR Quick Look rejects 'Blob'. We MUST use a 'File' object 
+        // with the exact '.usdz' filename extension so the OS can infer the type correctly!
+        const file = new File([arraybuffer], "silkmoon-bed.usdz", { type: 'model/vnd.usdz+zip' });
+        currentUrl = URL.createObjectURL(file) + '#model.usdz';
+        setUsdzUrl(currentUrl);
       } catch (error) {
         console.error('Error generating USDZ:', error);
       }
@@ -179,10 +160,10 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
       {/* Overlay UI */}
       <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-10">
         <div className="bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur">
-          {isIOS 
-            ? "Bấm nút bên dưới để mở Camera AR của iOS" 
-            : bedPosition 
-              ? "Chăn ga đã được đặt. Di chuyển xung quanh để xem." 
+          {isIOS
+            ? "Bấm nút bên dưới để mở Camera AR của iOS"
+            : bedPosition
+              ? "Chăn ga đã được đặt. Di chuyển xung quanh để xem."
               : "Quét mặt phẳng sàn/giường và chạm để đặt chăn ga"}
         </div>
         <button
@@ -215,7 +196,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
                 Đang tải 3D...
               </button>
             )}
-            
+
             {/* Google Model Viewer Official USDZ Test Button */}
             <a
               rel="ar"
@@ -242,13 +223,13 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
           <XR store={store}>
             <ambientLight intensity={0.6} />
             <directionalLight position={[5, 10, 5]} intensity={0.8} castShadow />
-            
+
             {!bedPosition && <Reticle onSelect={placeBed} />}
-            
+
             {bedPosition && (
-              <ARBedMesh 
-                position={bedPosition} 
-                productImageUrl={productImageUrl} 
+              <ARBedMesh
+                position={bedPosition}
+                productImageUrl={productImageUrl}
               />
             )}
           </XR>
