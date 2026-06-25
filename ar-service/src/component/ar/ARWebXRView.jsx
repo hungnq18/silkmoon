@@ -77,6 +77,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
   const [bedPosition, setBedPosition] = useState(null);
   const [loadedTexture, setLoadedTexture] = useState(null);
   const [usdzUrl, setUsdzUrl] = useState(null);
+  const [usdzError, setUsdzError] = useState(null);
 
   // Check if device is iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -155,6 +156,9 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         }
       } catch (error) {
         console.error('Error generating USDZ:', error);
+        if (active) {
+          setUsdzError(error.message || 'Lỗi không xác định');
+        }
       }
     };
 
@@ -207,6 +211,13 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
                 Xem AR Giường (Code)
                 <img src="" alt="" style={{ display: 'none' }} />
               </a>
+            ) : usdzError ? (
+              <button
+                disabled
+                className="bg-red-500/80 text-white px-6 py-3 rounded-full font-bold shadow-xl cursor-not-allowed text-xs max-w-[80vw] break-words"
+              >
+                Lỗi: {usdzError}
+              </button>
             ) : (
               <button
                 disabled
