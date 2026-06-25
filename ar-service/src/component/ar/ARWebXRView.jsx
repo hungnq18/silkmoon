@@ -113,8 +113,17 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
         if (!active) return;
 
         const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-        currentUrl = URL.createObjectURL(blob) + '#model.usdz';
-        setUsdzUrl(currentUrl);
+        
+        // Convert Blob to Data URI because iOS QuickLook runs out-of-process 
+        // and cannot access browser-memory blob: URLs on newer iOS versions.
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (!active) return;
+          // Safari requires the exact MIME type in the data URI
+          currentUrl = reader.result;
+          setUsdzUrl(currentUrl);
+        };
+        reader.readAsDataURL(blob);
       } catch (error) {
         console.error('Error generating USDZ:', error);
       }
@@ -124,9 +133,6 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
 
     return () => {
       active = false;
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl.replace('#model.usdz', ''));
-      }
     };
   }, [baseTextureImg, activeFabricId, isIOS]);
 
