@@ -72,60 +72,63 @@ function ARBedMesh({ position, fabricId, baseTextureImg }) {
 export default function ARWebXRView({ activeFabricId, onClose }) {
   const [bedPosition, setBedPosition] = useState(null);
   const [baseTextureImg, setBaseTextureImg] = useState(null);
-  const [isExporting, setIsExporting] = useState(false);
+  const [usdzUrl, setUsdzUrl] = useState(null);
 
   // Check if device is iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  const generateAndOpenUSDZ = async () => {
-    if (!baseTextureImg) return;
-    setIsExporting(true);
-    try {
-      const fabric = FABRICS.find(f => f.id === activeFabricId) || FABRICS[0];
-      const canvas = colorizeTexture(baseTextureImg, fabric.hex, fabric.shimmer);
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(2, 2);
+  // Pre-generate USDZ for iOS to bypass Safari's async click block
+  useEffect(() => {
+    if (!isIOS || !baseTextureImg) return;
 
-      const geometry = new THREE.PlaneGeometry(1.8, 2.0, 32, 32);
-      const material = new THREE.MeshStandardMaterial({
-        map: tex,
-        roughness: 0.4,
-        metalness: 0.1,
-        side: THREE.DoubleSide
-      });
-      const mesh = new THREE.Mesh(geometry, material);
-      // AR Quick Look standard orientation (XY plane maps correctly usually when rotated)
-      mesh.rotation.x = -Math.PI / 2;
-      
-      const scene = new THREE.Scene();
-      scene.add(mesh);
+    let active = true;
+    let currentUrl = null;
 
-      const exporter = new USDZExporter();
-      const arraybuffer = await exporter.parse(scene);
-      const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-      // IMPORTANT: iOS requires the URL to end with .usdz to properly trigger AR Quick Look
-      const url = URL.createObjectURL(blob) + '#model.usdz';
+    const generateUSDZ = async () => {
+      try {
+        const fabric = FABRICS.find(f => f.id === activeFabricId) || FABRICS[0];
+        const canvas = colorizeTexture(baseTextureImg, fabric.hex, fabric.shimmer);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
 
-      const a = document.createElement('a');
-      a.setAttribute('rel', 'ar');
-      a.setAttribute('href', url);
-      a.setAttribute('download', 'silkmoon-bed.usdz');
-      a.appendChild(document.createElement('img')); // Required by iOS for AR links
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // Cleanup
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (error) {
-      console.error('Error generating USDZ:', error);
-      alert('Không thể tạo mô hình AR cho iPhone. Vui lòng thử lại!');
-    } finally {
-      setIsExporting(false);
-    }
-  };
+        // BoxGeometry to give it some thickness, PlaneGeometry is sometimes rejected by iOS
+        const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
+        const material = new THREE.MeshStandardMaterial({
+          map: tex,
+          roughness: 0.4,
+          metalness: 0.1
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        // AR Quick Look standard orientation
+        mesh.position.y = 0.1; // elevate half thickness
+        
+        const scene = new THREE.Scene();
+        scene.add(mesh);
+
+        const exporter = new USDZExporter();
+        const arraybuffer = await exporter.parse(scene);
+        
+        if (!active) return;
+
+        const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
+        currentUrl = URL.createObjectURL(blob) + '#model.usdz';
+        setUsdzUrl(currentUrl);
+      } catch (error) {
+        console.error('Error generating USDZ:', error);
+      }
+    };
+
+    generateUSDZ();
+
+    return () => {
+      active = false;
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl.replace('#model.usdz', ''));
+      }
+    };
+  }, [baseTextureImg, activeFabricId, isIOS]);
 
   // Load base texture
   useEffect(() => {
@@ -163,13 +166,24 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
       {/* Enter AR Button overlay */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap">
         {isIOS ? (
-          <button
-            onClick={generateAndOpenUSDZ}
-            disabled={!baseTextureImg || isExporting}
-            className={`bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 transition-all ${isExporting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
-          >
-            {isExporting ? 'Đang tải 3D...' : 'Xem AR trên iPhone'}
-          </button>
+          usdzUrl ? (
+            <a
+              rel="ar"
+              href={usdzUrl}
+              download="silkmoon-bed.usdz"
+              className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
+            >
+              Xem AR trên iPhone
+              <img src="" alt="" style={{ display: 'none' }} />
+            </a>
+          ) : (
+            <button
+              disabled
+              className="bg-white/50 text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 cursor-not-allowed"
+            >
+              Đang tải 3D...
+            </button>
+          )
         ) : (
           <button
             onClick={() => store.enterAR()}
