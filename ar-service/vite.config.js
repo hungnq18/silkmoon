@@ -7,6 +7,7 @@ export default defineConfig({
   server: { 
     port: 5174, 
     strictPort: true,
+    allowedHosts: true, // Allow localtunnel hosts
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
