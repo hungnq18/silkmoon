@@ -105,7 +105,8 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
       const exporter = new USDZExporter();
       const arraybuffer = await exporter.parse(scene);
       const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-      const url = URL.createObjectURL(blob);
+      // IMPORTANT: iOS requires the URL to end with .usdz to properly trigger AR Quick Look
+      const url = URL.createObjectURL(blob) + '#model.usdz';
 
       const a = document.createElement('a');
       a.setAttribute('rel', 'ar');
