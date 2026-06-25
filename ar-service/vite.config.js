@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/ar/',
+  base: '/',
   server: { 
     port: 5174, 
     strictPort: true,
