@@ -4,8 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { XR, Interactive, useXRHitTest, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { USDZExporter } from 'three/addons/exporters/USDZExporter.js';
-import { FABRICS, colorizeTexture } from './arUtils';
-import velvetTextureUrl from '../../assets/velvet.png';
+import { FABRICS } from './arUtils';
 
 const store = createXRStore();
 
@@ -37,21 +36,26 @@ function Reticle({ onSelect }) {
 }
 
 // The Bed Mesh placed in AR
-function ARBedMesh({ position, fabricId, baseTextureImg }) {
-  const fabric = FABRICS.find(f => f.id === fabricId) || FABRICS[0];
+function ARBedMesh({ position, productImageUrl }) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
-    if (baseTextureImg) {
-      // Colorize the texture and create a Three.js Texture
-      const canvas = colorizeTexture(baseTextureImg, fabric.hex, fabric.shimmer);
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(2, 2); // Adjust repeat for scale
-      setTexture(tex);
+    if (productImageUrl) {
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      loader.load(
+        productImageUrl,
+        (tex) => {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(2, 2); // Adjust repeat if necessary
+          setTexture(tex);
+        },
+        undefined,
+        (err) => console.error('Error loading texture:', err)
+      );
     }
-  }, [fabric, baseTextureImg]);
+  }, [productImageUrl]);
 
   if (!texture) return null;
 
@@ -69,43 +73,56 @@ function ARBedMesh({ position, fabricId, baseTextureImg }) {
   );
 }
 
-export default function ARWebXRView({ activeFabricId, onClose }) {
+export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }) {
   const [bedPosition, setBedPosition] = useState(null);
-  const [baseTextureImg, setBaseTextureImg] = useState(null);
+  const [loadedTexture, setLoadedTexture] = useState(null);
   const [usdzUrl, setUsdzUrl] = useState(null);
 
   // Check if device is iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
+  // Load texture once for USDZ pre-generation
+  useEffect(() => {
+    if (productImageUrl) {
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      loader.load(productImageUrl, (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
+        setLoadedTexture(tex);
+      });
+    }
+  }, [productImageUrl]);
+
   // Pre-generate USDZ for iOS to bypass Safari's async click block
   useEffect(() => {
-    if (!isIOS || !baseTextureImg) return;
+    if (!isIOS || !loadedTexture) return;
 
     let active = true;
     let currentUrl = null;
 
     const generateUSDZ = async () => {
       try {
-        const fabric = FABRICS.find(f => f.id === activeFabricId) || FABRICS[0];
-        const canvas = colorizeTexture(baseTextureImg, fabric.hex, fabric.shimmer);
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2, 2);
-
         // BoxGeometry to give it some thickness
         const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
         const material = new THREE.MeshStandardMaterial({
-          map: tex,
+          map: loadedTexture,
           roughness: 0.4,
-          metalness: 0.1
+          metalness: 0.1,
+          name: 'BedFabricMaterial'
         });
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = 'BedMesh';
         // AR Quick Look standard orientation
         mesh.position.y = 0.1; // elevate half thickness
         
+        const group = new THREE.Group();
+        group.name = 'BedGroup';
+        group.add(mesh);
+
         const scene = new THREE.Scene();
-        scene.add(mesh);
+        scene.add(group);
 
         const exporter = new USDZExporter();
         const arraybuffer = await exporter.parse(scene);
@@ -126,18 +143,10 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
 
     return () => {
       active = false;
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl.replace('#model.usdz', ''));
-      }
+      // Do not revoke Object URL! iOS Quick Look needs time to read it out-of-process.
+      // Revoking it too early causes 'Cannot open object' error.
     };
-  }, [baseTextureImg, activeFabricId, isIOS]);
-
-  // Load base texture
-  useEffect(() => {
-    const img = new Image();
-    img.src = velvetTextureUrl;
-    img.onload = () => setBaseTextureImg(img);
-  }, []);
+  }, [loadedTexture, isIOS]);
 
   const placeBed = (e) => {
     if (e.intersection) {
@@ -220,8 +229,7 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
             {bedPosition && (
               <ARBedMesh 
                 position={bedPosition} 
-                fabricId={activeFabricId} 
-                baseTextureImg={baseTextureImg} 
+                productImageUrl={productImageUrl} 
               />
             )}
           </XR>
@@ -232,6 +240,7 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
 }
 
 ARWebXRView.propTypes = {
-  activeFabricId: PropTypes.string.isRequired,
+  activeFabricId: PropTypes.string,
+  productImageUrl: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 };

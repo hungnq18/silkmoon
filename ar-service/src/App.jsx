@@ -3,11 +3,15 @@ import ARWebXRView from './component/ar/ARWebXRView';
 
 function ARRoute() {
   const { fabricId } = useParams();
+  // Get image URL from query parameters, e.g. ?img=https://res.cloudinary.com/...
+  const searchParams = new URLSearchParams(window.location.search);
+  const imgUrl = searchParams.get('img');
   
   return (
     <div className="w-screen h-screen overflow-hidden bg-black text-white">
       <ARWebXRView 
         activeFabricId={fabricId} 
+        productImageUrl={imgUrl}
         onClose={() => window.close()} 
       />
     </div>
