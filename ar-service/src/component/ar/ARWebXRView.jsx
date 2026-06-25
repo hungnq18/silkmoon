@@ -129,11 +129,30 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         
         if (!active) return;
 
-        // CRITICAL FIX: iOS AR Quick Look rejects 'Blob'. We MUST use a 'File' object 
-        // with the exact '.usdz' filename extension so the OS can infer the type correctly!
-        const file = new File([arraybuffer], "silkmoon-bed.usdz", { type: 'model/vnd.usdz+zip' });
-        currentUrl = URL.createObjectURL(file) + '#model.usdz';
-        setUsdzUrl(currentUrl);
+        // NEW FLOW: Upload to Backend Relay
+        const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
+        const formData = new FormData();
+        formData.append('file', blob, 'model.usdz');
+
+        // Note: Make sure VITE_BACKEND_URL points to the NestJS backend
+        // Defaulting to port 3000 where NestJS runs
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+        const res = await fetch(`${backendUrl}/api/v1/ar/upload-usdz`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Upload failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (data && data.url) {
+          if (!active) return;
+          // Set the final URL (including full backend host since ar-service and backend might be on different ports)
+          currentUrl = `${backendUrl}${data.url}`;
+          setUsdzUrl(currentUrl);
+        }
       } catch (error) {
         console.error('Error generating USDZ:', error);
       }

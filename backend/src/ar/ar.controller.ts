@@ -1,5 +1,10 @@
-import { Controller, Post, Body, Get, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpException, HttpStatus, UseInterceptors, UploadedFile, Param, Res } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ARService } from './ar.service';
+import { Response } from 'express';
+
+// In-memory cache for USDZ files to act as a relay for iOS AR Quick Look
+const usdzCache = new Map<string, Buffer>();
 
 @Controller('ar')
 export class ARController {
@@ -145,5 +150,43 @@ export class ARController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  // --- iOS AR Quick Look USDZ Relay ---
+
+  @Post('upload-usdz')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadUsdz(@UploadedFile() file: any) {
+    if (!file || !file.buffer) {
+      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
+    }
+    
+    const id = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
+    usdzCache.set(id, file.buffer);
+    
+    // Auto-cleanup after 10 minutes to prevent memory leaks
+    setTimeout(() => {
+      usdzCache.delete(id);
+    }, 10 * 60 * 1000);
+
+    return { 
+      success: true, 
+      id,
+      url: `/api/v1/ar/usdz/${id}.usdz` 
+    };
+  }
+
+  @Get('usdz/:filename')
+  getUsdz(@Param('filename') filename: string, @Res() res: Response) {
+    const id = filename.replace('.usdz', '');
+    const buffer = usdzCache.get(id);
+    
+    if (!buffer) {
+      return res.status(HttpStatus.NOT_FOUND).send('USDZ file not found or expired');
+    }
+
+    res.setHeader('Content-Type', 'model/vnd.usdz+zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
   }
 }
