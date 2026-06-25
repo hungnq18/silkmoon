@@ -93,10 +93,10 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set(2, 2);
 
-        // BoxGeometry to give it some thickness, PlaneGeometry is sometimes rejected by iOS
+        // BoxGeometry to give it some thickness
         const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
         const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(fabric.hex), // Use solid color instead of CanvasTexture for testing
+          map: tex,
           roughness: 0.4,
           metalness: 0.1
         });
@@ -112,18 +112,11 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
         
         if (!active) return;
 
-        const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-        
-        // Convert Blob to Data URI because iOS QuickLook runs out-of-process 
-        // and cannot access browser-memory blob: URLs on newer iOS versions.
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (!active) return;
-          // Safari requires the exact MIME type in the data URI
-          currentUrl = reader.result;
-          setUsdzUrl(currentUrl);
-        };
-        reader.readAsDataURL(blob);
+        // CRITICAL FIX: iOS AR Quick Look rejects 'Blob'. We MUST use a 'File' object 
+        // with the exact '.usdz' filename extension so the OS can infer the type correctly!
+        const file = new File([arraybuffer], "silkmoon-bed.usdz", { type: 'model/vnd.usdz+zip' });
+        currentUrl = URL.createObjectURL(file) + '#model.usdz';
+        setUsdzUrl(currentUrl);
       } catch (error) {
         console.error('Error generating USDZ:', error);
       }
@@ -133,6 +126,9 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
 
     return () => {
       active = false;
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl.replace('#model.usdz', ''));
+      }
     };
   }, [baseTextureImg, activeFabricId, isIOS]);
 
