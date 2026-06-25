@@ -96,7 +96,7 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
         // BoxGeometry to give it some thickness, PlaneGeometry is sometimes rejected by iOS
         const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
         const material = new THREE.MeshStandardMaterial({
-          map: tex,
+          color: new THREE.Color(fabric.hex), // Use solid color instead of CanvasTexture for testing
           roughness: 0.4,
           metalness: 0.1
         });
