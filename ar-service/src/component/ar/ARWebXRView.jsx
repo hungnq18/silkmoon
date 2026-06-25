@@ -192,13 +192,13 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
               </button>
             )}
             
-            {/* Apple Official USDZ Test Button */}
+            {/* Google Model Viewer Official USDZ Test Button */}
             <a
               rel="ar"
-              href="https://developer.apple.com/augmented-reality/quick-look/models/sneaker/sneaker.usdz"
+              href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
               className="bg-blue-500 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
             >
-              Test Mẫu Của Apple
+              Test Mẫu Phi Hành Gia
               <img src="" alt="" style={{ display: 'none' }} />
             </a>
           </>
