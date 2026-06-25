@@ -170,26 +170,38 @@ export default function ARWebXRView({ activeFabricId, onClose }) {
       </div>
 
       {/* Enter AR Button overlay */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap">
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-4 whitespace-nowrap">
         {isIOS ? (
-          usdzUrl ? (
+          <>
+            {usdzUrl ? (
+              <a
+                rel="ar"
+                href={usdzUrl}
+                download="silkmoon-bed.usdz"
+                className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
+              >
+                Xem AR Giường (Code)
+                <img src="" alt="" style={{ display: 'none' }} />
+              </a>
+            ) : (
+              <button
+                disabled
+                className="bg-white/50 text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 cursor-not-allowed"
+              >
+                Đang tải 3D...
+              </button>
+            )}
+            
+            {/* Apple Official USDZ Test Button */}
             <a
               rel="ar"
-              href={usdzUrl}
-              download="silkmoon-bed.usdz"
-              className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
+              href="https://developer.apple.com/augmented-reality/quick-look/models/sneaker/sneaker.usdz"
+              className="bg-blue-500 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
             >
-              Xem AR trên iPhone
+              Test Mẫu Của Apple
               <img src="" alt="" style={{ display: 'none' }} />
             </a>
-          ) : (
-            <button
-              disabled
-              className="bg-white/50 text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 cursor-not-allowed"
-            >
-              Đang tải 3D...
-            </button>
-          )
+          </>
         ) : (
           <button
             onClick={() => store.enterAR()}
