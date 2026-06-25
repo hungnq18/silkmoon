@@ -278,7 +278,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
         ) : mode === MODES.AR ? (() => {
           /* ── AR mode: QR Code to standalone service ── */
           const arBaseUrl = import.meta.env.VITE_AR_SERVICE_URL || `http://${window.location.hostname}:5174`;
-          const arLink = `${arBaseUrl}/ar/${activeFabricId}`;
+          const arLink = `${arBaseUrl}/ar/${activeFabricId}?img=${encodeURIComponent(productImage)}`;
 
           return (
           <div className="flex-1 flex items-center justify-center bg-black/5 p-6 text-center overflow-y-auto">
