@@ -5,6 +5,7 @@ import { XR, Interactive, useXRHitTest, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { USDZExporter } from 'three/addons/exporters/USDZExporter.js';
 import { FABRICS } from './arUtils';
+import velvetTextureUrl from '../../assets/velvet.png';
 
 const store = createXRStore();
 
@@ -40,21 +41,26 @@ function ARBedMesh({ position, productImageUrl }) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
-    if (productImageUrl) {
-      const loader = new THREE.TextureLoader();
-      loader.setCrossOrigin('anonymous');
-      loader.load(
-        productImageUrl,
-        (tex) => {
-          tex.wrapS = THREE.RepeatWrapping;
-          tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(2, 2); // Adjust repeat if necessary
-          setTexture(tex);
-        },
-        undefined,
-        (err) => console.error('Error loading texture:', err)
-      );
-    }
+    // Wrap productImageUrl with our Backend Proxy to avoid Canvas Tainting
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+    const proxyUrl = productImageUrl 
+      ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
+      : null;
+      
+    const urlToLoad = proxyUrl || velvetTextureUrl;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    loader.load(
+      urlToLoad,
+      (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2); // Adjust repeat if necessary
+        setTexture(tex);
+      },
+      undefined,
+      (err) => console.error('Error loading texture in mesh:', err)
+    );
   }, [productImageUrl]);
 
   if (!texture) return null;
@@ -84,16 +90,32 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
 
   // Load texture once for USDZ pre-generation
   useEffect(() => {
-    if (productImageUrl) {
-      const loader = new THREE.TextureLoader();
-      loader.setCrossOrigin('anonymous');
-      loader.load(productImageUrl, (tex) => {
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    
+    // Wrap productImageUrl with our Backend Proxy to bypass Safari CORS blocks
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+    const proxyUrl = productImageUrl 
+      ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
+      : null;
+    
+    // Fallback to velvet if missing
+    const urlToLoad = proxyUrl || velvetTextureUrl;
+    
+    loader.load(
+      urlToLoad, 
+      (tex) => {
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set(2, 2);
         setLoadedTexture(tex);
-      });
-    }
+      },
+      undefined,
+      (err) => {
+        console.error('Error loading texture:', err);
+        setUsdzError(`Không thể tải ảnh bề mặt (Lỗi CORS hoặc mạng)`);
+      }
+    );
   }, [productImageUrl]);
 
   // Pre-generate USDZ for iOS to bypass Safari's async click block

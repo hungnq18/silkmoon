@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, HttpException, HttpStatus, UseInterceptors, UploadedFile, Param, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpException, HttpStatus, UseInterceptors, UploadedFile, Param, Res, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ARService } from './ar.service';
 import { Response } from 'express';
@@ -149,6 +149,39 @@ export class ARController {
         { success: false, error: 'generate_failed', message: error.message || 'Failed to generate preview' },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  // --- Backend Image Proxy (CORS Bypass) ---
+
+  @Get('proxy-image')
+  async proxyImage(@Query('url') imageUrl: string, @Res() res: Response) {
+    if (!imageUrl) {
+      return res.status(HttpStatus.BAD_REQUEST).send('Missing url parameter');
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      // Forward the original content type, or default to jpeg
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      
+      res.setHeader('Content-Type', contentType);
+      // Ensure cross-origin is explicitly allowed
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      // Set cache control for performance
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      
+      res.send(buffer);
+    } catch (error) {
+      console.error('[Proxy Image Error]', error);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('Failed to proxy image');
     }
   }
 
