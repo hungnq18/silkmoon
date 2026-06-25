@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, HttpException, HttpStatus, UseInterceptors, UploadedFile, Param, Res, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ARService } from './ar.service';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 // In-memory cache for USDZ files to act as a relay for iOS AR Quick Look
 const usdzCache = new Map<string, Buffer>();

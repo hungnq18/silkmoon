@@ -42,7 +42,8 @@ function ARBedMesh({ position, productImageUrl }) {
 
   useEffect(() => {
     // Wrap productImageUrl with our Backend Proxy to avoid Canvas Tainting
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+    // We use a relative path by default to prevent Mixed Content errors (HTTP inside HTTPS) on AWS
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
     const proxyUrl = productImageUrl 
       ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
       : null;
@@ -94,7 +95,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
     loader.setCrossOrigin('anonymous');
     
     // Wrap productImageUrl with our Backend Proxy to bypass Safari CORS blocks
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
     const proxyUrl = productImageUrl 
       ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
       : null;
@@ -112,8 +113,23 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
       },
       undefined,
       (err) => {
-        console.error('Error loading texture:', err);
-        setUsdzError(`Không thể tải ảnh bề mặt (Lỗi CORS hoặc mạng)`);
+        console.warn('Proxy image failed, falling back to velvet texture:', err);
+        // Automatically retry with velvet texture if proxy fails
+        loader.load(
+          velvetTextureUrl,
+          (fallbackTex) => {
+            fallbackTex.wrapS = THREE.RepeatWrapping;
+            fallbackTex.wrapT = THREE.RepeatWrapping;
+            fallbackTex.repeat.set(2, 2);
+            setLoadedTexture(fallbackTex);
+            setUsdzError(`Lưu ý: Không tải được vân vải thực tế (Lỗi mạng), đang dùng vân vải nhung mặc định.`);
+          },
+          undefined,
+          (fallbackErr) => {
+             console.error('Fatal: Even velvet fallback failed', fallbackErr);
+             setUsdzError(`Lỗi nghiêm trọng: Không thể tải ảnh bề mặt.`);
+          }
+        );
       }
     );
   }, [productImageUrl]);
@@ -157,9 +173,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         const formData = new FormData();
         formData.append('file', blob, 'model.usdz');
 
-        // Note: Make sure VITE_BACKEND_URL points to the NestJS backend
-        // Defaulting to port 3000 where NestJS runs
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3000`;
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
         const res = await fetch(`${backendUrl}/api/v1/ar/upload-usdz`, {
           method: 'POST',
           body: formData,
