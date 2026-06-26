@@ -204,10 +204,10 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
       <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-10">
         <div className="bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur">
           {isIOS 
-            ? "Bấm nút bên dưới để mở Camera AR của iOS" 
+            ? "Hướng Camera xuống mặt sàn trống để đặt Mô hình 3D" 
             : bedPosition 
-              ? "Chăn ga đã được đặt. Di chuyển xung quanh để xem." 
-              : "Quét mặt phẳng sàn/giường và chạm để đặt chăn ga"}
+              ? "Đã đặt Mô hình 3D. Hãy đi vòng quanh để xem chi tiết." 
+              : "Quét mặt phẳng sàn nhà và chạm để đặt Mô hình 3D"}
         </div>
         <button
           onClick={onClose}
@@ -230,13 +230,15 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
                   }}
                   className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
                 >
-                  Xem AR Giường (Google)
+                  Xem Mô Hình 3D (iOS)
                 </button>
                 <model-viewer
                   id="hidden-model-viewer"
                   src={usdzUrl}
                   ar
                   ar-modes="quick-look"
+                  ar-placement="floor"
+                  ar-scale="auto"
                   style={{ display: 'none' }}
                 ></model-viewer>
               </>
@@ -252,26 +254,16 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
                 disabled
                 className="bg-white/50 text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 cursor-not-allowed"
               >
-                Đang tải 3D...
+                Đang dựng 3D...
               </button>
             )}
-            
-            {/* Google Model Viewer Official USDZ Test Button */}
-            <a
-              rel="ar"
-              href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-              className="bg-blue-500 text-white px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
-            >
-              Test Mẫu Phi Hành Gia
-              <img src="" alt="" style={{ display: 'none' }} />
-            </a>
           </>
         ) : (
           <button
             onClick={() => store.enterAR()}
             className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all"
           >
-            Bắt đầu AR Try-On (V3)
+            Xem Mô Hình 3D (Android)
           </button>
         )}
       </div>
