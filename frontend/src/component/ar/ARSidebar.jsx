@@ -86,10 +86,10 @@ export default function ARSidebar({
           <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest">Mẹo sử dụng</p>
           <ul className="space-y-1.5">
             {[
-              { icon: 'view_in_ar',      text: 'Hệ thống AR quét không gian giường thực tế' },
-              { icon: 'palette',         text: 'Chọn màu lụa để mô phỏng AR Try On' },
-              { icon: 'auto_awesome',    text: 'Quá trình trải lụa diễn ra hoàn toàn tự động' },
-              { icon: 'restart_alt',     text: 'Nhấn Render lại để thử thách góc nhìn khác' },
+              { icon: 'view_in_ar',      text: 'Quét mặt sàn trống để đặt mô hình 3D' },
+              { icon: 'palette',         text: 'Chọn màu lụa để xem trước sản phẩm' },
+              { icon: 'auto_awesome',    text: 'Mô hình sẽ tự cập nhật màu và độ bóng' },
+              { icon: 'directions_walk', text: 'Di chuyển quanh phòng để ngắm các góc độ' },
             ].map(({ icon, text }) => (
               <li key={text} className="flex items-start gap-2">
                 <span className="material-symbols-outlined text-[14px] text-slate-deep/60 mt-0.5 flex-shrink-0">{icon}</span>

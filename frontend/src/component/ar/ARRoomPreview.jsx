@@ -150,7 +150,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
               >
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[13px]">view_in_ar</span>
-                  Realtime AR (V3)
+                  Mô Hình 3D (AR)
                 </span>
               </button>
             </div>
@@ -286,9 +286,9 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
               <div className="w-16 h-16 bg-slate-deep rounded-full flex items-center justify-center mb-4 flex-shrink-0">
                 <span className="material-symbols-outlined text-linen-white text-3xl">qr_code_scanner</span>
               </div>
-              <h2 className="font-label-caps text-lg text-slate-deep uppercase tracking-widest mb-2">Realtime AR (V3)</h2>
+              <h2 className="font-label-caps text-lg text-slate-deep uppercase tracking-widest mb-2">Mô Hình 3D (AR)</h2>
               <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-                Công nghệ AR quét không gian 3D hoạt động tốt nhất trên thiết bị di động. Vui lòng sử dụng điện thoại để quét mã QR và trải nghiệm.
+                Xem mô hình chăn ga 3D trực tiếp trong không gian. Vui lòng sử dụng điện thoại quét mã QR để bắt đầu.
               </p>
               <div className="bg-white p-4 rounded-lg shadow-inner border border-slate-deep/5 mb-6">
                 <QRCode value={arLink} size={160} />
