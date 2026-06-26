@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { Canvas } from '@react-three/fiber';
 import { XR, Interactive, useXRHitTest, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
-import { USDZExporter } from 'three/addons/exporters/USDZExporter.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import '@google/model-viewer';
 import { FABRICS } from './arUtils';
 import velvetTextureUrl from '../../assets/velvet.png';
 
@@ -134,19 +135,18 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
     );
   }, [productImageUrl]);
 
-  // Pre-generate USDZ for iOS to bypass Safari's async click block
+  // Pre-generate GLB for model-viewer to bypass Safari's async click block
   useEffect(() => {
     if (!isIOS || !loadedTexture) return;
 
     let active = true;
-    let currentUrl = null;
 
-    const generateUSDZ = async () => {
+    const generateGLB = async () => {
       try {
         // BoxGeometry to give it some thickness
         const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
         const material = new THREE.MeshStandardMaterial({
-          color: 0xff4444, // Solid red color for testing
+          map: loadedTexture,
           roughness: 0.4,
           metalness: 0.1,
           name: 'BedFabricMaterial'
@@ -163,42 +163,30 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         const scene = new THREE.Scene();
         scene.add(group);
 
-        const exporter = new USDZExporter();
-        const arraybuffer = await exporter.parse(scene);
-        
-        if (!active) return;
-
-        // NEW FLOW: Upload to Backend Relay
-        const blob = new Blob([arraybuffer], { type: 'model/vnd.usdz+zip' });
-        const formData = new FormData();
-        formData.append('file', blob, 'model.usdz');
-
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
-        const res = await fetch(`${backendUrl}/api/v1/ar/upload-usdz`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Upload failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
-        if (data && data.url) {
-          if (!active) return;
-          // Set the final URL (including full backend host since ar-service and backend might be on different ports)
-          currentUrl = `${backendUrl}${data.url}`;
-          setUsdzUrl(currentUrl);
-        }
+        const exporter = new GLTFExporter();
+        exporter.parse(
+          scene,
+          (glbArrayBuffer) => {
+            if (!active) return;
+            const blob = new Blob([glbArrayBuffer], { type: 'model/gltf-binary' });
+            const url = URL.createObjectURL(blob);
+            setUsdzUrl(url); // Storing GLB URL in usdzUrl state for simplicity
+          },
+          (error) => {
+            console.error('Error generating GLB:', error);
+            if (active) setUsdzError('Lỗi tạo mô hình 3D');
+          },
+          { binary: true }
+        );
       } catch (error) {
-        console.error('Error generating USDZ:', error);
+        console.error('Error in generateGLB:', error);
         if (active) {
           setUsdzError(error.message || 'Lỗi không xác định');
         }
       }
     };
 
-    generateUSDZ();
+    generateGLB();
 
     return () => {
       active = false;
@@ -238,15 +226,24 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         {isIOS ? (
           <>
             {usdzUrl ? (
-              <a
-                rel="ar"
-                href={usdzUrl}
-                download="silkmoon-bed.usdz"
-                className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
-              >
-                Xem AR Giường (Code)
-                <img src="" alt="" style={{ display: 'none' }} />
-              </a>
+              <>
+                <button
+                  onClick={() => {
+                    const mv = document.querySelector('#hidden-model-viewer');
+                    if (mv) mv.activateAR();
+                  }}
+                  className="bg-white text-black px-6 py-3 rounded-full font-bold uppercase tracking-wider shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all inline-flex items-center justify-center"
+                >
+                  Xem AR Giường (Google)
+                </button>
+                <model-viewer
+                  id="hidden-model-viewer"
+                  src={usdzUrl}
+                  ar
+                  ar-modes="quick-look"
+                  style={{ display: 'none' }}
+                ></model-viewer>
+              </>
             ) : usdzError ? (
               <button
                 disabled

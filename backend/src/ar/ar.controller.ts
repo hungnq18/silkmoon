@@ -78,6 +78,25 @@ export class ARController {
     return { success: true, url: publicUrl };
   }
 
+  @Get('latest-usdz')
+  async getLatestUsdz() {
+    const uploadPath = path.join(process.cwd(), 'uploads', 'usdz');
+    if (!fs.existsSync(uploadPath)) return { success: false, message: 'No files' };
+    const files = fs.readdirSync(uploadPath);
+    if (files.length === 0) return { success: false, message: 'No files' };
+    
+    // Sort by modified time
+    files.sort((a, b) => {
+      return fs.statSync(path.join(uploadPath, b)).mtime.getTime() - fs.statSync(path.join(uploadPath, a)).mtime.getTime();
+    });
+    
+    return {
+      success: true,
+      latest: `/uploads/usdz/${files[0]}`,
+      size: fs.statSync(path.join(uploadPath, files[0])).size
+    };
+  }
+
   @Post('segment')
   async segmentBed(@Body() body: { image: string }) {
     if (!body.image) throw new HttpException('No image provided', HttpStatus.BAD_REQUEST);
