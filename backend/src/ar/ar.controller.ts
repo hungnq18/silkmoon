@@ -1,14 +1,14 @@
-import { Controller, Post, Body, Get, HttpException, HttpStatus, UseInterceptors, UploadedFile, Param, Res, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpException, HttpStatus, Query, Res, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ARService } from './ar.service';
-import type { Response } from 'express';
-
-// In-memory cache for USDZ files to act as a relay for iOS AR Quick Look
-const usdzCache = new Map<string, Buffer>();
+import type { Response, Request } from 'express';
+import * as multer from 'multer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller('ar')
 export class ARController {
-  constructor(private readonly arService: ARService) {}
+  constructor(private readonly arService: ARService) { }
 
   // ── Temporary: list models to find image generation support ──
   @Get('list-models')
@@ -34,10 +34,54 @@ export class ARController {
 
   // --- VERSION 1 & 2 ARCHITECTURE SCAFFOLDING ---
 
+  @Get('proxy-image')
+  async proxyImage(@Query('url') url: string, @Res() res: Response) {
+    if (!url) {
+      return res.status(HttpStatus.BAD_REQUEST).send('URL is required');
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      
+      const buffer = await response.arrayBuffer();
+      res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('Proxy error: ' + error.message);
+    }
+  }
+
+  @Post('upload-usdz')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadPath = path.join(process.cwd(), 'uploads', 'usdz');
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        cb(null, `model-${Date.now()}-${Math.round(Math.random() * 1e9)}.usdz`);
+      }
+    })
+  }))
+  async uploadUsdz(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) {
+      throw new HttpException('File upload failed', HttpStatus.BAD_REQUEST);
+    }
+    
+    // Create the public URL
+    const publicUrl = `/uploads/usdz/${file.filename}`;
+    return { success: true, url: publicUrl };
+  }
+
   @Post('segment')
   async segmentBed(@Body() body: { image: string }) {
     if (!body.image) throw new HttpException('No image provided', HttpStatus.BAD_REQUEST);
-    
+
     // Future implementation: Send body.image to Python Microservice (SAM2 + Grounding DINO)
     // to get exact pixel masks for mattress, blanket, pillows.
     return {
@@ -72,8 +116,8 @@ export class ARController {
 
       // 2. Inpaint using SDXL with the mask
       const resultImage = await this.arService.inpaintBed(
-        body.roomImageUrl, 
-        maskUrl, 
+        body.roomImageUrl,
+        maskUrl,
         body.prompt || 'silk fabric',
         body.productImageUrl
       );
@@ -150,76 +194,5 @@ export class ARController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-
-  // --- Backend Image Proxy (CORS Bypass) ---
-
-  @Get('proxy-image')
-  async proxyImage(@Query('url') imageUrl: string, @Res() res: Response) {
-    if (!imageUrl) {
-      return res.status(HttpStatus.BAD_REQUEST).send('Missing url parameter');
-    }
-
-    try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      // Forward the original content type, or default to jpeg
-      const contentType = response.headers.get('content-type') || 'image/jpeg';
-      
-      res.setHeader('Content-Type', contentType);
-      // Ensure cross-origin is explicitly allowed
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      // Set cache control for performance
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
-      
-      res.send(buffer);
-    } catch (error) {
-      console.error('[Proxy Image Error]', error);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('Failed to proxy image');
-    }
-  }
-
-  // --- iOS AR Quick Look USDZ Relay ---
-
-  @Post('upload-usdz')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadUsdz(@UploadedFile() file: any) {
-    if (!file || !file.buffer) {
-      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
-    }
-    
-    const id = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
-    usdzCache.set(id, file.buffer);
-    
-    // Auto-cleanup after 10 minutes to prevent memory leaks
-    setTimeout(() => {
-      usdzCache.delete(id);
-    }, 10 * 60 * 1000);
-
-    return { 
-      success: true, 
-      id,
-      url: `/api/v1/ar/usdz/${id}.usdz` 
-    };
-  }
-
-  @Get('usdz/:filename')
-  getUsdz(@Param('filename') filename: string, @Res() res: Response) {
-    const id = filename.replace('.usdz', '');
-    const buffer = usdzCache.get(id);
-    
-    if (!buffer) {
-      return res.status(HttpStatus.NOT_FOUND).send('USDZ file not found or expired');
-    }
-
-    res.setHeader('Content-Type', 'model/vnd.usdz+zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(buffer);
   }
 }
