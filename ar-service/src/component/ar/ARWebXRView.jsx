@@ -37,47 +37,59 @@ function Reticle({ onSelect }) {
   );
 }
 
-// The Bed Mesh placed in AR
-function ARBedMesh({ position, productImageUrl }) {
-  const [texture, setTexture] = useState(null);
+// ── Hybrid 2.5D Relief Mesh Generator ───────────────────────
+function generateReliefGeometry() {
+  const geo = new THREE.PlaneGeometry(1.8, 2.0, 64, 64);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    let z = 0.25; // Base mattress thickness
 
-  useEffect(() => {
-    // Wrap productImageUrl with our Backend Proxy to avoid Canvas Tainting
-    // We use a relative path by default to prevent Mixed Content errors (HTTP inside HTTPS) on AWS
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
-    const proxyUrl = productImageUrl 
-      ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
-      : null;
-      
-    const urlToLoad = proxyUrl || velvetTextureUrl;
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-    loader.load(
-      urlToLoad,
-      (tex) => {
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2, 2); // Adjust repeat if necessary
-        setTexture(tex);
-      },
-      undefined,
-      (err) => console.error('Error loading texture in mesh:', err)
-    );
-  }, [productImageUrl]);
+    // 1. Drape edges smoothly
+    const drapeX = Math.max(0, (Math.abs(x) - 0.75) / 0.15); 
+    const drapeYFoot = Math.max(0, (-y - 0.85) / 0.15);
+    const drapeYHead = Math.max(0, (y - 0.9) / 0.1);
 
-  if (!texture) return null;
+    const drapeFactor = Math.min(1.0, Math.max(drapeX, drapeYFoot, drapeYHead));
+    const smoothDrape = drapeFactor * drapeFactor * (3 - 2 * drapeFactor); // smoothstep
+    z -= smoothDrape * 0.25; // drop down to floor
+
+    // 2. Add Pillow Bumps at headboard
+    const distL = Math.sqrt((x + 0.4)**2 + (y - 0.7)**2);
+    const distR = Math.sqrt((x - 0.4)**2 + (y - 0.7)**2);
+    const pillowR = 0.35;
+    const pillowH = 0.15;
+
+    if (distL < pillowR) {
+       z += Math.cos((distL/pillowR) * Math.PI/2) * pillowH;
+    }
+    if (distR < pillowR) {
+       z += Math.cos((distR/pillowR) * Math.PI/2) * pillowH;
+    }
+
+    pos.setZ(i, z);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// The Bed Mesh placed in AR (Android)
+function ARBedMesh({ position, loadedTexture }) {
+  if (!loadedTexture) return null;
 
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>
-      {/* 1.8m x 2.0m standard bed size */}
-      <planeGeometry args={[1.8, 2.0, 32, 32]} />
-      <meshStandardMaterial 
-        map={texture} 
-        roughness={0.4} 
-        metalness={0.1} 
-        side={THREE.DoubleSide} 
-      />
-    </mesh>
+    <group position={position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <primitive object={generateReliefGeometry()} attach="geometry" />
+        <meshStandardMaterial 
+          map={loadedTexture} 
+          roughness={0.6} 
+          metalness={0.1} 
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -95,45 +107,28 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous');
     
-    // Wrap productImageUrl with our Backend Proxy to bypass Safari CORS blocks
     const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
     const proxyUrl = productImageUrl 
       ? `${backendUrl}/api/v1/ar/proxy-image?url=${encodeURIComponent(productImageUrl)}` 
-      : null;
-    
-    // Fallback to velvet if missing
-    const urlToLoad = proxyUrl || velvetTextureUrl;
+      : velvetTextureUrl;
     
     loader.load(
-      urlToLoad, 
+      proxyUrl, 
       (tex) => {
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2, 2);
+        // We stretch the real image exactly once over the plane (no repeating)
+        tex.wrapS = THREE.ClampToEdgeWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        // FlipY might be needed for PlaneGeometry UVs
+        tex.flipY = true; 
         setLoadedTexture(tex);
       },
       undefined,
       (err) => {
-        console.warn('Proxy image failed, falling back to velvet texture:', err);
-        // Automatically retry with velvet texture if proxy fails
-        loader.load(
-          velvetTextureUrl,
-          (fallbackTex) => {
-            fallbackTex.wrapS = THREE.RepeatWrapping;
-            fallbackTex.wrapT = THREE.RepeatWrapping;
-            fallbackTex.repeat.set(2, 2);
-            setLoadedTexture(fallbackTex);
-            setUsdzError(`Lưu ý: Không tải được vân vải thực tế (Lỗi mạng), đang dùng vân vải nhung mặc định.`);
-          },
-          undefined,
-          (fallbackErr) => {
-             console.error('Fatal: Even velvet fallback failed', fallbackErr);
-             setUsdzError(`Lỗi nghiêm trọng: Không thể tải ảnh bề mặt.`);
-          }
-        );
+        console.error('Fatal: Velvet texture failed', err);
+        setUsdzError(`Lỗi nghiêm trọng: Không thể tải ảnh bề mặt.`);
       }
     );
-  }, [productImageUrl]);
+  }, []);
 
   // Pre-generate GLB for model-viewer to bypass Safari's async click block
   useEffect(() => {
@@ -143,21 +138,24 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
 
     const generateGLB = async () => {
       try {
-        // BoxGeometry to give it some thickness
-        const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
+        const group = new THREE.Group();
+        group.name = 'HybridReliefBedGroup';
+
+        const geometry = generateReliefGeometry();
         const material = new THREE.MeshStandardMaterial({
           map: loadedTexture,
-          roughness: 0.4,
+          roughness: 0.6,
           metalness: 0.1,
-          name: 'BedFabricMaterial'
+          side: THREE.DoubleSide,
+          name: 'RealProductMaterial'
         });
+
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.name = 'BedMesh';
-        // AR Quick Look standard orientation
-        mesh.position.y = 0.1; // elevate half thickness
-        
-        const group = new THREE.Group();
-        group.name = 'BedGroup';
+        mesh.name = 'HybridReliefBedMesh';
+        // Rotate flat and elevate slightly
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.y = 0.05;
+
         group.add(mesh);
 
         const scene = new THREE.Scene();
@@ -190,10 +188,8 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
 
     return () => {
       active = false;
-      // Do not revoke Object URL! iOS Quick Look needs time to read it out-of-process.
-      // Revoking it too early causes 'Cannot open object' error.
     };
-  }, [loadedTexture, isIOS]);
+  }, [loadedTexture, isIOS, activeFabricId]);
 
   const placeBed = (e) => {
     if (e.intersection) {
@@ -292,7 +288,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
             {bedPosition && (
               <ARBedMesh 
                 position={bedPosition} 
-                productImageUrl={productImageUrl} 
+                loadedTexture={loadedTexture} 
               />
             )}
           </XR>
