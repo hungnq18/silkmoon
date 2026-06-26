@@ -11,6 +11,11 @@ async function bootstrap() {
   // Serve static files from /uploads directory
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
+    setHeaders: (res, path) => {
+      if (path.endsWith('.usdz')) {
+        res.setHeader('Content-Type', 'model/vnd.usdz+zip');
+      }
+    }
   });
 
   // Global prefix

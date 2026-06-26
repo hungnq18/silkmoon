@@ -146,7 +146,7 @@ export default function ARWebXRView({ activeFabricId, productImageUrl, onClose }
         // BoxGeometry to give it some thickness
         const geometry = new THREE.BoxGeometry(1.8, 0.2, 2.0); 
         const material = new THREE.MeshStandardMaterial({
-          map: loadedTexture,
+          color: 0xff4444, // Solid red color for testing
           roughness: 0.4,
           metalness: 0.1,
           name: 'BedFabricMaterial'
