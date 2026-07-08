@@ -21,7 +21,7 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="login-container" style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="login-container" style={{ display: 'flex', height: '100vh', width: '100%', alignItems: 'center', justifyContent: 'center' }}>
       <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '2rem', width: '300px' }}>
         <h2>Admin Login</h2>
         {error && <p style={{ color: 'red' }}>{error}</p>}
