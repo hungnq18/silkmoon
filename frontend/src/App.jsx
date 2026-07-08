@@ -59,10 +59,17 @@ function AppContent() {
   );
 }
 
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

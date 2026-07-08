@@ -50,14 +50,13 @@ export default function Header() {
            {/* Left */}
            <div className="flex items-center gap-6">
              <Link to="/about" className="hover:opacity-80 transition-opacity flex items-center gap-1 font-medium">
-               About
+               Về chúng tôi
              </Link>
-             <Link to="/showroom" className="hover:opacity-80 transition-opacity font-medium">Showroom</Link>
              <Link to="/blog" className="hover:opacity-80 transition-opacity font-medium">Blog</Link>
            </div>
            {/* Center */}
            <div className="flex-1 text-center font-medium">
-             Giảm ngay 15% khi mua từ 02 sản phẩm
+             Giảm giá 20% cho đơn hàng từ 500.000 vnđ
            </div>
            {/* Right */}
            <div className="flex items-center gap-2 justify-end">
@@ -75,11 +74,11 @@ export default function Header() {
       >
         <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center select-none w-[120px] shrink-0">
+          <Link to="/" className="flex items-center select-none w-[150px] shrink-0">
             <img
               src={logoImg}
               alt="SILKMOON Logo"
-              className="h-6 md:h-8 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
+              className="h-8 md:h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
             />
           </Link>
 
@@ -117,6 +116,12 @@ export default function Header() {
             </Link>
             <Link
               className={`hover:opacity-70 transition-opacity font-body-md text-body-md py-1 font-medium ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}
+              to="/blog"
+            >
+              Hướng dẫn chăm sóc
+            </Link>
+            <Link
+              className={`hover:opacity-70 transition-opacity font-body-md text-body-md py-1 font-medium ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}
               to="/shop"
             >
               Sale
@@ -124,7 +129,7 @@ export default function Header() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-stack-sm md:gap-stack-md w-[120px] shrink-0">
+          <div className="flex items-center justify-end gap-stack-sm md:gap-stack-md w-[150px] shrink-0">
             <button className={`p-2 hover:opacity-70 transition-opacity hidden md:block ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}>
               <span className="material-symbols-outlined text-[24px]">account_circle</span>
             </button>
@@ -158,10 +163,9 @@ export default function Header() {
           {/* Top Bar Items on Mobile */}
           <div className="flex flex-col gap-2 pb-4 border-b border-slate-deep/10 mb-2 text-on-surface-variant font-body-sm">
              <div className="bg-slate-deep/5 text-slate-deep font-medium text-center py-2 rounded mb-2 text-xs">
-               Giảm ngay 15% khi mua từ 02 sản phẩm
+               Giảm giá 20% cho đơn hàng từ 500.000 vnđ
              </div>
-             <Link to="/about" className="py-1">About</Link>
-             <Link to="/showroom" className="py-1">Showroom</Link>
+             <Link to="/about" className="py-1">Về chúng tôi</Link>
              <Link to="/careers" className="py-1">Careers</Link>
           </div>
           
@@ -200,6 +204,13 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Phụ kiện <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </Link>
+          <Link
+            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
+            to="/blog"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Hướng dẫn chăm sóc <span className="material-symbols-outlined text-[20px]">chevron_right</span>
           </Link>
           <Link
             className="py-3 font-body-md text-body-md text-slate-deep font-medium flex justify-between items-center"

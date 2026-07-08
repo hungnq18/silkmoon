@@ -71,95 +71,51 @@ export default function About() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-8">
             {/* Value 1 */}
             <div className="bg-linen-white p-8 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
               <div className="w-16 h-16 bg-sage-haze/10 rounded-full flex items-center justify-center mx-auto mb-6 text-sage-haze">
-                <span className="material-symbols-outlined text-[32px]">eco</span>
+                <span className="material-symbols-outlined text-[32px]">shield</span>
               </div>
-              <h3 className="font-display-sm text-display-sm mb-3">100% Tự Nhiên</h3>
+              <h3 className="font-display-sm text-display-sm mb-3">Trách nhiệm</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Lựa chọn khắt khe các nguồn sợi tự nhiên, thân thiện với làn da và an toàn cho sức khỏe trong dài hạn.
+                Silkmoon coi trọng trách nhiệm trong công việc, sự chú trọng đến từng chi tiết trong mỗi sản phẩm và tính chuyên nghiệp đối với khách hàng, đồng nghiệp và các mục tiêu chung của công ty.
               </p>
             </div>
             {/* Value 2 */}
             <div className="bg-linen-white p-8 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
               <div className="w-16 h-16 bg-sage-haze/10 rounded-full flex items-center justify-center mx-auto mb-6 text-sage-haze">
-                <span className="material-symbols-outlined text-[32px]">bed</span>
+                <span className="material-symbols-outlined text-[32px]">lightbulb</span>
               </div>
-              <h3 className="font-display-sm text-display-sm mb-3">Trải Nghiệm Tối Đa</h3>
+              <h3 className="font-display-sm text-display-sm mb-3">Đổi mới</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Tập trung vào cảm giác êm ái, thoáng mát, hỗ trợ nâng đỡ cơ thể tuyệt đối để mỗi phút giây ngả lưng đều là tận hưởng.
+                Silkmoon áp dụng các công nghệ hiện đại như chatbot AI và thực tế ảo để nâng cao trải nghiệm mua sắm trực tuyến. Công ty liên tục tìm kiếm các giải pháp mới để mang lại sự tiện lợi hơn, cá nhân hóa hơn và kết nối khách hàng mạnh mẽ hơn.
               </p>
             </div>
             {/* Value 3 */}
             <div className="bg-linen-white p-8 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
               <div className="w-16 h-16 bg-sage-haze/10 rounded-full flex items-center justify-center mx-auto mb-6 text-sage-haze">
-                <span className="material-symbols-outlined text-[32px]">local_shipping</span>
+                <span className="material-symbols-outlined text-[32px]">handshake</span>
               </div>
-              <h3 className="font-display-sm text-display-sm mb-3">Minh Bạch & Tận Tâm</h3>
+              <h3 className="font-display-sm text-display-sm mb-3">Hợp tác</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Chính sách dùng thử tại nhà, miễn phí vận chuyển và bảo hành dài hạn vì chúng tôi tin tưởng vào sản phẩm của mình.
+                Silkmoon xây dựng một môi trường làm việc cởi mở, tôn trọng và hỗ trợ, nơi các thành viên trong nhóm hợp tác và cùng nhau phát triển hướng tới các mục tiêu kinh doanh chung.
+              </p>
+            </div>
+            {/* Value 4 */}
+            <div className="bg-linen-white p-8 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-16 h-16 bg-sage-haze/10 rounded-full flex items-center justify-center mx-auto mb-6 text-sage-haze">
+                <span className="material-symbols-outlined text-[32px]">visibility</span>
+              </div>
+              <h3 className="font-display-sm text-display-sm mb-3">Minh bạch</h3>
+              <p className="font-body-sm text-slate-deep/70">
+                Silkmoon thúc đẩy sự trung thực, cởi mở và giao tiếp rõ ràng trong tất cả các hoạt động kinh doanh. Công ty coi trọng tính minh bạch trong việc ra quyết định, làm việc nhóm và các mối quan hệ với đối tác và khách hàng, tạo dựng lòng tin và sự phát triển bền vững lâu dài.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. Hành Trình (Timeline) */}
-      <section className="py-section-gap px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
-        <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep text-center mb-16">Hành Trình Của Chúng Tôi</h2>
-        
-        <div className="relative border-l border-slate-deep/10 ml-4 md:mx-auto md:w-fit md:border-l-0">
-          <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-px bg-slate-deep/10 -translate-x-1/2"></div>
-          
-          <div className="space-y-12">
-            {/* Year 1 */}
-            <div className="relative pl-8 md:pl-0 flex flex-col md:flex-row items-center w-full group">
-              <div className="absolute left-[-5px] top-2 md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-sage-haze border-4 border-linen-white shadow-sm z-10 transition-transform group-hover:scale-150"></div>
-              <div className="md:w-1/2 md:pr-16 text-left md:text-right w-full">
-                <span className="text-sage-haze font-bold text-lg mb-1 block">Năm 2023</span>
-                <h3 className="font-display-sm text-display-sm mb-2">Ý Tưởng Bắt Đầu</h3>
-                <p className="font-body-sm text-slate-deep/70">Từ khao khát tìm kiếm một bộ chăn ga thực sự làm từ thiên nhiên, không pha nilon với mức giá hợp lý, SILKMOON được nhen nhóm hình thành.</p>
-              </div>
-              <div className="md:w-1/2 md:pl-16 hidden md:block"></div>
-            </div>
-
-            {/* Year 2 */}
-            <div className="relative pl-8 md:pl-0 flex flex-col md:flex-row items-center w-full group">
-              <div className="absolute left-[-5px] top-2 md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-sage-haze border-4 border-linen-white shadow-sm z-10 transition-transform group-hover:scale-150"></div>
-              <div className="md:w-1/2 md:pr-16 hidden md:block"></div>
-              <div className="md:w-1/2 md:pl-16 text-left w-full">
-                <span className="text-sage-haze font-bold text-lg mb-1 block">Năm 2024</span>
-                <h3 className="font-display-sm text-display-sm mb-2">Ra Mắt Sản Phẩm Đầu Tiên</h3>
-                <p className="font-body-sm text-slate-deep/70">Mất hơn 1 năm nghiên cứu chất liệu vải dệt từ sợi sồi và sợi bạch đàn, bộ sưu tập chăn ga làm mát đầu tiên chính thức tới tay khách hàng.</p>
-              </div>
-            </div>
-
-            {/* Year 3: 2025 */}
-            <div className="relative pl-8 md:pl-0 flex flex-col md:flex-row items-center w-full group">
-              <div className="absolute left-[-5px] top-2 md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-sage-haze border-4 border-linen-white shadow-sm z-10 transition-transform group-hover:scale-150"></div>
-              <div className="md:w-1/2 md:pr-16 text-left md:text-right w-full">
-                <span className="text-sage-haze font-bold text-lg mb-1 block">Năm 2025</span>
-                <h3 className="font-display-sm text-display-sm mb-2">Mở Rộng & Phát Triển</h3>
-                <p className="font-body-sm text-slate-deep/70">Tiếp tục cải tiến các dòng gối hỗ trợ đốt sống cổ và đệm cao cấp, trở thành người bạn đồng hành trong hàng vạn phòng ngủ của gia đình Việt.</p>
-              </div>
-              <div className="md:w-1/2 md:pl-16 hidden md:block"></div>
-            </div>
-
-            {/* Year 4: 2026 */}
-            <div className="relative pl-8 md:pl-0 flex flex-col md:flex-row items-center w-full group">
-              <div className="absolute left-[-5px] top-2 md:left-1/2 md:-translate-x-1/2 w-3 h-3 rounded-full bg-sage-haze border-4 border-linen-white shadow-sm z-10 transition-transform group-hover:scale-150"></div>
-              <div className="md:w-1/2 md:pr-16 hidden md:block"></div>
-              <div className="md:w-1/2 md:pl-16 text-left w-full">
-                <span className="text-sage-haze font-bold text-lg mb-1 block">Năm 2026</span>
-                <h3 className="font-display-sm text-display-sm mb-2">Nâng Tầm Giấc Ngủ</h3>
-                <p className="font-body-sm text-slate-deep/70">Ra mắt bộ sưu tập cao cấp ứng dụng công nghệ làm mát tiên tiến nhất, khẳng định vị thế thương hiệu chăm sóc giấc ngủ hàng đầu Việt Nam.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import CheckoutForm from '../component/CheckoutForm';
 import OrderSummary from '../component/OrderSummary';
 import { ordersApi } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function Checkout() {
+  const { cart, clearCart } = useCart();
   const [isCompleted, setIsCompleted] = useState(false);
   const [checkoutData, setCheckoutData] = useState(null);
   const [orderResult, setOrderResult] = useState(null);
@@ -13,25 +15,14 @@ export default function Checkout() {
   const handleCheckoutSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // Build order payload from cart + form data
-      const cartItems = JSON.parse(localStorage.getItem('silkmoon_cart') || '[]');
-      const totals = JSON.parse(localStorage.getItem('silkmoon_checkout_totals') || '{}');
       const promoCode = localStorage.getItem('silkmoon_promo_code') || null;
 
       const order = await ordersApi.create({
         ...data,
-        subtotal: totals.subtotal || 0,
-        discountAmount: totals.discountAmount || 0,
-        total: totals.total || 0,
         promoCode,
-        items: cartItems.map((item) => ({
+        items: cart.map((item) => ({
           productId: item.productId,
-          name: item.name,
-          spec: item.spec,
           quantity: item.quantity,
-          price: item.price,
-          image: item.image,
-          embroidery: item.embroidery || null,
         })),
       });
 
@@ -39,11 +30,11 @@ export default function Checkout() {
       setCheckoutData(data);
       setIsCompleted(true);
 
-      localStorage.removeItem('silkmoon_cart');
+      // Clear the cart via context instead of localStorage directly
+      clearCart();
       localStorage.removeItem('silkmoon_discount');
       localStorage.removeItem('silkmoon_promo_code');
       localStorage.removeItem('silkmoon_checkout_totals');
-      window.dispatchEvent(new Event('cart-updated'));
     } catch (err) {
       alert(err.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
     } finally {

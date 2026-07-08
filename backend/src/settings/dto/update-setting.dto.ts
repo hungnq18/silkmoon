@@ -1,0 +1,8 @@
+import { IsNotEmpty } from 'class-validator';
+
+export class UpdateSettingDto {
+  @IsNotEmpty()
+  value: any;
+
+  description?: string;
+}

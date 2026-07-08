@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  body {
+  html, body {
     @apply bg-linen-white text-slate-deep;
     overflow-x: hidden;
     font-family: 'Manrope', sans-serif;

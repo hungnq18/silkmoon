@@ -24,10 +24,10 @@ export default function BrandStory() {
             Giấc Ngủ Ngon
           </h2>
           <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
-            Tại silkMoon, chúng tôi tin rằng ngôi nhà là thánh đường của sự bình yên. Mỗi sản phẩm được ra đời từ niềm đam mê với chất liệu bền vững và thiết kế tối giản, giúp bạn tách biệt khỏi sự ồn ào của thế giới bên ngoài.
+            Tại SILKMOON, chúng tôi tin rằng ngôi nhà là không gian của sự bình yên. Mỗi sản phẩm được ra đời từ niềm đam mê với chất liệu bền vững và thiết kế tối giản, giúp bạn tách biệt khỏi sự ồn ào của thế giới bên ngoài.
           </p>
           <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
-            Chúng tôi chọn lọc những sợi cotton tốt nhất và quy trình sản xuất thân thiện với môi trường để đảm bảo rằng mỗi đêm của bạn đều là một hành trình nghỉ ngơi đích thực.
+            Chúng tôi chọn lọc những chất liệu từ tự nhiên và thân thiện với môi trường để đảm bảo rằng mỗi đêm của bạn đều là một hành trình nghỉ ngơi đích thực.
           </p>
           <div className="pt-stack-md">
             <Link

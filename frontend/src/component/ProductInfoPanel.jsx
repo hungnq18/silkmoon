@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const sizes = [
   { id: 'queen', label: 'Queen (160x200)' },
@@ -15,19 +16,25 @@ const colors = [
   { id: 'slate', hex: '#334641', label: 'Slate Silk' },
 ];
 
-export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
+export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState('queen');
-  const [selectedColor, setSelectedColor] = useState('champagne');
+  
+  // Use product colors or fallback
+  const productColors = product.colors?.length > 0 ? product.colors : colors;
+  const [selectedColor, setSelectedColor] = useState(productColors[0]?.id || 'champagne');
+  
   const [embroideryText, setEmbroideryText] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [customSize, setCustomSize] = useState({ length: '', width: '', height: '' });
 
-  const activeColorInfo = colors.find((c) => c.id === selectedColor);
+  const activeColorInfo = productColors.find((c) => c.id === selectedColor) || productColors[0];
 
   const handleColorClick = (colorId) => {
     setSelectedColor(colorId);
-    const colorInfo = colors.find((c) => c.id === colorId);
-    if (onColorChange) {
+    const colorInfo = productColors.find((c) => c.id === colorId);
+    if (onColorChange && colorInfo) {
       onColorChange(colorInfo.label);
     }
   };
@@ -40,41 +47,11 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
   };
 
   const handleAddToCart = () => {
-    const sizeObj = sizes.find((s) => s.id === selectedSize);
-    const colorObj = colors.find((c) => c.id === selectedColor);
-    
-    const basePrice = 4500000;
-    const embroideryPrice = embroideryText ? 250000 : 0;
-    const finalPrice = basePrice + embroideryPrice;
-    
-    const specLabel = `${colorObj.label.toUpperCase()} / ${sizeObj.label.split(' ')[0].toUpperCase()}`;
-
-    const newCartItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      productId: 'mulberry-silk-bedding',
-      name: 'Bộ Ga Giường Lụa Mulberry 22 Momme',
-      spec: specLabel,
-      price: finalPrice,
-      quantity: 1,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBXSKeAS-krZL7BdTKe-zbjRmYe8lurfn2LsLMoA-uUbKoeZ72OCkjHCp7H8eIothkquNH0ZQ-ZI0gGpUh3e2JjlzZ7mxnjRJOia8aryibPNfIhNAFEnTmmhAtFAQlAWfsFAyx9Tb9Ghii-WpGyQoagjhRIWNHYs-xjdcLiRyvtWuaIVYrNMoq2dhawpnWhQD2EhcHr85aErSjlphn-JGjZABRu-FLi1LseTpov7wsxmg5tutc42PaGgkLZ9LqEWbLa8y6GOncWlzI',
-      embroidery: embroideryText || null,
-    };
-
     try {
-      const existingCart = JSON.parse(localStorage.getItem('silkmoon_cart') || '[]');
+      // Add product ID and exact quantity (1 for panel add)
+      addToCart(product._id || product.id, 1);
       
-      const existingItemIndex = existingCart.findIndex(
-        (item) => item.productId === newCartItem.productId && item.spec === newCartItem.spec && item.embroidery === newCartItem.embroidery
-      );
-      
-      if (existingItemIndex > -1) {
-        existingCart[existingItemIndex].quantity += 1;
-      } else {
-        existingCart.push(newCartItem);
-      }
-      
-      localStorage.setItem('silkmoon_cart', JSON.stringify(existingCart));
-      window.dispatchEvent(new Event('cart-updated'));
+      // We can also trigger a custom event or toast here if we want
       navigate('/cart');
     } catch (e) {
       console.error('Error adding item to cart:', e);
@@ -87,10 +64,10 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
       {/* Brand & Title */}
       <div>
         <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
-          Premium Collection
+          {product.category || 'Premium Collection'}
         </span>
         <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-slate-deep mt-stack-sm leading-tight">
-          Bộ Ga Giường Lụa Mulberry 22 Momme
+          {product.name}
         </h1>
 
         {/* Ratings & Reviews */}
@@ -107,18 +84,18 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
 
         {/* Price */}
         <p className="font-headline-sm text-headline-sm text-slate-deep mt-stack-md">
-          4.500.000 VNĐ
+          {product.price?.toLocaleString('vi-VN')} VNĐ
         </p>
       </div>
 
       {/* AR Preview Trigger */}
       <button
         onClick={onOpenAR}
-        className="group flex items-center justify-center gap-stack-sm border border-slate-deep/10 py-4 px-6 rounded-full hover:bg-slate-deep hover:text-linen-white transition-all duration-300 bg-primary text-white shadow-sm active:scale-98"
+        className="group flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-stack-sm border border-slate-deep/10 py-4 px-4 md:px-6 rounded-full hover:bg-slate-deep hover:text-linen-white transition-all duration-300 bg-primary text-white shadow-sm active:scale-98 w-full"
       >
         <span className="material-symbols-outlined text-[20px]">view_in_ar</span>
-        <span className="font-button text-button uppercase tracking-wide">
-          Thử trong phòng của bạn (AR PREVIEW)
+        <span className="font-button text-[11px] md:text-button uppercase tracking-wide text-center">
+          Thử trong phòng của bạn
         </span>
       </button>
 
@@ -128,12 +105,9 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
         <div className="space-y-stack-sm">
           <div className="flex justify-between items-center">
             <span className="font-label-caps text-label-caps text-slate-deep">CHỌN KÍCH THƯỚC</span>
-            <button className="text-label-caps text-[11px] underline opacity-60 hover:opacity-100 transition-opacity">
-              Bảng size
-            </button>
           </div>
           <div className="flex flex-wrap gap-stack-sm">
-            {sizes.map((size) => {
+            {[...(product.sizes?.length > 0 ? product.sizes : sizes), { id: 'custom', label: 'May size riêng' }].map((size) => {
               const isSelected = selectedSize === size.id;
               return (
                 <button
@@ -150,15 +124,52 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
               );
             })}
           </div>
+          
+          {selectedSize === 'custom' && (
+            <div className="mt-4 grid grid-cols-3 gap-3 animate-fade-in">
+              <div>
+                <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Chiều dài (cm)</label>
+                <input 
+                  type="number" 
+                  placeholder="VD: 200"
+                  className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
+                  value={customSize.length}
+                  onChange={(e) => setCustomSize({...customSize, length: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Chiều rộng (cm)</label>
+                <input 
+                  type="number" 
+                  placeholder="VD: 180"
+                  className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
+                  value={customSize.width}
+                  onChange={(e) => setCustomSize({...customSize, width: e.target.value})}
+                />
+              </div>
+              {product?.category?.toLowerCase().includes('gối') ? null : (
+                <div>
+                  <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Độ dày nệm (cm)</label>
+                  <input 
+                    type="number" 
+                    placeholder="VD: 20"
+                    className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
+                    value={customSize.height}
+                    onChange={(e) => setCustomSize({...customSize, height: e.target.value})}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Color Selection */}
         <div className="space-y-stack-sm">
           <span className="font-label-caps text-label-caps text-slate-deep uppercase">
-            MÀU SẮC: <span className="opacity-60 font-body-md normal-case pl-1">{activeColorInfo.label}</span>
+            MÀU SẮC: <span className="opacity-60 font-body-md normal-case pl-1">{activeColorInfo?.label}</span>
           </span>
           <div className="flex gap-stack-md">
-            {colors.map((color) => {
+            {productColors.map((color) => {
               const isSelected = selectedColor === color.id;
               return (
                 <button
@@ -181,27 +192,29 @@ export default function ProductInfoPanel({ onOpenAR, onColorChange }) {
         </div>
 
         {/* Personalized Customization */}
-        <div className="bg-bone/50 p-stack-md border-l-2 border-sand-silk space-y-stack-sm rounded-r-md">
-          <div className="flex items-center gap-stack-sm text-slate-deep">
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-            <span className="font-label-caps text-label-caps">TÙY CHỌN IN TÊN CÁ NHÂN</span>
+        {product?.category === 'Đồ Ngủ' && (
+          <div className="bg-bone/50 p-stack-md border-l-2 border-sand-silk space-y-stack-sm rounded-r-md">
+            <div className="flex items-center gap-stack-sm text-slate-deep">
+              <span className="material-symbols-outlined text-[20px]">edit</span>
+              <span className="font-label-caps text-label-caps">TÙY CHỌN IN TÊN CÁ NHÂN</span>
+            </div>
+            <p className="text-sm text-on-surface-variant opacity-80 leading-snug">
+              Thêu tên hoặc chữ ký của bạn lên sản phẩm (+250k VNĐ)
+            </p>
+            <div className="relative">
+              <input
+                className="w-full bg-transparent border-0 border-b border-slate-deep/20 py-2 pr-12 focus:outline-none focus:ring-0 focus:border-slate-deep transition-all font-body-md text-slate-deep"
+                placeholder="Nhập nội dung thêu (Tối đa 12 ký tự)"
+                type="text"
+                value={embroideryText}
+                onChange={handleEmbroideryChange}
+              />
+              <span className="absolute right-0 bottom-2 text-xs text-on-surface-variant/40 font-mono">
+                {embroideryText.length}/12
+              </span>
+            </div>
           </div>
-          <p className="text-sm text-on-surface-variant opacity-80 leading-snug">
-            Thêu tên hoặc chữ ký của bạn lên gối (+250k VNĐ)
-          </p>
-          <div className="relative">
-            <input
-              className="w-full bg-transparent border-0 border-b border-slate-deep/20 py-2 pr-12 focus:outline-none focus:ring-0 focus:border-slate-deep transition-all font-body-md text-slate-deep"
-              placeholder="Nhập nội dung thêu (Tối đa 12 ký tự)"
-              type="text"
-              value={embroideryText}
-              onChange={handleEmbroideryChange}
-            />
-            <span className="absolute right-0 bottom-2 text-xs text-on-surface-variant/40 font-mono">
-              {embroideryText.length}/12
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* Add to Cart / Favorites Buttons */}
         <div className="flex gap-stack-sm pt-2">

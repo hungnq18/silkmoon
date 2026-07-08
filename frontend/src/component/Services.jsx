@@ -2,19 +2,14 @@ export default function Services() {
   const services = [
     {
       icon: "bedtime",
-      title: "100 đêm ngủ thử",
+      title: "3 đêm ngủ thử",
       text: "Trải nghiệm sản phẩm ngay tại nhà với cam kết đổi trả linh hoạt."
     },
     {
       icon: "local_shipping",
       title: "Miễn phí vận chuyển",
-      subtitle: "(từ 1.500.000vnđ)",
+      subtitle: "(từ 500.000VNĐ)",
       text: "Chỉ cần chọn sản phẩm bạn yêu thích, việc giao hàng tận nơi để SILKMOON lo."
-    },
-    {
-      icon: "verified_user",
-      title: "Bảo hành dài lâu",
-      text: "Mỗi chiếc nệm được bảo hành lâu dài để bạn yên tâm sử dụng suốt nhiều năm."
     },
     {
       icon: "currency_exchange",
@@ -30,7 +25,7 @@ export default function Services() {
           An tâm hơn với dịch vụ vượt trội
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {services.map((service, index) => (
             <div key={index} className="bg-[#F4F9FF] p-6 rounded-xl flex flex-col items-start transition-all duration-300 hover:-translate-y-2 hover:shadow-lg cursor-pointer group">
               <span className="material-symbols-outlined text-[48px] text-slate-deep mb-6" style={{ fontVariationSettings: "'wght' 200" }}>

@@ -1,35 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const galleryImages = [
-  {
-    id: 0,
-    src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5ydK7aCRv1y7RaejNp-Ax9LhpHaU2vtWRIcHOLxn6NokUmgyNpUGiKbwdQUytnjtQ7J0VYu2NXIlPUQTgHYAXUL5y5FRuCIXviBggAYwt5KVFlbT-YVCRjexHDUBbtJ82Va8ihcrt7FTkOFmWD7d4gr1heMUmADKb-HeuP7dOGkmFc4bXpNJ4i6KVJNHhgrHUtwTIvqvwWyJf7w_1HVjpdYKXXro_zPX8NGlwuiDpcDLQ9NvBPZltOjPScmzTabt7iaCO-bhqSb4',
-    alt: 'Main Mulberry Silk Bedding Champagne',
-    type: 'image',
-  },
-  {
-    id: 1,
-    src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD7BFKWk1o5mRKRclEZVyBUPmtjoLOKAYzUY_vTg9r_DzTzEB4UeTrWapZ649raqux7U_cFhj-BF4KG_ZgLoQuJA5aeqsXFkdSrPYko2xbScizKkfbRmcNAx1REZ76G6PAgwJiZW3Mp5b2ATQt3MhrFCHulAOt_HKIU1eP3A2vbBDdTtQqVC1GO-HzFYZi2UffsjjjqFU3Z142_XsJBFM85o6ZF33EhSFeczCVDKhfxxqYKYvLel8OyUocomhRmSCX-nPWG7It_-3c',
-    alt: 'Mulberry Silk feel close-up',
-    type: 'image',
-  },
-  {
-    id: 2,
-    src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBJbhsTCwF4xH7z1WLMrs5fPQu5V4ZbldfAuJIgsFgzDHlmSxs5dQeKRUQVt3VZCB9U8spht-Jbzg44VON0lkHD7kWAJogxqL13ZX8Qevx50d7U9in2bKbZcKiG1U6pOGKYCIh11lZgF6HMeCeRHe3xeIy6M38G9cuKv1w8ZCdUBOjrqyhDNy_Xgo4l1lnaa31iwwjHvwCyIavTvcTdohgfmrFw0vDOJio96HieIuSK-jqXpZojQQyisDWzYKy9N4afpwQLh4IgREY',
-    alt: 'Embroidered pillow on silk sheet',
-    type: 'image',
-  },
-  {
-    id: 3,
-    src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtWZJilwSrc_Is9EkP9JdFVBxxuqjLgpckuQFSASTM5mNXWMqEXlGs1KMMqkSOq5em8p_355ZrL8FHRjMlIqDrtSQlOA9YLKu1eWpf6EOxLI-rqdekiQYAMBAOcNonH_9B4qbtbj0GrSSIoJEbX608r1R1vnvk09LrqnU8vXoVvtfv7zigX_brn3yJNhhEzziWN5f0Q84chep01IQFivPfZhok_CdYydMc6qjMi_VrR9Q8WxEsx1rwsBUQc8DN-d3lT1CpKUZoFgw',
-    alt: 'Silk sheets flowing atmospheric preview',
-    type: 'video',
-  },
-];
-
-export default function ProductImageGallery() {
+export default function ProductImageGallery({ images = [] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  // Map API images to gallery items
+  const galleryItems = images.length > 0 
+    ? images.map((src, i) => ({ id: i, src, type: 'image' }))
+    : [
+        {
+          id: 0,
+          src: 'https://placehold.co/600x800/E5D5C5/334641?text=No+Image',
+          alt: 'No Image',
+          type: 'image'
+        }
+      ];
+
+  // Reset active index if images change
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [images]);
 
   const handleThumbnailClick = (img) => {
     if (img.type === 'video') {
@@ -45,14 +35,14 @@ export default function ProductImageGallery() {
       <div className="aspect-[4/5] w-full overflow-hidden bg-bone rounded-lg relative">
         <img
           className="w-full h-full object-cover"
-          src={galleryImages[activeIndex].src}
-          alt={galleryImages[activeIndex].alt}
+          src={galleryItems[activeIndex]?.src || galleryItems[0].src}
+          alt={`Hình ảnh sản phẩm ${activeIndex + 1}`}
         />
       </div>
 
       {/* Thumbnails Row */}
       <div className="grid grid-cols-4 gap-stack-md">
-        {galleryImages.map((img) => {
+        {galleryItems.map((img) => {
           const isActive = img.type === 'image' && activeIndex === img.id;
           return (
             <div
@@ -72,7 +62,7 @@ export default function ProductImageGallery() {
               <img
                 className="w-full h-full object-cover"
                 src={img.src}
-                alt={img.alt}
+                alt={img.alt || `Thumbnail ${img.id + 1}`}
               />
             </div>
           );
@@ -102,7 +92,7 @@ export default function ProductImageGallery() {
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-bone text-slate-deep p-6">
               <img
                 className="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none"
-                src={galleryImages[3].src}
+                src={galleryItems[0]?.src}
                 alt="Video Still"
               />
               <span className="material-symbols-outlined text-[64px] mb-4 text-sage-haze animate-spin">

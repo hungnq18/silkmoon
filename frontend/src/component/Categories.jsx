@@ -15,11 +15,11 @@ export default function Categories() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-[800px] md:h-[700px]">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[700px]">
         {/* Bed Sheets */}
         <Link
           to="/shop"
-          className="md:col-span-8 relative overflow-hidden rounded-xl bg-bone group block"
+          className="md:col-span-8 relative overflow-hidden rounded-xl bg-bone group block h-[350px] md:h-auto"
         >
           <img
             alt="Ga giường"
@@ -29,14 +29,14 @@ export default function Categories() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/50 to-transparent"></div>
           <div className="absolute bottom-stack-lg left-stack-lg text-linen-white">
             <h3 className="font-headline-sm text-headline-sm mb-2">Ga Giường</h3>
-            <p className="font-body-md opacity-90">100% Cotton hữu cơ & French Linen</p>
+            <p className="font-body-md opacity-90">Êm ái từ cái chạm đầu tiên</p>
           </div>
         </Link>
 
         {/* Pillowcases */}
         <Link
           to="/shop"
-          className="md:col-span-4 relative overflow-hidden rounded-xl bg-bone group block"
+          className="md:col-span-4 relative overflow-hidden rounded-xl bg-bone group block h-[250px] md:h-auto"
         >
           <img
             alt="Vỏ gối"
@@ -46,22 +46,41 @@ export default function Categories() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/50 to-transparent"></div>
           <div className="absolute bottom-stack-lg left-stack-lg text-linen-white">
             <h3 className="font-headline-sm text-headline-sm mb-2">Vỏ Gối</h3>
-            <p className="font-body-md opacity-90">Sợi lụa tơ tằm mịn màng</p>
+            <p className="font-body-md opacity-90">Nâng niu làn da & mái tóc</p>
+          </div>
+        </Link>
+
+        {/* Blanket/Duvet */}
+        <Link
+          to="/shop"
+          className="md:col-span-6 relative overflow-hidden rounded-xl bg-bone group block h-[200px] md:h-auto"
+        >
+          <img
+            alt="Vỏ chăn"
+            className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJbhsTCwF4xH7z1WLMrs5fPQu5V4ZbldfAuJIgsFgzDHlmSxs5dQeKRUQVt3VZCB9U8spht-Jbzg44VON0lkHD7kWAJogxqL13ZX8Qevx50d7U9in2bKbZcKiG1U6pOGKYCIh11lZgF6HMeCeRHe3xeIy6M38G9cuKv1w8ZCdUBOjrqyhDNy_Xgo4l1lnaa31iwwjHvwCyIavTvcTdohgfmrFw0vDOJio96HieIuSK-jqXpZojQQyisDWzYKy9N4afpwQLh4IgREY"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/50 to-transparent"></div>
+          <div className="absolute bottom-stack-lg left-stack-lg text-linen-white max-w-sm">
+            <h3 className="font-headline-sm text-headline-sm mb-2">Vỏ Chăn</h3>
+            <p className="font-body-md opacity-90">
+              Ôm trọn từng giấc êm
+            </p>
           </div>
         </Link>
 
         {/* Sleepwear */}
         <Link
           to="/shop"
-          className="md:col-span-12 relative overflow-hidden rounded-xl bg-bone group block h-[200px] md:h-auto"
+          className="md:col-span-6 relative overflow-hidden rounded-xl bg-bone group block h-[200px] md:h-auto"
         >
           <img
             alt="Đồ ngủ"
             className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-9vCtOEhZSSVUnVCp_QcJsw1QVKcajQqAak1kCppQWN4vJQyabIVs1eaRPn7wlyp81-NdfBJONHyOrIHIWVHAvHVCzPKkv7F-ybmJdueIIPnBeFFPB0gyVNT8vaCA44j_5YnSdkf1Ql2JLtww9HJa9_rplcdByntqvuiNcODKYT6qxHqMMSqiLN-_QszLwCb4mazPwmEOLej58npNchvkdXWErBWdgkflbHm99vq1eu9EyPtWufwpZ8ygZwsrrfDCbDnEzlh2fxM"
           />
-          <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-slate-deep/70 via-slate-deep/30 to-transparent"></div>
-          <div className="absolute bottom-stack-lg md:bottom-auto md:inset-y-0 left-stack-lg flex flex-col justify-center text-linen-white max-w-md">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/50 to-transparent"></div>
+          <div className="absolute bottom-stack-lg left-stack-lg text-linen-white max-w-sm">
             <h3 className="font-headline-sm text-headline-sm mb-2">Đồ Ngủ & Loungewear</h3>
             <p className="font-body-md opacity-90">
               Tự do trong từng chuyển động, nhẹ nhàng trong từng hơi thở.

@@ -46,7 +46,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Lụa Mulberry',
         momme: 22,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBXSKeAS-krZL7BdTKe-zbjRmYe8lurfn2LsLMoA-uUbKoeZ72OCkjHCp7H8eIothkquNH0ZQ-ZI0gGpUh3e2JjlzZ7mxnjRJOia8aryibPNfIhNAFEnTmmhAtFAQlAWfsFAyx9Tb9Ghii-WpGyQoagjhRIWNHYs-xjdcLiRyvtWuaIVYrNMoq2dhawpnWhQD2EhcHr85aErSjlphn-JGjZABRu-FLi1LseTpov7wsxmg5tutc42PaGgkLZ9LqEWbLa8y6GOncWlzI',
+          'https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'queen', label: 'Queen (160x200)' },
@@ -74,7 +74,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Cotton',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuD6Kinl409VW7yiLXiXRW1WJ0qDxJO57GRdZC0mhIX_WlmVOpkNzPQDUCO-D_jE9tTevA3t7fh6Mhi526ebqZfJOVXt9PwfNBqv-IV5sHOpzZycRsE2vt2cIxsKlb_R5Im6YF9zVaI0midXVz3phyj5JOowgDv84YldfknZB8dneykVx4UxOJluJS-NM5lQ7UnXLwtYUt2ZzggmFwM6Qwe0tlr2du04usnT1zCqEuKEnZTAaL7zyRH-uaarvyZE1jmSKVYjXJ7kazI',
+          'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'single', label: 'Single (120x200)' },
@@ -101,8 +101,8 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Lụa Mulberry',
         momme: 22,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCqTeBJNByuuDe_yoGhQysOa_DeRjPj-tS1iJEWzz4EtQ7f7HpbJYob0I8jnNR5E3m32soM5r3CrIvts_WPfJzII6K_vZz_7SgXRF15BnH8Fog5KdF49rXgWvXX4WBz9OnuXfaN5IDFY_wHIACXnBy9KVDbblAYPk0WJpJunWhPAfO98M7dNC-l_ltl7_HpAfxKLGviIPoZAl1zpNLJ8IURZ-ceI9Ki0hDW20wclyeJI0N9-nqS52omcl7j1Wyc6ITIV80oG9tgP4s',
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAqBVrRwcqZQNfZmJy5TxxiV59JifqaIUaj5WrU0joOriYUTxpZU2nJmKc1jS403rHapLcGQJj4HYqItFU_napvWniKO5dE2PPsm1NvXoIyVc01TT1a7Z5xRF8NIYxkCp9scHKCimQohP1eQZDeX1Npwax4pv0a8WcTsdBWh4ckweLQrUWQuFkKPQVPXqE1yZ0yA50gbKIJo0L_YkGuX4jVRIWohORglovHRQMz5zLm7M9nwMex9rpXt-5ePJ3GVRQnf60GdHpII',
+          'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&q=80&w=800',
+          'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'standard', label: 'Standard (50x70) - Combo 2' },
@@ -127,7 +127,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Bamboo',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAF2LYRO6FG5OqRlWp_CQX7XRjcao0Pp0Hkk-mpYpDxjP3W896hitoWauX0T7v5jXFKBb9eTSA6BXFZszP4NQrgmtIplLqvRZVhCSoITpVZ3tDy0xjMujm6brs_eXNSVlEIwxGwjgCECCPhDSz3UL_kJkXsSEAC2TFEIet_C2Rfc7XewLVnTCH21oaLWsET0vllysnqYjlkcjCsJIQUM5ZXvGVWTjoud46czQnBAjBFZTp6BWQOdnf-sFm_OhE_OH26PES6YkL0I7k',
+          'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'S', label: 'S' },
@@ -154,7 +154,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Cotton',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCQ9GDYUENjrKsrYP1pgv_D8SUSH327PBwEkappnJq1nLvIE3r_28BJ6Zg_aI_HovNPWXtheOM7DkrQK76kn-v_-r4xYVly5pBP206ADebgwJZgI_j-agt5IAe9z0Ky6oQy3sQ5lQG1d-CA_LAtYnsLhawW7SvaQU6bC_ifQO4Ua-q_gD19k5lD1p50vHtFXPp8ozPrvGglRCmf5aHIvqcZidONC4MeuXSUd38oTt3I8SIu-5MBaAIy3L50nSIJB386QklbtJDiv8A',
+          'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'queen', label: 'Queen (200x220)' },
@@ -181,7 +181,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Cotton',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBCbj01IRNgg4tNmZJVSkxsolrsCnQfOnntINU88GVEO5y0Gam02WYhz5Rn2LciHxawYGyTaQmPxFNPqPE_p-qWWfiMzjcd3H3N3KWXYJFuJt6ckC3_SOny1DAfaC3kWb1IQjqdluUk4t2ddUMI9UxOXs8yVi7sgkUtM-TZMOBY_aXW1z_pWnNVgziV90e3p6-Jks7sbFb0JQgVyCusp4D5h7UeC9IPZIC2Ga92IojhdYTm1Y7c5oJ1XPBENwDfS1WgqVf6P_HrjiY',
+          'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'single', label: 'Single (120x200)' },
@@ -208,7 +208,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Cotton',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAUtNtGJcAjyzFCAMGfd3nZjdhdpCswJxQS-gWf8QWQc1Ggg9noxPof7SC2OsIAjdQxJM5NZR3-n0qIyHxyVnedT_8WSqIJQPvCgTPazr8dHcpoZJhMt7u1Ek_el6_cVoLa7NuIVilWJph5B9KWUjNdpE-HmFRsLW14zX9sjvAuBwzJOfSkzHTnLr9H0KExpbtVv2kBqMaRfOe1tAF4oYIFPS1WN4Z7t2yAZTZuQ',
+          'https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'standard', label: 'Standard (50x70)' },
@@ -234,7 +234,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Tencel',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBM_n2ZdlpgOnVdNcCmdZKDfA8v8dHwWOKkV5jzw6ag14HL2nrRAp36OxZda_M8O10KOgVlyEv91-Zbg-Paf550SWLMS-xRb6ndngzbq7kMmrKqMtmK_9f-CiFiSVne58tUjRWuN7L47YIb3kI-lCzVFXpi21FMnrYbb1robAE2EDufCzIr9d9FSeWP8cQurdg8e2pUg7UrgiklhirR4NAxU0wjhdT2Kao__xlTWGXrx5LPDhNDmD34z91MnpO1qRm-JfVeEYxaczI',
+          'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'queen', label: 'Queen (200x220)' },
@@ -260,7 +260,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Linen',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBgrApSYtCa65K6YDPvKsXPP7-C0sRvknYvzazqCzwQ7PlRsKHtZbkMHIOEz-AGzZN5pr73tdbrb1PzlMx0wAYTyGz0tVO-cRvVQRfYwvWTWnP94jMXO4H7mC-173MA13eKhbvLkpukp_Yh590BOUiwEboX8TmSd8JsbmQ884lnsnAFSDRb_4puBo_K-dQQkK6OAgD6_dP_kXk7LUo9MxtdFoq4l8hslZk1ohn39j8inDtBQFNK8uxTP2TkHTD54R1DF9R6L_GK-b4',
+          'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'queen', label: 'Queen Set' },
@@ -285,7 +285,7 @@ export class SeedService implements OnApplicationBootstrap {
         material: 'Cotton',
         momme: 0,
         images: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCk_1Zo18Gl3Ekz7NCswUSv_5AYq80i3c-8RZtfQwHpddiPnZ-wMaMJRkzbDDoF_-_JxEnuIgcedQAlyTUA4hUXHIzAybPfP15bVty-Z2c9DNiOQmC4OZdi_aDNdy-yAOGI8lw9iKhZySdmy9F96iTEY-cRwBbtPko8l35_47mZIVK2N2YIQtwgJtSwXjwN60oARx8pPEylrYJ0S9BtIFErpaGA3l2yrM0kCMtf_JVI2tuF9qLqoBWAHD-xMMMNAFw549ovK2z6yRk',
+          'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
         ],
         sizes: [
           { id: 'single', label: 'Single (100x200)' },

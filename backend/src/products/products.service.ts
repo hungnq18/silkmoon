@@ -96,4 +96,31 @@ export class ProductsService {
     const categories = await this.productModel.distinct('category');
     return categories;
   }
+
+  async create(data: any) {
+    // Automatically generate slug if not provided
+    if (!data.slug && data.name) {
+      data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+    const createdProduct = new this.productModel(data);
+    return createdProduct.save();
+  }
+
+  async update(id: string, data: any) {
+    const updatedProduct = await this.productModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .lean();
+    if (!updatedProduct) {
+      throw new NotFoundException(`Sản phẩm không tồn tại`);
+    }
+    return updatedProduct;
+  }
+
+  async remove(id: string) {
+    const deletedProduct = await this.productModel.findByIdAndDelete(id).lean();
+    if (!deletedProduct) {
+      throw new NotFoundException(`Sản phẩm không tồn tại`);
+    }
+    return deletedProduct;
+  }
 }

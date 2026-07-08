@@ -1,14 +1,14 @@
 export default function CustomerFeedback() {
   const feedbacks = [
     {
-      text: "Bộ chăn ga lụa tơ tằm của silkMoon thực sự làm thay đổi giấc ngủ của mình. Vải cực kỳ mềm mại, mát rượi vào mùa hè và giữ ấm tốt vào mùa đông. Chắc chắn sẽ ủng hộ thêm!",
+      text: "Bộ chăn ga Tencel của SILKMOON thực sự làm thay đổi giấc ngủ của mình. Vải cực kỳ mềm mại, mát rượi vào mùa hè và giữ ấm tốt vào mùa đông. Chắc chắn sẽ ủng hộ thêm!",
       author: "Mai Anh",
       location: "TP. Hồ Chí Minh",
       initial: "M",
       color: "bg-sage-haze"
     },
     {
-      text: "Mình rất khó ngủ do hay bị dị ứng bụi vải. Từ ngày đổi sang dùng ga giường của silkMoon thì tình trạng giảm hẳn, sáng dậy thấy tinh thần vô cùng sảng khoái.",
+      text: "Mình rất khó ngủ do hay bị dị ứng bụi vải. Từ ngày đổi sang dùng ga giường của SILKMOON thì tình trạng giảm hẳn, sáng dậy thấy tinh thần vô cùng sảng khoái.",
       author: "Hoàng Hải",
       location: "Hà Nội",
       initial: "H",

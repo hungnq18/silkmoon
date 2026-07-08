@@ -1,9 +1,16 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -91,5 +98,33 @@ export const arApi = {
     request('/ar/auto-tryon', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+};
+
+// ── Auth ──────────────────────────────────────────────────
+export const authApi = {
+  login: (credentials) =>
+    request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
+
+  register: (data) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getProfile: () => request('/auth/profile'),
+};
+
+// ── Cart (For Logged-in Users) ────────────────────────────
+export const cartApi = {
+  getCart: () => request('/users/cart'),
+  
+  updateCart: (cart) =>
+    request('/users/cart', {
+      method: 'PUT',
+      body: JSON.stringify(cart),
     }),
 };

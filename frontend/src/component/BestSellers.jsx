@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
 import { productsApi } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function BestSellers() {
   const [products, setProducts] = useState([]);
@@ -9,6 +10,7 @@ export default function BestSellers() {
   const [selectedColors, setSelectedColors] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [modalProduct, setModalProduct] = useState(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     productsApi.getBestSellers()
@@ -37,29 +39,9 @@ export default function BestSellers() {
     const activeColorObj = product.colors?.find((c) => c.id === activeColorId) || product.colors?.[0];
     const specLabel = `${(activeColorObj?.label || '').toUpperCase()} / STANDARD`;
 
-    const newCartItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      productId: product._id,
-      name: product.name,
-      spec: specLabel,
-      price: product.price,
-      quantity: 1,
-      image: product.images?.[0] || '',
-      embroidery: null,
-    };
-
     try {
-      const existingCart = JSON.parse(localStorage.getItem('silkmoon_cart') || '[]');
-      const existingItemIndex = existingCart.findIndex(
-        (item) => item.productId === newCartItem.productId && item.spec === newCartItem.spec
-      );
-      if (existingItemIndex > -1) {
-        existingCart[existingItemIndex].quantity += 1;
-      } else {
-        existingCart.push(newCartItem);
-      }
-      localStorage.setItem('silkmoon_cart', JSON.stringify(existingCart));
-      window.dispatchEvent(new Event('cart-updated'));
+      addToCart(product._id, 1);
+      
       setModalProduct({ name: product.name, price: product.price, image: product.images?.[0], spec: specLabel });
       setModalOpen(true);
     } catch (err) {
@@ -76,19 +58,76 @@ export default function BestSellers() {
             <div className="h-8 w-48 bg-slate-deep/10 rounded mx-auto mb-4 animate-pulse" />
             <div className="h-4 w-96 bg-slate-deep/5 rounded mx-auto animate-pulse" />
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex flex-col gap-3">
-                <div className="aspect-[3/4] bg-slate-deep/10 rounded-lg animate-pulse" />
-                <div className="h-4 bg-slate-deep/10 rounded animate-pulse" />
-                <div className="h-3 w-24 bg-slate-deep/5 rounded animate-pulse" />
-              </div>
-            ))}
+          <div className="mb-12">
+             <div className="h-6 w-64 bg-slate-deep/10 rounded mb-6 animate-pulse" />
+             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="aspect-[3/4] bg-slate-deep/10 rounded-lg animate-pulse" />
+                  <div className="h-4 bg-slate-deep/10 rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-slate-deep/5 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
     );
   }
+
+  const renderProductCard = (product) => (
+    <div key={product._id} className="flex flex-col group">
+      <Link to={`/product/${product._id}`} className="flex flex-col group cursor-pointer">
+        <div className="aspect-[3/4] overflow-hidden bg-bone mb-stack-md relative rounded-lg">
+          <img
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            src={product.images?.[0]}
+          />
+          <button
+            onClick={(e) => handleQuickAdd(e, product)}
+            className="absolute bottom-4 left-4 right-4 bg-linen-white text-slate-deep py-3 font-button text-button opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300 rounded shadow-sm hover:bg-bone text-center active:scale-95 z-25"
+          >
+            THÊM VÀO GIỎ
+          </button>
+        </div>
+        <h4 className="font-body-md text-slate-deep font-medium transition-colors group-hover:text-secondary">
+          {product.name}
+        </h4>
+        <p className="text-on-surface-variant font-body-md mt-1">
+          {product.price?.toLocaleString('vi-VN')}đ
+        </p>
+      </Link>
+
+      {/* Color indicators */}
+      <div className="flex gap-2 mt-2">
+        {product.colors?.map((color) => (
+          <button
+            key={color.id}
+            className={`w-4 h-4 rounded-full transition-all duration-200 ${
+              selectedColors[product._id] === color.id
+                ? 'ring-1 ring-offset-2 ring-slate-deep scale-110'
+                : 'opacity-70 hover:opacity-100'
+            }`}
+            style={{
+              backgroundColor: color.hex,
+              border: color.hex === '#FCFCF9' ? '1px solid rgba(51, 70, 65, 0.1)' : 'none',
+            }}
+            onClick={() => handleColorChange(product._id, color.id)}
+            title={color.label}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
+  // Group products
+  const beddingProducts = products.filter(p => p.category === 'Chăn Ga Gối' || p.category === 'Gối').slice(0, 3);
+  const accessoriesProducts = products.filter(p => p.category === 'Đồ Ngủ' || p.category === 'Phụ kiện').slice(0, 3);
+  
+  // Fallback in case database doesn't have enough matching categories
+  const row1 = beddingProducts.length > 0 ? beddingProducts : products.slice(0, 3);
+  const row2 = accessoriesProducts.length > 0 ? accessoriesProducts : products.slice(3, 6);
 
   return (
     <>
@@ -103,52 +142,28 @@ export default function BestSellers() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {products.map((product) => (
-              <div key={product._id} className="flex flex-col group">
-                <Link to={`/product/${product._id}`} className="flex flex-col group cursor-pointer">
-                  <div className="aspect-[3/4] overflow-hidden bg-bone mb-stack-md relative rounded-lg">
-                    <img
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      src={product.images?.[0]}
-                    />
-                    <button
-                      onClick={(e) => handleQuickAdd(e, product)}
-                      className="absolute bottom-4 left-4 right-4 bg-linen-white text-slate-deep py-3 font-button text-button opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300 rounded shadow-sm hover:bg-bone text-center active:scale-95 z-25"
-                    >
-                      THÊM VÀO GIỎ
-                    </button>
-                  </div>
-                  <h4 className="font-body-md text-slate-deep font-medium transition-colors group-hover:text-secondary">
-                    {product.name}
-                  </h4>
-                  <p className="text-on-surface-variant font-body-md mt-1">
-                    {product.price?.toLocaleString('vi-VN')}đ
-                  </p>
-                </Link>
+          <div className="space-y-12">
+            {/* Row 1: Bedding */}
+            <div>
+              <h3 className="font-display-md text-xl md:text-2xl text-slate-deep mb-6 border-b border-slate-deep/10 pb-3">
+                Vỏ chăn, ga giường, vỏ gối (Tencel 60S)
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {row1.map(renderProductCard)}
+              </div>
+            </div>
 
-                {/* Color indicators */}
-                <div className="flex gap-2 mt-2">
-                  {product.colors?.map((color) => (
-                    <button
-                      key={color.id}
-                      className={`w-4 h-4 rounded-full transition-all duration-200 ${
-                        selectedColors[product._id] === color.id
-                          ? 'ring-1 ring-offset-2 ring-slate-deep scale-110'
-                          : 'opacity-70 hover:opacity-100'
-                      }`}
-                      style={{
-                        backgroundColor: color.hex,
-                        border: color.hex === '#FCFCF9' ? '1px solid rgba(51, 70, 65, 0.1)' : 'none',
-                      }}
-                      onClick={() => handleColorChange(product._id, color.id)}
-                      title={color.label}
-                    />
-                  ))}
+            {/* Row 2: Sleepwear & Accessories */}
+            {row2.length > 0 && (
+              <div>
+                <h3 className="font-display-md text-xl md:text-2xl text-slate-deep mb-6 border-b border-slate-deep/10 pb-3">
+                  Đồ ngủ, bịt mắt, dây buộc tóc (Lụa cao cấp)
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {row2.map(renderProductCard)}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

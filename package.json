@@ -6,10 +6,11 @@
   "workspaces": [
     "frontend",
     "backend",
-    "ar-service"
+    "ar-service",
+    "admin"
   ],
   "scripts": {
-    "dev": "concurrently -n \"BACKEND,FRONTEND,AR-SERVICE\" -c \"cyan.bold,yellow.bold,magenta.bold\" \"npm run start:dev -w backend\" \"npm run dev -w frontend\" \"npm run dev -w ar-service\"",
+    "dev": "concurrently -n \"BACKEND,FRONTEND,AR-SERVICE,ADMIN\" -c \"cyan.bold,yellow.bold,magenta.bold,green.bold\" \"npm run start:dev -w backend\" \"npm run dev -w frontend\" \"npm run dev -w ar-service\" \"npm run dev -w admin\"",
     "build": "npm run build --workspaces --if-present",
     "install:all": "npm install"
   },

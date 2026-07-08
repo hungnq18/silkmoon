@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
+import { useCart } from '../context/CartContext';
 
 export default function ProductListGrid({ products }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalProduct, setModalProduct] = useState(null);
+  const { addToCart } = useCart();
 
   const handleQuickAdd = (e, product) => {
     e.preventDefault();
@@ -12,31 +14,8 @@ export default function ProductListGrid({ products }) {
 
     const specLabel = product.tag === 'NEW' ? 'CHAMPAGNE SILK / QUEEN' : 'WHITE CLOUD / STANDARD';
 
-    const newCartItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      productId: `shop-product-${product.id}`,
-      name: product.name,
-      spec: specLabel,
-      price: product.price,
-      quantity: 1,
-      image: product.image,
-      embroidery: null,
-    };
-
     try {
-      const existingCart = JSON.parse(localStorage.getItem('silkmoon_cart') || '[]');
-      const existingItemIndex = existingCart.findIndex(
-        (item) => item.productId === newCartItem.productId && item.spec === newCartItem.spec
-      );
-
-      if (existingItemIndex > -1) {
-        existingCart[existingItemIndex].quantity += 1;
-      } else {
-        existingCart.push(newCartItem);
-      }
-
-      localStorage.setItem('silkmoon_cart', JSON.stringify(existingCart));
-      window.dispatchEvent(new Event('cart-updated'));
+      addToCart(product.id, 1);
 
       setModalProduct({
         name: product.name,
@@ -83,7 +62,7 @@ export default function ProductListGrid({ products }) {
             {/* Quick Add Overlay */}
             <div className="absolute bottom-0 left-0 w-full p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
               <button
-                onClick={(e) => handleQuickAdd(e, product.name)}
+                onClick={(e) => handleQuickAdd(e, product)}
                 className="w-full bg-slate-deep text-white py-3 font-button hover:bg-slate-deep/90 rounded shadow-sm active:scale-95 transition-transform"
               >
                 THÊM VÀO GIỎ
@@ -120,6 +99,14 @@ export default function ProductListGrid({ products }) {
           </div>
         </Link>
       ))}
+
+      {modalOpen && modalProduct && (
+        <AddToCartModal 
+          isOpen={modalOpen} 
+          onClose={() => setModalOpen(false)} 
+          product={modalProduct} 
+        />
+      )}
     </div>
   );
 }

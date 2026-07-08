@@ -1,40 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { reviewsApi } from '../services/api';
 
-const INITIAL_REVIEWS = [
-  {
-    id: 1,
-    name: 'taixexe@',
-    date: '04/14/2026',
-    rating: 5,
-    title: 'Cân nhắc mua',
-    content: 'nếu thích cảm giác nằm chắc chắn thì nên cân nhắc',
-    images: ['https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?auto=format&fit=crop&q=80&w=200']
-  },
-  {
-    id: 2,
-    name: 'ngochai.nguyen',
-    date: '04/13/2026',
-    rating: 5,
-    title: 'Chất lượng tuyệt vời',
-    content: 'Chất liệu rất xịn, nằm vô cùng mát và mượt mà. Giấc ngủ được cải thiện rõ rệt từ ngày dùng ga lụa này.',
-    images: []
-  }
-];
-
-export default function ProductReviews() {
+export default function ProductReviews({ productId }) {
   const [sort, setSort] = useState('newest');
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [isWriting, setIsWriting] = useState(false);
   const [newReviewText, setNewReviewText] = useState('');
+  const [newRating, setNewRating] = useState(5);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!productId) return;
+    setLoading(true);
+    reviewsApi.getByProduct(productId)
+      .then((data) => setReviews(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [productId]);
 
   const filteredReviews = reviews.filter(review => {
     if (filter === 'all') return true;
     if (filter === 'image') return review.images && review.images.length > 0;
     return review.rating === parseInt(filter);
   }).sort((a, b) => {
-    if (sort === 'newest') return new Date(b.date) - new Date(a.date);
-    if (sort === 'oldest') return new Date(a.date) - new Date(b.date);
+    if (sort === 'newest') return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+    if (sort === 'oldest') return new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date);
     if (sort === 'highest') return b.rating - a.rating;
     if (sort === 'lowest') return a.rating - b.rating;
     return 0;
@@ -49,23 +41,28 @@ export default function ProductReviews() {
     ));
   };
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    if (!newReviewText.trim()) return;
-
-    const newReview = {
-      id: Date.now(),
-      name: 'Người dùng ẩn danh',
-      date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
-      rating: 5,
-      title: 'Đánh giá mới',
-      content: newReviewText,
-      images: []
-    };
-
-    setReviews([newReview, ...reviews]);
-    setNewReviewText('');
-    setIsWriting(false);
+    if (!newReviewText.trim() || !productId) return;
+    
+    setIsSubmitting(true);
+    try {
+      const newReview = await reviewsApi.create({
+        productId,
+        rating: newRating,
+        title: newReviewText.slice(0, 20) + (newReviewText.length > 20 ? '...' : ''),
+        content: newReviewText,
+        images: []
+      });
+      setReviews([newReview, ...reviews]);
+      setNewReviewText('');
+      setNewRating(5);
+      setIsWriting(false);
+    } catch (err) {
+      alert('Vui lòng đăng nhập để gửi đánh giá.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,18 +83,18 @@ export default function ProductReviews() {
             </span>
           </div>
           <p className="text-sm text-slate-deep/70 whitespace-nowrap">
-            Dựa trên {reviews.length + 16} đánh giá <span className="material-symbols-outlined text-[16px] text-sage-haze align-middle">verified</span>
+            Dựa trên {reviews.length} đánh giá <span className="material-symbols-outlined text-[16px] text-sage-haze align-middle">verified</span>
           </p>
         </div>
 
         {/* Rating Bars */}
         <div className="w-full max-w-[250px] md:max-w-[300px] space-y-2 shrink-0">
           {[
-            { stars: 5, count: reviews.length + 15, percent: 94 },
-            { stars: 4, count: 1, percent: 6 },
-            { stars: 3, count: 0, percent: 0 },
-            { stars: 2, count: 0, percent: 0 },
-            { stars: 1, count: 0, percent: 0 },
+            { stars: 5, count: reviews.filter(r => r.rating === 5).length, percent: reviews.length ? (reviews.filter(r => r.rating === 5).length / reviews.length) * 100 : 0 },
+            { stars: 4, count: reviews.filter(r => r.rating === 4).length, percent: reviews.length ? (reviews.filter(r => r.rating === 4).length / reviews.length) * 100 : 0 },
+            { stars: 3, count: reviews.filter(r => r.rating === 3).length, percent: reviews.length ? (reviews.filter(r => r.rating === 3).length / reviews.length) * 100 : 0 },
+            { stars: 2, count: reviews.filter(r => r.rating === 2).length, percent: reviews.length ? (reviews.filter(r => r.rating === 2).length / reviews.length) * 100 : 0 },
+            { stars: 1, count: reviews.filter(r => r.rating === 1).length, percent: reviews.length ? (reviews.filter(r => r.rating === 1).length / reviews.length) * 100 : 0 },
           ].map((row) => (
             <div key={row.stars} className="flex items-center gap-3 text-sm">
               <div className="flex gap-0.5 text-yellow-400 w-24 justify-end shrink-0">
@@ -136,7 +133,14 @@ export default function ProductReviews() {
               <span className="text-sm font-medium text-slate-deep/70">Đánh giá của bạn:</span>
               <div className="flex text-yellow-400 cursor-pointer">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span 
+                    key={i} 
+                    onClick={() => setNewRating(i + 1)}
+                    className="material-symbols-outlined hover:scale-110 transition-transform" 
+                    style={{ fontVariationSettings: i < newRating ? "'FILL' 1" : "'FILL' 0" }}
+                  >
+                    star
+                  </span>
                 ))}
               </div>
             </div>
@@ -158,9 +162,10 @@ export default function ProductReviews() {
               </button>
               <button 
                 type="submit" 
-                className="px-6 py-2 rounded bg-sage-haze text-white font-medium hover:opacity-90 transition-opacity shadow-sm"
+                disabled={isSubmitting}
+                className="px-6 py-2 rounded bg-sage-haze text-white font-medium hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
               >
-                Gửi đánh giá
+                {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
               </button>
             </div>
           </form>
@@ -221,10 +226,12 @@ export default function ProductReviews() {
                   </div>
                   <div className="flex items-center gap-2 text-sage-haze font-medium text-sm">
                     <span className="material-symbols-outlined text-[18px]">person_outline</span>
-                    {review.name}
+                    {review.user?.fullName || review.name || 'Người dùng ẩn danh'}
                   </div>
                 </div>
-                <div className="text-slate-400 text-sm">{review.date}</div>
+                <div className="text-slate-400 text-sm">
+                  {new Date(review.createdAt || review.date).toLocaleDateString('vi-VN')}
+                </div>
               </div>
               
               <h4 className="font-bold text-slate-deep mb-2">{review.title}</h4>

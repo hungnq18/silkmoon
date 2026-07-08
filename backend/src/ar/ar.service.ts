@@ -206,14 +206,14 @@ Output ONLY this JSON format:
 Task: Edit this bedroom photo to show what the bed would look like with a new bed sheet.
 
 Instructions:
-- Replace ONLY the bed sheet/mattress cover fabric with a luxurious silk fabric in the color: ${fabricName} (hex: ${colorHex})
+- Replace the ENTIRE bedding set (including all bed sheets, blankets, duvet covers, and pillows) with a luxurious silk fabric in the color: ${fabricName} (hex: ${colorHex})
 - The silk fabric should have a subtle sheen and slight texture typical of high-quality silk bedding
 - Keep the EXACT SAME perspective, lighting, shadows, and room composition
-- Keep all pillows, the headboard, footboard, bed frame, nightstands, and room decor completely unchanged
-- The new sheet should follow the same folds, wrinkles, and draping as the original
+- Keep the headboard, footboard, bed frame, nightstands, walls, floors, and room decor completely unchanged
+- The new fabric should follow the same folds, wrinkles, and draping as the original
 - Maintain photorealistic quality — this should look like a real product photo
 
-Output: The edited bedroom photo with only the bed sheet color changed to ${fabricName}.`;
+Output: The edited bedroom photo with the entire bedding set color changed to ${fabricName}.`;
 
     const freeModels = [
       'gemini-3.1-flash-image',         // Nano Banana 2 — latest

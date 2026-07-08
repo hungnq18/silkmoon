@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { productsApi } from '../services/api';
 import ProductImageGallery from '../component/ProductImageGallery';
 import ProductInfoPanel from '../component/ProductInfoPanel';
 import ProductTabs from '../component/ProductTabs';
@@ -8,34 +10,60 @@ import ARRoomPreview from '../component/ar/ARRoomPreview';
 
 // Product images per color — must match ProductInfoPanel colors
 const PRODUCT_IMAGES = {
-  champagne: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5ydK7aCRv1y7RaejNp-Ax9LhpHaU2vtWRIcHOLxn6NokUmgyNpUGiKbwdQUytnjtQ7J0VYu2NXIlPUQTgHYAXUL5y5FRuCIXviBggAYwt5KVFlbT-YVCRjexHDUBbtJ82Va8ihcrt7FTkOFmWD7d4gr1heMUmADKb-HeuP7dOGkmFc4bXpNJ4i6KVJNHhgrHUtwTIvqvwWyJf7w_1HVjpdYKXXro_zPX8NGlwuiDpcDLQ9NvBPZltOjPScmzTabt7iaCO-bhqSb4',
-  white:     'https://lh3.googleusercontent.com/aida-public/AB6AXuD7BFKWk1o5mRKRclEZVyBUPmtjoLOKAYzUY_vTg9r_DzTzEB4UeTrWapZ649raqux7U_cFhj-BF4KG_ZgLoQuJA5aeqsXFkdSrPYko2xbScizKkfbRmcNAx1REZ76G6PAgwJiZW3Mp5b2ATQt3MhrFCHulAOt_HKIU1eP3A2vbBDdTtQqVC1GO-HzFYZi2UffsjjjqFU3Z142_XsJBFM85o6ZF33EhSFeczCVDKhfxxqYKYvLel8OyUocomhRmSCX-nPWG7It_-3c',
-  sage:      'https://lh3.googleusercontent.com/aida-public/AB6AXuBJbhsTCwF4xH7z1WLMrs5fPQu5V4ZbldfAuJIgsFgzDHlmSxs5dQeKRUQVt3VZCB9U8spht-Jbzg44VON0lkHD7kWAJogxqL13ZX8Qevx50d7U9in2bKbZcKiG1U6pOGKYCIh11lZgF6HMeCeRHe3xeIy6M38G9cuKv1w8ZCdUBOjrqyhDNy_Xgo4l1lnaa31iwwjHvwCyIavTvcTdohgfmrFw0vDOJio96HieIuSK-jqXpZojQQyisDWzYKy9N4afpwQLh4IgREY',
-  slate:     'https://lh3.googleusercontent.com/aida-public/AB6AXuBJbhsTCwF4xH7z1WLMrs5fPQu5V4ZbldfAuJIgsFgzDHlmSxs5dQeKRUQVt3VZCB9U8spht-Jbzg44VON0lkHD7kWAJogxqL13ZX8Qevx50d7U9in2bKbZcKiG1U6pOGKYCIh11lZgF6HMeCeRHe3xeIy6M38G9cuKv1w8ZCdUBOjrqyhDNy_Xgo4l1lnaa31iwwjHvwCyIavTvcTdohgfmrFw0vDOJio96HieIuSK-jqXpZojQQyisDWzYKy9N4afpwQLh4IgREY',
+  champagne: 'https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800',
+  white:     'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
+  sage:      'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800',
+  slate:     'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
 };
 
 export default function ProductDetail() {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isAROpen, setIsAROpen] = useState(false);
-  const [activeColorLabel, setActiveColorLabel] = useState('Champagne Silk');
-  const [activeColorId, setActiveColorId] = useState('champagne');
+  const [activeColorLabel, setActiveColorLabel] = useState('');
+  const [activeColorId, setActiveColorId] = useState('champagne'); // default for AR fallback
+
+  useEffect(() => {
+    setLoading(true);
+    productsApi.getById(id || 'mulberry-silk-bedding')
+      .then((data) => {
+        setProduct(data);
+        if (data.colors?.length > 0) {
+          setActiveColorLabel(data.colors[0].label);
+          setActiveColorId(data.colors[0].id);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleColorChange = (colorLabel) => {
     setActiveColorLabel(colorLabel);
     setActiveColorId(colorLabel.split(' ')[0].toLowerCase());
   };
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-linen-white text-slate-deep animate-pulse">Đang tải sản phẩm...</div>;
+  }
+
+  if (!product) {
+    return <div className="min-h-screen flex items-center justify-center bg-linen-white text-slate-deep">Sản phẩm không tồn tại.</div>;
+  }
+
   return (
-    <div className="bg-linen-white flex flex-col min-h-screen relative">
+    <div className="bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Detail Section */}
       <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-24 md:pt-32">
         {/* Left Column: Image Gallery */}
         <div className="lg:col-span-7">
-          <ProductImageGallery />
+          <ProductImageGallery images={product.images || []} />
         </div>
 
         {/* Right Column: Selections and Details */}
         <div className="lg:col-span-5">
           <ProductInfoPanel
+            product={product}
             onOpenAR={() => setIsAROpen(true)}
             onColorChange={handleColorChange}
           />
@@ -48,10 +76,10 @@ export default function ProductDetail() {
       </section>
 
       {/* Related Products Grid */}
-      <RelatedProducts />
+      <RelatedProducts productId={product._id || product.id} />
 
       {/* Product Reviews */}
-      <ProductReviews />
+      <ProductReviews productId={product._id || product.id} />
 
       {/* AR Room Preview */}
       <ARRoomPreview

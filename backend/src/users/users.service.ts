@@ -1,26 +1,44 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+
+  async create(createData: Partial<User>): Promise<UserDocument> {
+    const newUser = new this.userModel(createData);
+    return newUser.save();
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).exec();
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findAll() {
+    return this.userModel.find().select('-passwordHash').exec();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async update(id: string, updateData: Partial<User>) {
+    return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).select('-passwordHash').exec();
+  }
+
+  async remove(id: string) {
+    return this.userModel.findByIdAndDelete(id).exec();
+  }
+
+  async getCart(id: string) {
+    const user = await this.userModel.findById(id).select('cart').exec();
+    return user ? user.cart : [];
+  }
+
+  async updateCart(id: string, cart: { productId: string; quantity: number }[]) {
+    return this.userModel.findByIdAndUpdate(id, { cart }, { new: true }).select('cart').exec();
   }
 }
+

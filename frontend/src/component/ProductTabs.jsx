@@ -12,14 +12,14 @@ export default function ProductTabs() {
   return (
     <div className="max-w-4xl mx-auto space-y-stack-lg select-none">
       {/* Tabs Header Navigation */}
-      <div className="flex border-b border-slate-deep/10 gap-stack-lg overflow-x-auto hide-scrollbar">
+      <div className="flex flex-wrap md:flex-nowrap border-b border-slate-deep/10 gap-4 md:gap-stack-lg">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-stack-sm border-b-2 font-label-caps text-label-caps whitespace-nowrap transition-all duration-300 ${
+              className={`pb-2 md:pb-stack-sm border-b-2 font-label-caps text-xs md:text-label-caps whitespace-nowrap md:whitespace-nowrap transition-all duration-300 ${
                 isActive
                   ? 'border-slate-deep text-slate-deep font-semibold'
                   : 'border-transparent text-on-surface-variant opacity-60 hover:opacity-100'

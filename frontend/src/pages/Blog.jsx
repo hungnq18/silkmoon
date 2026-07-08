@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const CATEGORIES = ['Sản phẩm', 'Giấc ngủ', 'Mẹo vặt', 'Mẹ & bé', 'Nệm cao su', 'Kích thước nệm', 'Nệm 1m2', 'Đệm 2mx2m2'];
+const CATEGORIES = ['Bạn có biết', 'Sản phẩm Silkmoon', 'Mẹo hay', 'Không gian sống'];
 
 const FEATURED_POST = {
   id: 1,

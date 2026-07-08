@@ -11,7 +11,13 @@ import { SeedService } from './seed/seed.service';
 import { Product, ProductSchema } from './products/schemas/product.schema';
 import { Promotion, PromotionSchema } from './promotions/schemas/promotion.schema';
 import { Review, ReviewSchema } from './reviews/schemas/review.schema';
+import { Category, CategorySchema } from './categories/schemas/category.schema';
 import { ARModule } from './ar/ar.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { SettingsModule } from './settings/settings.module';
+import { CategoriesModule } from './categories/categories.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +40,7 @@ import { ARModule } from './ar/ar.module';
       { name: Product.name, schema: ProductSchema },
       { name: Promotion.name, schema: PromotionSchema },
       { name: Review.name, schema: ReviewSchema },
+      { name: Category.name, schema: CategorySchema },
     ]),
 
     // Feature modules
@@ -42,6 +49,11 @@ import { ARModule } from './ar/ar.module';
     PromotionsModule,
     ReviewsModule,
     ARModule,
+    AuthModule,
+    UsersModule,
+    SettingsModule,
+    CategoriesModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

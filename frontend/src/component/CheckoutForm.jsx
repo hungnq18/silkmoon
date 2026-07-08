@@ -162,7 +162,7 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
                 className={`h-8 transition-all ${
                   paymentMethod === 'payos' ? 'grayscale-0 opacity-100' : 'grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100'
                 }`}
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5KcsRaxfZR8HO5G7I5W6c3K6XyriQc0afe8W86KzUqFJYVs_7tQ09wVPXwcBET_Me3ul5tIf4bfnqKSqKpKJQRfG3WHV1Hnb2rOpIBJecRGVRWK8KV_rv_6hCKyiSHRbuyH7HCAaO2A5O-PIecqAUqV-WLWzCUDhZSGgkXnmdqb9tVO2YXKIgcvCN43uOImkcdtYvMEM_IaHyjo7zbaAzFd8J3Saj9PRfGqQWIlab534v-ETZQ85H1IVO9xzeattFhgTj-ek0c8M"
+                src="https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800"
               />
             </div>
           </label>

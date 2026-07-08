@@ -1,79 +1,61 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { promotionsApi } from '../services/api';
-
-const defaultItems = [
-  {
-    id: 'default-1',
-    productId: 'tencel-bedding',
-    name: 'Bộ Chăn Ga Gối Lụa Tencel',
-    spec: 'SÀI GÒN BLUE / KING SIZE',
-    quantity: 1,
-    price: 2450000,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBXSKeAS-krZL7BdTKe-zbjRmYe8lurfn2LsLMoA-uUbKoeZ72OCkjHCp7H8eIothkquNH0ZQ-ZI0gGpUh3e2JjlzZ7mxnjRJOia8aryibPNfIhNAFEnTmmhAtFAQlAWfsFAyx9Tb9Ghii-WpGyQoagjhRIWNHYs-xjdcLiRyvtWuaIVYrNMoq2dhawpnWhQD2EhcHr85aErSjlphn-JGjZABRu-FLi1LseTpov7wsxmg5tutc42PaGgkLZ9LqEWbLa8y6GOncWlzI',
-    embroidery: null
-  },
-  {
-    id: 'default-2',
-    productId: 'feather-pillow',
-    name: 'Gối Lông Vũ Cao Cấp',
-    spec: 'WHITE CLOUD / STANDARD',
-    quantity: 2,
-    price: 1200000,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuApu7m5DSJcNh6RITkhLRMeCiMdDnlnCliSdMCVWPIOvN4H_sDZi0N4Q8z0x18KZrSeNoIp4_pBzfXvCjZO4ZYfy5CYtLc-ZOJ4p13pZt_Ue07NH62PpsFcviRwh0YEu1fNTT5Bw1y5AU4D86drcqmtFoKIJ8uR69aFDTRSzvFTWlJhIDJj7_Lo_EV0hP3jTD16qFytfy0_rcFvr1oLIH3r-GEXmIsNnY7mkJnAdbsW693CZbBCeBsAcEZDcw5M9CUROSEe38UzXQ4',
-    embroidery: null
-  }
-];
+import { promotionsApi, productsApi } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState([]);
+  const { cart, updateQuantity, removeFromCart, loading: cartLoading } = useCart();
+  const [cartDetails, setCartDetails] = useState([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
 
-  // Load and initialize cart
+  // Fetch product details whenever cart changes
   useEffect(() => {
-    const rawCart = localStorage.getItem('silkmoon_cart');
-    if (rawCart === null) {
-      localStorage.setItem('silkmoon_cart', JSON.stringify(defaultItems));
-      setCartItems(defaultItems);
-      // Dispatch update event
-      window.dispatchEvent(new Event('cart-updated'));
-    } else {
-      setCartItems(JSON.parse(rawCart));
+    const fetchDetails = async () => {
+      if (!cart || cart.length === 0) {
+        setCartDetails([]);
+        return;
+      }
+      setLoadingDetails(true);
+      try {
+        const detailsPromises = cart.map(async (item) => {
+          // If the backend has getById, fetch it
+          const product = await productsApi.getById(item.productId);
+          return {
+            ...item,
+            id: item.productId, // use productId as id for UI
+            name: product.name,
+            price: product.price,
+            image: product.images?.[0] || '',
+            spec: product.category || 'N/A'
+          };
+        });
+        const details = await Promise.all(detailsPromises);
+        setCartDetails(details);
+      } catch (err) {
+        console.error('Failed to fetch cart details', err);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+    
+    if (!cartLoading) {
+      fetchDetails();
     }
+  }, [cart, cartLoading]);
 
-    // Load discount if already applied
+  // Load discount if already applied
+  useEffect(() => {
     const savedDiscount = localStorage.getItem('silkmoon_discount');
     if (savedDiscount) {
       setDiscountPercent(Number(savedDiscount));
       setPromoSuccess(`Đã áp dụng mã giảm giá ${savedDiscount}%`);
     }
   }, []);
-
-  const saveCart = (items) => {
-    setCartItems(items);
-    localStorage.setItem('silkmoon_cart', JSON.stringify(items));
-    window.dispatchEvent(new Event('cart-updated'));
-  };
-
-  const updateQuantity = (id, amount) => {
-    const updated = cartItems.map((item) => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.quantity + amount);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    });
-    saveCart(updated);
-  };
-
-  const removeItem = (id) => {
-    const updated = cartItems.filter((item) => item.id !== id);
-    saveCart(updated);
-  };
 
   const handleApplyPromo = async (e) => {
     e.preventDefault();
@@ -103,7 +85,7 @@ export default function Cart() {
     localStorage.removeItem('silkmoon_discount');
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cartDetails.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const discountAmount = Math.round(subtotal * (discountPercent / 100));
   const shippingFee = 0; // free shipping
   const total = subtotal - discountAmount + shippingFee;
@@ -126,7 +108,9 @@ export default function Cart() {
         Giỏ hàng
       </h1>
 
-      {cartItems.length === 0 ? (
+      {cartLoading || loadingDetails ? (
+        <div className="text-center py-16 animate-pulse">Đang tải giỏ hàng...</div>
+      ) : cartDetails.length === 0 ? (
         /* Empty State */
         <section className="text-center py-16 bg-bone/35 rounded-2xl border border-slate-deep/5 space-y-stack-md max-w-2xl mx-auto">
           <span className="material-symbols-outlined text-[64px] text-on-surface-variant/40 animate-pulse">
@@ -164,7 +148,7 @@ export default function Cart() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-deep/5">
-                  {cartItems.map((item) => (
+                  {cartDetails.map((item) => (
                     <tr key={item.id} className="align-middle">
                       {/* Product details */}
                       <td className="py-6 pr-4">
@@ -190,9 +174,9 @@ export default function Cart() {
                       {/* Quantity Controls */}
                       <td className="py-6 text-center">
                         <div className="inline-flex items-center border border-slate-deep/15 rounded-full overflow-hidden bg-linen-white">
-                          <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">-</button>
+                          <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">-</button>
                           <span className="w-8 text-center font-body-md font-medium text-slate-deep">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">+</button>
+                          <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">+</button>
                         </div>
                       </td>
 
@@ -205,7 +189,7 @@ export default function Cart() {
                       <td className="py-6 text-right font-body-md text-slate-deep">
                         <div className="flex items-center justify-end gap-4">
                           <span className="font-semibold">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
-                          <button onClick={() => removeItem(item.id)} className="flex items-center justify-center p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-full transition-all" title="Xóa sản phẩm">
+                          <button onClick={() => removeFromCart(item.productId)} className="flex items-center justify-center p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-full transition-all" title="Xóa sản phẩm">
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -218,7 +202,7 @@ export default function Cart() {
 
             {/* Mobile List View */}
             <div className="md:hidden divide-y divide-slate-deep/5">
-              {cartItems.map((item) => (
+              {cartDetails.map((item) => (
                 <div key={item.id} className="py-stack-md flex flex-col gap-4">
                   {/* Product Details (Image + Spec) */}
                   <div className="flex gap-4 w-full">
@@ -245,7 +229,7 @@ export default function Cart() {
                         )}
                       </div>
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeFromCart(item.productId)}
                         className="flex items-center gap-1 text-xs text-error/80 hover:text-error transition-colors mt-2"
                       >
                         <span className="material-symbols-outlined text-[14px]">delete</span>
@@ -258,7 +242,7 @@ export default function Cart() {
                   <div className="flex justify-between items-center w-full pt-2 border-t border-dashed border-slate-deep/5">
                     <div className="flex items-center border border-slate-deep/15 rounded-full overflow-hidden bg-linen-white">
                       <button
-                        onClick={() => updateQuantity(item.id, -1)}
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                         className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold"
                       >
                         -
@@ -267,7 +251,7 @@ export default function Cart() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, 1)}
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                         className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold"
                       >
                         +

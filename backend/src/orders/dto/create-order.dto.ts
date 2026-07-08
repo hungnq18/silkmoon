@@ -17,29 +17,9 @@ class OrderItemDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  spec: string;
-
   @IsNumber()
   @Min(1)
   quantity: number;
-
-  @IsNumber()
-  @IsPositive()
-  price: number;
-
-  @IsOptional()
-  @IsString()
-  image?: string;
-
-  @IsOptional()
-  @IsString()
-  embroidery?: string | null;
 }
 
 export class CreateOrderDto {
@@ -69,18 +49,6 @@ export class CreateOrderDto {
 
   @IsIn(['payos', 'cod'])
   paymentMethod: string;
-
-  @IsNumber()
-  @Min(0)
-  subtotal: number;
-
-  @IsNumber()
-  @Min(0)
-  discountAmount: number;
-
-  @IsNumber()
-  @Min(0)
-  total: number;
 
   @IsOptional()
   @IsString()

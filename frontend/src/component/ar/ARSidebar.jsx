@@ -15,7 +15,7 @@ export default function ARSidebar({
   const isAIMode = mode === 'ai';
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col bg-linen-white border-l border-slate-deep/10 overflow-y-auto">
+    <div className="w-full md:w-72 flex-shrink-0 flex flex-col bg-linen-white border-l border-slate-deep/10 overflow-y-auto">
 
       {/* ── Active fabric ── */}
       <div className="px-6 pt-6 pb-5 border-b border-slate-deep/10">
@@ -86,10 +86,10 @@ export default function ARSidebar({
           <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest">Mẹo sử dụng</p>
           <ul className="space-y-1.5">
             {[
-              { icon: 'view_in_ar',      text: 'Quét mặt sàn trống để đặt mô hình 3D' },
+              { icon: 'add_photo_alternate', text: 'Tải lên ảnh phòng ngủ có ánh sáng tốt' },
               { icon: 'palette',         text: 'Chọn màu lụa để xem trước sản phẩm' },
-              { icon: 'auto_awesome',    text: 'Mô hình sẽ tự cập nhật màu và độ bóng' },
-              { icon: 'directions_walk', text: 'Di chuyển quanh phòng để ngắm các góc độ' },
+              { icon: 'auto_awesome',    text: 'AI sẽ tự động nhận diện và trải lụa lên giường' },
+              { icon: 'share',           text: 'Tải về hoặc sao chép ảnh để chia sẻ' },
             ].map(({ icon, text }) => (
               <li key={text} className="flex items-start gap-2">
                 <span className="material-symbols-outlined text-[14px] text-slate-deep/60 mt-0.5 flex-shrink-0">{icon}</span>
@@ -102,15 +102,7 @@ export default function ARSidebar({
 
       {/* ── Action buttons ── */}
       <div className="px-6 pb-6 pt-4 border-t border-slate-deep/10 space-y-2.5 flex-shrink-0">
-        {hasImage && (
-          <button
-            onClick={onReanalyze}
-            className="w-full py-3 px-4 border border-slate-deep/20 text-slate-deep font-button text-button uppercase tracking-wider hover:border-slate-deep hover:bg-slate-deep/5 transition-all duration-200 flex items-center justify-center gap-2 rounded"
-          >
-            <span className="material-symbols-outlined text-[16px]">restart_alt</span>
-            Render lại
-          </button>
-        )}
+
         <button
           onClick={onNewImage}
           className="w-full py-3 px-4 bg-slate-deep text-linen-white font-button text-button uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 rounded"
