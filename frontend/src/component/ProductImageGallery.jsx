@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export default function ProductImageGallery({ images = [] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
 
   // Map API images to gallery items
   const galleryItems = images.length > 0 
@@ -29,26 +30,41 @@ export default function ProductImageGallery({ images = [] }) {
     }
   };
 
+  const showPrevious = () => setActiveIndex((current) => (current - 1 + galleryItems.length) % galleryItems.length);
+  const showNext = () => setActiveIndex((current) => (current + 1) % galleryItems.length);
+  const handleTouchEnd = (event) => {
+    if (touchStart === null) return;
+    const distance = touchStart - event.changedTouches[0].clientX;
+    if (Math.abs(distance) > 45) distance > 0 ? showNext() : showPrevious();
+    setTouchStart(null);
+  };
+
   return (
     <div className="space-y-stack-md select-none">
       {/* Main Image Viewer */}
-      <div className="aspect-[4/5] w-full overflow-hidden bg-bone rounded-lg relative">
+      <div className="aspect-[4/5] w-full overflow-hidden bg-bone rounded-lg relative" onTouchStart={(event) => setTouchStart(event.touches[0].clientX)} onTouchEnd={handleTouchEnd}>
         <img
-          className="w-full h-full object-cover"
+          key={activeIndex}
+          className="product-gallery-image w-full h-full object-cover"
           src={galleryItems[activeIndex]?.src || galleryItems[0].src}
           alt={`Hình ảnh sản phẩm ${activeIndex + 1}`}
         />
+        {galleryItems.length > 1 && <>
+          <button type="button" onClick={showPrevious} aria-label="Ảnh trước" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-deep shadow-md backdrop-blur transition-all hover:bg-white active:scale-95"><span className="material-symbols-outlined">chevron_left</span></button>
+          <button type="button" onClick={showNext} aria-label="Ảnh tiếp theo" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-deep shadow-md backdrop-blur transition-all hover:bg-white active:scale-95"><span className="material-symbols-outlined">chevron_right</span></button>
+          <span className="absolute bottom-3 right-3 rounded-full bg-slate-deep/70 px-3 py-1 text-xs text-white">{activeIndex + 1}/{galleryItems.length}</span>
+        </>}
       </div>
 
       {/* Thumbnails Row */}
-      <div className="grid grid-cols-4 gap-stack-md">
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-4 md:gap-stack-md md:overflow-visible md:px-0 md:pb-0">
         {galleryItems.map((img) => {
           const isActive = img.type === 'image' && activeIndex === img.id;
           return (
             <div
               key={img.id}
               onClick={() => handleThumbnailClick(img)}
-              className={`aspect-square bg-bone overflow-hidden rounded-lg cursor-pointer relative group ${
+              className={`relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md bg-bone group md:h-auto md:w-auto md:aspect-square ${
                 isActive ? 'ring-1 ring-slate-deep ring-offset-2' : 'hover:opacity-90'
               }`}
             >

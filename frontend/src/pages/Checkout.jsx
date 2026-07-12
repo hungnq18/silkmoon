@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CheckoutForm from '../component/CheckoutForm';
 import OrderSummary from '../component/OrderSummary';
@@ -11,6 +11,26 @@ export default function Checkout() {
   const [checkoutData, setCheckoutData] = useState(null);
   const [orderResult, setOrderResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentFailed, setPaymentFailed] = useState(false);
+  const [isReturning, setIsReturning] = useState(() => new URLSearchParams(window.location.search).has('order'));
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderNumber = params.get('order');
+    if (!orderNumber) return;
+    const pending = JSON.parse(localStorage.getItem('silkmoon_pending_order') || 'null');
+    if (pending?.checkoutData) setCheckoutData(pending.checkoutData);
+
+    ordersApi.getPaymentStatus(orderNumber)
+      .then((result) => {
+        setOrderResult(result);
+        setPaymentFailed(result.paymentStatus !== 'paid');
+        setIsCompleted(true);
+        if (result.paymentStatus === 'paid') localStorage.removeItem('silkmoon_pending_order');
+      })
+      .catch((err) => alert(err.message || 'Không thể kiểm tra trạng thái thanh toán.'))
+      .finally(() => setIsReturning(false));
+  }, []);
 
   const handleCheckoutSubmit = async (data) => {
     setIsSubmitting(true);
@@ -25,6 +45,16 @@ export default function Checkout() {
           quantity: item.quantity,
         })),
       });
+
+      if (data.paymentMethod === 'payos' && order.checkoutUrl) {
+        localStorage.setItem('silkmoon_pending_order', JSON.stringify({ checkoutData: data, orderNumber: order.orderNumber }));
+        clearCart();
+        localStorage.removeItem('silkmoon_discount');
+        localStorage.removeItem('silkmoon_promo_code');
+        localStorage.removeItem('silkmoon_checkout_totals');
+        window.location.assign(order.checkoutUrl);
+        return;
+      }
 
       setOrderResult(order);
       setCheckoutData(data);
@@ -67,17 +97,19 @@ export default function Checkout() {
         </span>
       </div>
 
-      {isCompleted ? (
+      {isReturning ? (
+        <section className="max-w-xl mx-auto text-center py-stack-lg space-y-stack-md"><span className="material-symbols-outlined text-[42px] animate-spin">progress_activity</span><h1 className="font-display-lg text-display-lg-mobile">Đang kiểm tra thanh toán…</h1></section>
+      ) : isCompleted ? (
         /* Checkout Success Screen */
         <section className="max-w-xl mx-auto text-center py-stack-lg space-y-stack-lg animate-fade-in select-none">
-          <div className="w-16 h-16 bg-sage-haze/10 text-sage-haze rounded-full flex items-center justify-center mx-auto mb-2">
-            <span className="material-symbols-outlined text-[36px]">check_circle</span>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 ${paymentFailed ? 'bg-red-50 text-red-600' : 'bg-sage-haze/10 text-sage-haze'}`}>
+            <span className="material-symbols-outlined text-[36px]">{paymentFailed ? 'cancel' : 'check_circle'}</span>
           </div>
           <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-slate-deep leading-tight">
-            Đặt hàng thành công!
+            {paymentFailed ? 'Thanh toán chưa hoàn tất' : 'Đặt hàng thành công!'}
           </h1>
           <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant max-w-md mx-auto leading-relaxed">
-            Cảm ơn <strong>{checkoutData?.fullName}</strong> đã lựa chọn SILKMOON. Đơn hàng của bạn đang được xử lý.
+            {paymentFailed ? 'Giao dịch đã bị hủy, hết hạn hoặc chưa được PayOS xác nhận. Đơn hàng sẽ chưa được xử lý.' : <>Cảm ơn <strong>{checkoutData?.fullName || orderResult?.fullName}</strong> đã lựa chọn SILKMOON. Đơn hàng của bạn đang được xử lý.</>}
           </p>
 
           <div className="bg-bone/40 p-stack-lg rounded-xl text-left border border-slate-deep/5 space-y-3 max-w-md mx-auto text-sm">

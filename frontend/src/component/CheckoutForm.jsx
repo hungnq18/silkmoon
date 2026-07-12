@@ -97,7 +97,7 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="input-underline font-body-md text-body-md bg-transparent appearance-none text-slate-deep cursor-pointer"
+              className="input-underline font-body-md text-body-md appearance-none text-slate-deep cursor-pointer"
             >
               <option value="Hà Nội">Hà Nội</option>
               <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
@@ -157,13 +157,7 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
             
             {/* PayOS Logo */}
             <div className="hidden sm:block">
-              <img
-                alt="PayOS"
-                className={`h-8 transition-all ${
-                  paymentMethod === 'payos' ? 'grayscale-0 opacity-100' : 'grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100'
-                }`}
-                src="https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800"
-              />
+              <span className={`text-xl font-bold tracking-tight transition-opacity ${paymentMethod === 'payos' ? 'text-[#5b2cff] opacity-100' : 'text-slate-deep opacity-40 group-hover:opacity-80'}`}>payOS</span>
             </div>
           </label>
 
@@ -198,28 +192,6 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
         </div>
       </div>
 
-      {/* Submit Button */}
-      <div className="pt-4">
-        <button
-          type="submit"
-          form="checkout-form"
-          disabled={isSubmitting}
-          className="w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? (
-            <>
-              <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
-              Đang xử lý...
-            </>
-          ) : (
-            <>
-              XÁC NHẬN ĐẶT HÀNG
-              <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-            </>
-          )}
-        </button>
-      </div>
     </form>
   );
 }
-

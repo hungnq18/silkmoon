@@ -6,13 +6,14 @@ import { v2 as cloudinary } from 'cloudinary';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AiUsage, AiUsageDocument } from './ai-usage.schema';
+import { SILKMOON_CHATBOT_KNOWLEDGE } from './chatbot-knowledge';
 
 /**
  * Bed detection strategy:
  *
  * Instead of asking Gemini for 4 corner pixel coordinates (which is unreliable),
  * we ask for 5 simpler, independent values the model can answer more accurately:
- *
+ * 
  *   headboard_y  — y where the flat sheet surface starts (below pillows/headboard)
  *   foot_y       — y where the flat surface ENDS at the foot edge
  *   left_x       — x of the LEFT side of the mattress at its widest (foot side)
@@ -63,13 +64,21 @@ export class ARService {
     await this.usageModel.create({ feature, provider: 'gemini', modelName: model, promptTokens: usage.promptTokenCount || 0, outputTokens: usage.candidatesTokenCount || 0, totalTokens: usage.totalTokenCount || 0, success: true });
   }
 
-  async chat(message: string, systemPrompt?: string) {
+  async chat(message: string, systemPrompt?: string, history: Array<{ role: string; text: string }> = []) {
     if (!this.ai) throw new Error('Gemini API is not configured.');
     const modelName = 'gemini-2.5-flash';
+    const safeHistory = history.slice(-10).map((item) => ({
+      role: item.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(item.text || '').slice(0, 1500) }],
+    }));
     const response = await this.ai.models.generateContent({
       model: modelName,
-      contents: [{ role: 'user', parts: [{ text: `${systemPrompt || 'Bạn là trợ lý tư vấn của Silkmoon.'}\n\nKhách hàng: ${String(message || '').slice(0, 2000)}` }] }],
-      config: { temperature: 0.35, maxOutputTokens: 500 },
+      contents: [...safeHistory, { role: 'user', parts: [{ text: String(message || '').slice(0, 2000) }] }],
+      config: {
+        systemInstruction: `${SILKMOON_CHATBOT_KNOWLEDGE}\n\nCHỈ DẪN BỔ SUNG TỪ QUẢN TRỊ VIÊN:\n${systemPrompt || 'Không có.'}`,
+        temperature: 0.3,
+        maxOutputTokens: 650,
+      },
     });
     await this.recordUsage('chatbot', modelName, response);
     return { message: response.text?.trim() || 'Xin lỗi, tôi chưa thể trả lời câu hỏi này.' };
@@ -179,8 +188,9 @@ Output ONLY this JSON format:
           this.logger.log(`[Result] ${JSON.stringify(result)}`);
           return result;
 
-        } catch (err) {
-          const msg = String(err.message ?? err);
+        } catch (err: unknown) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          const msg = String(error.message ?? error);
           const is503 = msg.includes('503') || msg.toLowerCase().includes('unavailable') || msg.toLowerCase().includes('high demand');
 
           if (is503 && attempt < 3) {
@@ -196,7 +206,7 @@ Output ONLY this JSON format:
           }
 
           this.logger.warn(`[Detection] ${modelName} failed: ${msg.substring(0, 120)}`);
-          lastError = err;
+          lastError = error;
           break;
         }
       }
@@ -241,16 +251,14 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
       : defaultPrompt;
 
     const freeModels = [
-      'gemini-3.1-flash-image',         // Nano Banana 2 — latest
-      'gemini-2.5-flash-image',         // Nano Banana — fast
+      'gemini-3.1-flash-lite-image',
+      'gemini-3.1-flash-image',
+      'gemini-2.5-flash-image',
     ];
-    const proModels = [
-      'gemini-3-pro-image',             // Nano Banana Pro — quality
-      'imagen-4.0-ultra-generate-001',   // Imagen 4 Ultra — premium image generation
-      'imagen-4.0-generate-001',        // Imagen 4
-    ];
+    const proModels = ['gemini-3-pro-image'];
 
     let quotaExceeded = false;
+    let lastGenerationError = '';
     let currentModels = [...freeModels];
 
     for (let i = 0; i < currentModels.length; i++) {
@@ -286,7 +294,15 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
 
         this.logger.warn(`[Generate] ${modelName}: no image part in response`);
       } catch (err) {
-        const msg = String(err.message ?? err);
+        const msg = String((err as Error).message ?? err);
+        const normalized = msg.toLowerCase();
+        lastGenerationError = msg;
+        if (msg.includes('401') || normalized.includes('api key not valid') || normalized.includes('unauthenticated')) {
+          throw new Error('API_KEY_INVALID: Gemini API key không hợp lệ hoặc đã bị thu hồi.');
+        }
+        if (msg.includes('403') || normalized.includes('billing') || normalized.includes('paid tier') || normalized.includes('permission_denied')) {
+          throw new Error('BILLING_REQUIRED: Project Google AI chưa có quyền tạo ảnh. Hãy bật billing cho project chứa GEMINI_API_KEY.');
+        }
         const is429 = msg.includes('429') || msg.includes('4299') || msg.toLowerCase().includes('quota');
         if (is429) {
           this.logger.warn(`[Generate] ${modelName}: quota exceeded (429/4299)`);
@@ -313,7 +329,8 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
       throw err;
     }
 
-    throw new Error('No image generation model succeeded. Check /api/v1/ar/list-models for available models.');
+    this.logger.error(`[Generate] All image models failed: ${lastGenerationError || 'No image result'}`);
+    throw new Error('IMAGE_MODEL_FAILED');
   }
 
   /** Lists available Gemini models — useful for debugging which ones support image output. */
@@ -339,8 +356,9 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
         m.name?.includes('imagen')
       );
       return { total: models.length, imageCapable: imageModels, all: models };
-    } catch (err) {
-      return { error: err.message };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { error: message };
     }
   }
 
@@ -358,8 +376,9 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
       this.logger.log(`[Cloudinary] Upload success: ${result.secure_url}`);
       return result.secure_url;
     } catch (error) {
-      this.logger.error(`[Cloudinary] Upload failed: ${error.message}`);
-      throw new Error(`Cloudinary upload failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`[Cloudinary] Upload failed: ${message}`);
+      throw new Error(`Cloudinary upload failed: ${message}`);
     }
   }
 
@@ -391,7 +410,7 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
       this.logger.log(`[Replicate SAM] Segmentation Success: ${resultUrl}`);
       return resultUrl as string;
     } catch (error) {
-      this.logger.error(`[Replicate SAM] Segmentation Failed: ${error.message}`);
+      this.logger.error(`[Replicate SAM] Segmentation Failed: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -441,7 +460,8 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
       this.logger.log(`[Replicate] Inpainting Success: ${resultUrl}`);
       return resultUrl as string;
     } catch (error) {
-      this.logger.error(`[Replicate] Inpainting Failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`[Replicate] Inpainting Failed: ${message}`);
       throw error;
     }
   }

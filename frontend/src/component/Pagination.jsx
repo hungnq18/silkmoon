@@ -20,7 +20,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
   const pages = getPagesList();
 
   return (
-    <div className="mt-16 flex justify-center items-center gap-2 md:gap-4 select-none">
+    <div className="mt-8 flex select-none items-center justify-center gap-2 md:gap-4">
       {/* Prev Button */}
       <button
         onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}

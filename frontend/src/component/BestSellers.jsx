@@ -52,13 +52,13 @@ export default function BestSellers() {
   // Skeleton loader
   if (loading) {
     return (
-      <section className="bg-bone/50 py-section-gap">
+      <section className="bg-bone/50 pb-section-gap pt-6 md:pt-10">
         <div className="px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
-          <div className="text-center mb-stack-lg md:mb-section-gap">
+          <div className="mb-6 text-center">
             <div className="h-8 w-48 bg-slate-deep/10 rounded mx-auto mb-4 animate-pulse" />
             <div className="h-4 w-96 bg-slate-deep/5 rounded mx-auto animate-pulse" />
           </div>
-          <div className="mb-12">
+          <div className="mb-8">
              <div className="h-6 w-64 bg-slate-deep/10 rounded mb-6 animate-pulse" />
              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {[1, 2, 3].map((i) => (
@@ -127,13 +127,17 @@ export default function BestSellers() {
   
   // Fallback in case database doesn't have enough matching categories
   const row1 = beddingProducts.length > 0 ? beddingProducts : products.slice(0, 3);
-  const row2 = accessoriesProducts.length > 0 ? accessoriesProducts : products.slice(3, 6);
+  const usedIds = new Set(row1.map((product) => product._id));
+  const row2 = [
+    ...accessoriesProducts,
+    ...products.filter((product) => !usedIds.has(product._id) && !accessoriesProducts.some((item) => item._id === product._id)),
+  ].slice(0, 3);
 
   return (
     <>
-      <section className="bg-bone/50 py-section-gap">
+      <section className="bg-bone/50 pb-section-gap pt-6 md:pt-10">
         <div className="px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
-          <div className="text-center mb-stack-lg md:mb-section-gap">
+          <div className="mb-6 text-center">
             <h2 className="font-headline-md text-headline-sm md:text-headline-md text-slate-deep mb-4">
               Sản Phẩm Bán Chạy
             </h2>
@@ -145,9 +149,6 @@ export default function BestSellers() {
           <div className="space-y-12">
             {/* Row 1: Bedding */}
             <div>
-              <h3 className="font-display-md text-xl md:text-2xl text-slate-deep mb-6 border-b border-slate-deep/10 pb-3">
-                Vỏ chăn, ga giường, vỏ gối (Tencel 60S)
-              </h3>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {row1.map(renderProductCard)}
               </div>
@@ -156,9 +157,6 @@ export default function BestSellers() {
             {/* Row 2: Sleepwear & Accessories */}
             {row2.length > 0 && (
               <div>
-                <h3 className="font-display-md text-xl md:text-2xl text-slate-deep mb-6 border-b border-slate-deep/10 pb-3">
-                  Đồ ngủ, bịt mắt, dây buộc tóc (Lụa cao cấp)
-                </h3>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {row2.map(renderProductCard)}
                 </div>

@@ -14,6 +14,7 @@ export class BlogService implements OnModuleInit {
       { name: 'Sản Phẩm Silkmoon', slug: 'san-pham-silkmoon', description: 'Tin tức và hướng dẫn về sản phẩm Silkmoon.' },
       { name: 'Mẹo Hay', slug: 'meo-hay', description: 'Mẹo chăm sóc phòng ngủ và sản phẩm.' },
       { name: 'Không Gian Sống', slug: 'khong-gian-song', description: 'Cảm hứng thiết kế không gian sống.' },
+      { name: 'Hướng Dẫn Chăm Sóc', slug: 'huong-dan-cham-soc', description: 'Hướng dẫn sử dụng, giặt và bảo quản sản phẩm Silkmoon.' },
     ];
     await this.categories.bulkWrite(defaults.map(item => ({ updateOne: { filter: { slug: item.slug }, update: { $setOnInsert: { ...item, isActive: true } }, upsert: true } })));
     const categoryDocs = await this.categories.find().lean();

@@ -109,10 +109,10 @@ export default function Cart() {
       </h1>
 
       {cartLoading || loadingDetails ? (
-        <div className="text-center py-16 animate-pulse">Đang tải giỏ hàng...</div>
+        <div className="animate-pulse py-10 text-center">Đang tải giỏ hàng...</div>
       ) : cartDetails.length === 0 ? (
         /* Empty State */
-        <section className="text-center py-16 bg-bone/35 rounded-2xl border border-slate-deep/5 space-y-stack-md max-w-2xl mx-auto">
+        <section className="mx-auto max-w-2xl space-y-stack-md rounded-2xl border border-slate-deep/5 bg-bone/35 py-10 text-center">
           <span className="material-symbols-outlined text-[64px] text-on-surface-variant/40 animate-pulse">
             shopping_bag
           </span>

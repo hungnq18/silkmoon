@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Patch, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Patch, Query, HttpCode } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -16,6 +16,17 @@ export class OrdersController {
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
+  }
+
+  @Post('payos/webhook')
+  @HttpCode(200)
+  payosWebhook(@Body() payload: any) {
+    return this.ordersService.handlePayosWebhook(payload);
+  }
+
+  @Get(':id/payment-status')
+  paymentStatus(@Param('id') id: string) {
+    return this.ordersService.syncPayosPaymentStatus(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

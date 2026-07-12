@@ -66,8 +66,8 @@ export default function ProductReviews({ productId }) {
   };
 
   return (
-    <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16">
-      <h2 className="text-3xl font-display-md font-bold text-slate-deep text-center mb-10">
+    <section className="mx-auto max-w-container-max px-margin-mobile py-8 md:px-margin-desktop md:py-10">
+      <h2 className="mb-6 text-center font-display-md text-3xl font-bold text-slate-deep">
         Đánh giá của Khách hàng
       </h2>
 

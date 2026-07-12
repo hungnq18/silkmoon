@@ -77,5 +77,17 @@ export class UsersService {
   async updateCart(id: string, cart: { productId: string; quantity: number }[]) {
     return this.userModel.findByIdAndUpdate(id, { cart }, { returnDocument: 'after' }).select('cart').exec();
   }
+
+  async setResetPasswordToken(id: string, tokenHash: string, expiresAt: Date) {
+    return this.userModel.findByIdAndUpdate(id, { resetPasswordTokenHash: tokenHash, resetPasswordExpiresAt: expiresAt }).exec();
+  }
+
+  async resetPassword(tokenHash: string, passwordHash: string) {
+    return this.userModel.findOneAndUpdate(
+      { resetPasswordTokenHash: tokenHash, resetPasswordExpiresAt: { $gt: new Date() } },
+      { $set: { passwordHash }, $unset: { resetPasswordTokenHash: 1, resetPasswordExpiresAt: 1 } },
+      { returnDocument: 'after' },
+    ).exec();
+  }
 }
 

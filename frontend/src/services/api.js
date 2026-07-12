@@ -11,6 +11,7 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
+    cache: options.cache || 'no-store',
   });
 
   if (!res.ok) {
@@ -26,7 +27,7 @@ export const analyticsApi = {
 };
 
 export const assistantApi = {
-  chat: (message) => request('/assistant/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+  chat: (message, history = []) => request('/assistant/chat', { method: 'POST', body: JSON.stringify({ message, history }) }),
 };
 
 // ── Products ──────────────────────────────────────────────
@@ -59,7 +60,9 @@ export const blogApi = {
   getCategories: () => request('/blog/categories'),
   createComment: (data) => request('/blog/comments', { method: 'POST', body: JSON.stringify(data) }),
 };
-export const settingsApi = { get: (key) => request(`/settings/${key}`) };
+export const settingsApi = {
+  get: (key) => request(`/settings/${encodeURIComponent(key)}?_=${Date.now()}`, { cache: 'no-store' }),
+};
 
 // ── Promotions ────────────────────────────────────────────
 export const promotionsApi = {
@@ -79,6 +82,7 @@ export const ordersApi = {
     }),
 
   getById: (id) => request(`/orders/${id}`),
+  getPaymentStatus: (id) => request(`/orders/${encodeURIComponent(id)}/payment-status`),
 };
 
 // ── Reviews ───────────────────────────────────────────────
@@ -140,6 +144,8 @@ export const authApi = {
     }),
 
   getProfile: () => request('/auth/profile'),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
 };
 
 // ── Cart (For Logged-in Users) ────────────────────────────

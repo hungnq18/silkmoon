@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { blogApi, settingsApi } from "../services/api";
 
 export default function Blog() {
+  const location = useLocation();
   const [posts, setPosts] = useState([]),
     [categories, setCategories] = useState([]),
     [videos, setVideos] = useState([]),
     [active, setActive] = useState("all");
   useEffect(() => {
     blogApi.getPosts().then(setPosts);
-    blogApi.getCategories().then(setCategories);
+    blogApi.getCategories().then((items) => {
+      setCategories(items);
+      if (new URLSearchParams(location.search).get("type") === "care") {
+        const careCategory = items.find((category) => category.slug === "huong-dan-cham-soc");
+        if (careCategory) setActive(careCategory._id);
+      }
+    });
     settingsApi
       .get("website_content")
       .then((setting) =>
@@ -20,7 +27,7 @@ export default function Blog() {
         ),
       )
       .catch(() => setVideos([]));
-  }, []);
+  }, [location.search]);
   const visible = useMemo(() => {
     const items = Array.isArray(posts) ? posts : [];
     return active === "all"
@@ -47,10 +54,10 @@ export default function Blog() {
           <span className="mx-2">›</span>
           <strong>Cẩm nang</strong>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-deep mb-8">
+        <h1 className="mb-5 text-3xl font-bold text-slate-deep md:text-4xl">
           Cẩm nang
         </h1>
-        <div className="flex flex-wrap gap-3 mb-10">
+        <div className="mb-6 flex flex-wrap gap-3">
           <button
             className={`old-blog-chip ${active === "all" ? "active" : ""}`}
             onClick={() => setActive("all")}
@@ -70,7 +77,7 @@ export default function Blog() {
             ))}
         </div>
         {featured && (
-          <section className="mb-16">
+          <section className="mb-8">
             <Link
               to={`/blog/${featured.slug}`}
               className="flex flex-col md:flex-row bg-[#EAF2F8] rounded-2xl overflow-hidden mb-6 group"
@@ -169,7 +176,7 @@ export default function Blog() {
           </section>
         )}
         {videos.length > 0 && (
-          <section className="mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <section className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="bg-[#A7E4CD] rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px]">
               <h2 className="text-3xl font-bold text-slate-deep mb-4">
                 Videos

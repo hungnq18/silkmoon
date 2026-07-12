@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Header } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -11,11 +11,13 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   findAll() {
     return this.settingsService.findAll();
   }
 
   @Get(':key')
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   findByKey(@Param('key') key: string) {
     return this.settingsService.findByKey(key);
   }

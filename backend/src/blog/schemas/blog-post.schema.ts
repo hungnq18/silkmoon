@@ -11,7 +11,7 @@ export class BlogPost {
   @Prop({ required: true }) categoryId: string;
   @Prop({ default: 'Brand Silkmoon' }) author: string;
   @Prop({ default: 'draft', enum: ['draft', 'published'] }) status: string;
-  @Prop({ default: 'standard', enum: ['standard', 'featured', 'editorial', 'guide', 'split', 'gallery'] }) layout: string;
+  @Prop({ default: 'standard', enum: ['standard', 'featured', 'editorial', 'guide', 'split', 'gallery', 'silkmoon-product'] }) layout: string;
   @Prop({ type: [String], default: [] }) galleryImages: string[];
   @Prop() publishedAt?: Date;
 }

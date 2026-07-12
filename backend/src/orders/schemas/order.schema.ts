@@ -64,6 +64,15 @@ export class Order {
   })
   paymentStatus: string;
 
+  @Prop({ type: Number, unique: true, sparse: true })
+  payosOrderCode?: number;
+
+  @Prop({ type: String, default: null })
+  payosPaymentLinkId?: string | null;
+
+  @Prop({ type: String, default: null })
+  payosReference?: string | null;
+
   @Prop({
     enum: ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'],
     default: 'pending',

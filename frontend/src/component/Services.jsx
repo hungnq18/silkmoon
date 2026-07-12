@@ -19,9 +19,9 @@ export default function Services() {
   ];
 
   return (
-    <section className="py-16 px-margin-mobile md:px-margin-desktop bg-white w-full">
+    <section className="w-full bg-white px-margin-mobile py-8 md:px-margin-desktop md:py-10">
       <div className="max-w-container-max mx-auto">
-        <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep mb-8 md:mb-10 font-bold text-center md:text-left">
+        <h2 className="mb-6 text-center font-display-md text-display-md-mobile font-bold text-slate-deep md:text-left md:text-display-md">
           An tâm hơn với dịch vụ vượt trội
         </h2>
         

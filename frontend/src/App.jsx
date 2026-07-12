@@ -14,6 +14,8 @@ import Blog from './pages/Blog';
 import BlogDetail from './pages/BlogDetail';
 import BlogPreview from './pages/BlogPreview';
 import Showroom from './pages/Showroom';
+import ARShare from './pages/ARShare';
+import Account from './pages/Account';
 import './App.css';
 import { analyticsApi } from './services/api';
 
@@ -51,6 +53,8 @@ function AppContent() {
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/blog-preview" element={<BlogPreview />} />
           <Route path="/showroom" element={<Showroom />} />
+          <Route path="/ar-share" element={<ARShare />} />
+          <Route path="/account" element={<Account />} />
         </Routes>
       </div>
 

@@ -3,8 +3,10 @@ import FilterSidebar from '../component/FilterSidebar';
 import ProductListGrid from '../component/ProductListGrid';
 import Pagination from '../component/Pagination';
 import { productsApi } from '../services/api';
+import { useLocation } from 'react-router-dom';
 
 export default function Shop() {
+  const location = useLocation();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCollection, setSelectedCollection] = useState('all');
@@ -13,6 +15,14 @@ export default function Shop() {
   const [sortOption, setSortOption] = useState('newest');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const query = new URLSearchParams(location.search);
+  const categoryFromMenu = query.get('category') || '';
+  const saleOnly = query.get('sale') === 'true';
+
+  useEffect(() => {
+    setSelectedCollection(categoryFromMenu || 'all');
+    setCurrentPage(1);
+  }, [location.search]);
 
   useEffect(() => {
     productsApi.getAll()
@@ -25,11 +35,15 @@ export default function Shop() {
   const filteredProducts = useMemo(() => {
     let result = [...allProducts];
 
-    if (selectedCollection && selectedCollection !== 'all') {
+    if (selectedCollection === 'sale') {
+      result = result.filter((product) => product.originalPrice || String(product.tag || '').toLowerCase() === 'sale');
+    } else if (selectedCollection && selectedCollection !== 'all') {
       result = result.filter((p) =>
         p.category?.toLowerCase().includes(selectedCollection.toLowerCase())
       );
     }
+
+    if (saleOnly) result = result.filter((product) => product.originalPrice || String(product.tag || '').toLowerCase() === 'sale');
 
     if (selectedMaterials.length > 0) {
       result = result.filter((p) =>
@@ -54,7 +68,7 @@ export default function Shop() {
     }
 
     return result;
-  }, [allProducts, selectedCollection, selectedMaterials, selectedColor, sortOption]);
+  }, [allProducts, selectedCollection, selectedMaterials, selectedColor, sortOption, saleOnly]);
 
   const ITEMS_PER_PAGE = 6;
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -87,7 +101,7 @@ export default function Shop() {
       {/* Category Header */}
       <section className="mb-stack-lg animate-fade-in">
         <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-stack-sm text-slate-deep">
-          Tất cả sản phẩm
+          {saleOnly ? 'Sản phẩm Sale' : categoryFromMenu || 'Tất cả sản phẩm'}
         </h1>
         <p className="text-on-surface-variant max-w-2xl font-body-lg text-body-md md:text-body-lg">
           Khám phá bộ sưu tập chăn ga gối đệm được thiết kế cho sự nghỉ ngơi tuyệt đối, sử dụng những chất liệu tự nhiên bền vững nhất.

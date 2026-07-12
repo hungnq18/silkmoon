@@ -26,11 +26,22 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   // CORS
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.ADMIN_URL,
+    process.env.CORS_ORIGINS,
+  ]
+    .filter(Boolean)
+    .flatMap((value) => value!.split(','))
+    .map((value) => value.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+
   app.enableCors({
-    origin: [
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_URL,
-    ].filter((origin): origin is string => Boolean(origin)),
+    origin: (origin, callback) => {
+      const normalizedOrigin = origin?.replace(/\/$/, '');
+      if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
+      return callback(new Error(`Origin ${origin} is not allowed by CORS`), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -48,5 +59,6 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 SILKMOON Backend running on http://localhost:${port}/api/v1`);
+  console.log(`🌐 CORS origins: ${allowedOrigins.join(', ') || '(none configured)'}`);
 }
 bootstrap();

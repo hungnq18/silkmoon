@@ -327,18 +327,22 @@ const contentDefaults = {
 Object.assign(contentDefaults.footer, {
   logoUrl: "",
   facebookUrl: "https://www.facebook.com/",
+  instagramUrl: "https://www.instagram.com/",
   tiktokUrl: "https://www.tiktok.com/",
   shopeeUrl: "https://shopee.vn/",
   productLinks: "Bộ chăn ga|/shop\nVỏ chăn|/shop\nVỏ gối|/shop\nBộ đồ ngủ|/shop\nPhụ kiện|/shop",
   policyLinks: "3 đêm ngủ thử|/policy\nĐổi trả sản phẩm|/policy\nVận chuyển|/policy\nBảo hành|/policy\nThanh toán|/policy\nTrả góp 0%|/policy\nBảo mật thông tin|/policy\nChính sách đặt cọc|/policy",
+  aboutLinks: "Chuyện của SILKMOON|/about\nFAQs|/policy\nBlog|/blog",
 });
 const socialFieldLabels = {
   logoUrl: "Logo chân trang",
   facebookUrl: "Facebook URL",
+  instagramUrl: "Instagram URL",
   tiktokUrl: "TikTok URL",
   shopeeUrl: "Shopee URL",
   productLinks: "Cột sản phẩm (Tên|Đường dẫn, mỗi dòng một mục)",
   policyLinks: "Cột chính sách (Tên|Đường dẫn, mỗi dòng một mục)",
+  aboutLinks: "Cột về chúng tôi (Tên|Đường dẫn, mỗi dòng một mục)",
 };
 const previewLinks = (value) =>
   (value || "")
@@ -351,12 +355,13 @@ function FooterSocialPreview({ label, children }) {
 }
 
 function SocialEditIcon({ type }) {
-  const symbols = { facebookUrl: "f", tiktokUrl: "♪", shopeeUrl: "S" };
+  const symbols = { facebookUrl: "f", instagramUrl: "◎", tiktokUrl: "♪", shopeeUrl: "S" };
   return <span className="footer-social-edit-icon" aria-hidden="true">{symbols[type]}</span>;
 }
 
 const socialIconKeys = {
   facebookUrl: "facebookIconUrl",
+  instagramUrl: "instagramIconUrl",
   tiktokUrl: "tiktokIconUrl",
   shopeeUrl: "shopeeIconUrl",
 };
@@ -473,8 +478,12 @@ function WebsiteSectionManager({ section, title, description, labels }) {
       {section === "about" && <AboutPagePreview values={values} />}
       {section === "footer" && (
         <div className="footer-preview">
+          <div className="footer-preview-top">
+            <div>{values.logoUrl && <div className="footer-preview-logo"><img src={values.logoUrl} alt="SILKMOON" /></div>}<span>{values.description}</span></div>
+            <div><h3>{values.newsletterTitle}</h3><p>Nhận câu chuyện giấc ngủ và ưu đãi mới nhất từ Silkmoon.</p><div className="footer-fake-input">Nhập email hoặc số điện thoại <b>Gửi thông tin</b></div></div>
+          </div>
+          <div className="footer-preview-columns">
           <div>
-            <div className="footer-preview-logo"><img src={values.logoUrl || footerLogo} alt="SILKMOON" /></div>
             <div className="footer-preview-brand"><strong>{values.companyName}</strong><span>{values.description}</span></div>
             <p>Mã số thuế: {values.taxCode}</p>
             <p>{values.address}</p>
@@ -483,11 +492,6 @@ function WebsiteSectionManager({ section, title, description, labels }) {
             <p>{values.workingHours}</p>
             <h3>HOTLINE</h3>
             <p className="footer-preview-phone">{values.phone}</p>
-            <div className="footer-preview-socials">
-              <FooterSocialPreview label="Facebook">{values.facebookIconUrl ? <img src={values.facebookIconUrl} alt="" /> : <SocialEditIcon type="facebookUrl" />}</FooterSocialPreview>
-              <FooterSocialPreview label="TikTok">{values.tiktokIconUrl ? <img src={values.tiktokIconUrl} alt="" /> : <SocialEditIcon type="tiktokUrl" />}</FooterSocialPreview>
-              <FooterSocialPreview label="Shopee">{values.shopeeIconUrl ? <img src={values.shopeeIconUrl} alt="" /> : <SocialEditIcon type="shopeeUrl" />}</FooterSocialPreview>
-            </div>
           </div>
           <div>
             <h3>Sản phẩm</h3>
@@ -499,15 +503,22 @@ function WebsiteSectionManager({ section, title, description, labels }) {
           </div>
           <div>
             <h3>Về chúng tôi</h3>
-            <p>Chuyện của SILKMOON</p>
-            <h3 className="footer-preview-newsletter">{values.newsletterTitle}</h3>
-            <div className="footer-fake-input">Nhập email <b>Gửi thông tin</b></div>
+            <ul>{previewLinks(values.aboutLinks).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul>
+          </div>
+          </div>
+          <div className="footer-preview-bottom">
             <small>{values.copyright}</small>
+            <div className="footer-preview-socials">
+              {values.facebookUrl && <FooterSocialPreview label="Facebook">{values.facebookIconUrl ? <img src={values.facebookIconUrl} alt="" /> : <SocialEditIcon type="facebookUrl" />}</FooterSocialPreview>}
+              {values.instagramUrl && <FooterSocialPreview label="Instagram">{values.instagramIconUrl ? <img src={values.instagramIconUrl} alt="" /> : <SocialEditIcon type="instagramUrl" />}</FooterSocialPreview>}
+              {values.tiktokUrl && <FooterSocialPreview label="TikTok">{values.tiktokIconUrl ? <img src={values.tiktokIconUrl} alt="" /> : <SocialEditIcon type="tiktokUrl" />}</FooterSocialPreview>}
+              {values.shopeeUrl && <FooterSocialPreview label="Shopee">{values.shopeeIconUrl ? <img src={values.shopeeIconUrl} alt="" /> : <SocialEditIcon type="shopeeUrl" />}</FooterSocialPreview>}
+            </div>
           </div>
         </div>
       )}
       <div className="content-fields">
-        {Object.entries(values).filter(([key]) => key !== "productLinks" && key !== "policyLinks").map(([key, value]) => (
+        {Object.entries(values).filter(([key]) => !["productLinks", "policyLinks", "aboutLinks"].includes(key)).map(([key, value]) => (
           <Field key={key} label={labels[key] || socialFieldLabels[key] || key}>
             {key === "logoUrl" || key.endsWith("ImageUrl") ? (
               <div className="footer-logo-editor">
@@ -515,7 +526,7 @@ function WebsiteSectionManager({ section, title, description, labels }) {
                 <label className={`image-upload-button ${uploading ? "disabled" : ""}`}><span className="material-symbols-outlined">upload</span>{uploading ? "Đang tải…" : "Thay ảnh"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { uploadImage(event.target.files[0], key); event.target.value = ""; }} /></label>
                 <input value={value} placeholder="URL hình ảnh" onChange={(event) => setAll((current) => ({ ...current, [section]: { ...current[section], [key]: event.target.value } }))} />
               </div>
-            ) : ["facebookUrl", "tiktokUrl", "shopeeUrl"].includes(key) ? (
+            ) : ["facebookUrl", "instagramUrl", "tiktokUrl", "shopeeUrl"].includes(key) ? (
               <div className="footer-social-editor">
                 <div className="footer-social-icon-preview">{values[socialIconKeys[key]] ? <img src={values[socialIconKeys[key]]} alt="Icon" /> : <SocialEditIcon type={key} />}</div>
                 <div className="footer-social-inputs"><input value={value} placeholder="URL khi bấm icon" onChange={(event) => setAll((current) => ({ ...current, [section]: { ...current[section], [key]: event.target.value } }))} /><input value={values[socialIconKeys[key]] || ""} placeholder="URL hình icon (không bắt buộc)" onChange={(event) => setAll((current) => ({ ...current, [section]: { ...current[section], [socialIconKeys[key]]: event.target.value } }))} /></div>
@@ -548,6 +559,7 @@ function WebsiteSectionManager({ section, title, description, labels }) {
         {section === "footer" && <div className="footer-link-columns">
           <Field label={socialFieldLabels.productLinks}><LinkListEditor value={values.productLinks} onChange={(productLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, productLinks } }))} /></Field>
           <Field label={socialFieldLabels.policyLinks}><LinkListEditor value={values.policyLinks} onChange={(policyLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, policyLinks } }))} /></Field>
+          <Field label={socialFieldLabels.aboutLinks}><LinkListEditor value={values.aboutLinks} onChange={(aboutLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, aboutLinks } }))} /></Field>
         </div>}
       </div>
       <div className="section-save">

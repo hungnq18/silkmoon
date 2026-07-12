@@ -18,6 +18,28 @@
 }
 
 @layer components {
+  .input-underline {
+    @apply min-h-[48px] rounded-lg border border-slate-deep/25 bg-white px-4 py-3 text-slate-deep outline-none transition-all duration-200;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(28, 44, 88, 0.04);
+  }
+  .input-underline:hover {
+    @apply border-slate-deep/45;
+  }
+  .input-underline:focus {
+    @apply border-secondary ring-2 ring-secondary/20;
+    box-shadow: 0 4px 14px rgba(74, 144, 226, 0.1);
+  }
+  .input-underline::placeholder {
+    @apply text-on-surface-variant/45;
+  }
+  .input-underline:disabled {
+    @apply cursor-not-allowed bg-bone text-on-surface-variant/60;
+  }
+  .footer-dynamic-grid { grid-template-columns: 1fr; }
+  @media (min-width: 768px) {
+    .footer-dynamic-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  }
   .blog-filter { @apply px-4 py-2 rounded-full bg-bone text-sm text-slate-deep transition-colors; }
   .blog-filter.active { @apply bg-slate-deep text-white; }
   .old-blog-chip { @apply px-5 py-2.5 rounded-full text-sm font-semibold bg-[#F8F9FB] text-slate-deep transition-colors; }
@@ -54,6 +76,15 @@
   .blog-image-gallery { @apply grid grid-cols-2 md:grid-cols-3 gap-3 mb-14; }
   .blog-image-gallery img { @apply w-full h-48 md:h-64 object-cover rounded-lg; }
   .blog-image-gallery img:first-child { @apply col-span-2 row-span-2 h-full min-h-[400px]; }
+  .silkmoon-product { @apply max-w-5xl; }
+  .silkmoon-product .blog-detail-header { @apply mb-7; }
+  .silkmoon-product .blog-detail-cover { @apply mx-auto mb-0 max-h-[520px] rounded-t-lg; }
+  .silkmoon-product-document { @apply mx-auto max-w-4xl border-x border-b border-slate-deep/15 bg-white px-5 py-8 shadow-sm md:px-12 md:py-10; }
+  .silkmoon-product-document .blog-article-content { @apply max-w-none text-sm leading-relaxed md:text-base; }
+  .silkmoon-product-document .blog-article-content h2 { @apply mt-8 border-t border-slate-deep/10 pt-8 text-xl font-bold md:text-2xl; }
+  .silkmoon-product-document .blog-article-content h2:first-child { @apply mt-0 border-0 pt-0; }
+  .silkmoon-product-document .blog-article-content h3 { @apply mb-3 mt-6 text-lg font-bold text-slate-deep; }
+  .silkmoon-product-document .blog-article-content img { @apply my-6 max-h-[620px] w-full rounded-sm object-contain; }
   .glass-panel {
     background: rgba(252, 252, 249, 0.8);
     backdrop-filter: blur(12px);
@@ -78,4 +109,22 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+}
+@keyframes header-mega-menu-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header-mega-menu {
+  animation: header-mega-menu-in 180ms ease-out both;
+  transform-origin: top center;
+}
+
+@keyframes product-gallery-image-in {
+  from { opacity: 0.45; transform: scale(1.01); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.product-gallery-image {
+  animation: product-gallery-image-in 220ms ease-out both;
 }

@@ -5,6 +5,7 @@ import { Order, OrderDocument } from './schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ProductsService } from '../products/products.service';
+import { PayosService } from './payos.service';
 
 @Injectable()
 export class OrdersService {
@@ -12,6 +13,7 @@ export class OrdersService {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private readonly promotionsService: PromotionsService,
     private readonly productsService: ProductsService,
+    private readonly payosService: PayosService,
   ) {}
 
   private generateOrderNumber(): string {
@@ -57,6 +59,9 @@ export class OrdersService {
     }
 
     const total = Math.max(0, subtotal - discountAmount);
+    const payosOrderCode = dto.paymentMethod === 'payos'
+      ? Date.now() * 100 + Math.floor(Math.random() * 100)
+      : undefined;
 
     const order = await this.orderModel.create({
       ...dto,
@@ -67,7 +72,20 @@ export class OrdersService {
       orderNumber,
       paymentStatus: 'pending',
       orderStatus: 'pending',
+      payosOrderCode,
     });
+
+    let paymentLink: any = null;
+    if (dto.paymentMethod === 'payos') {
+      try {
+        paymentLink = await this.payosService.createPaymentLink(order.toObject(), payosOrderCode!);
+        order.payosPaymentLinkId = paymentLink.paymentLinkId;
+        await order.save();
+      } catch (error) {
+        await this.orderModel.findByIdAndDelete(order._id);
+        throw error;
+      }
+    }
 
     // Increment promo usage if a code was used
     if (dto.promoCode) {
@@ -94,6 +112,54 @@ export class OrdersService {
       phone: order.phone,
       address: order.address,
       city: order.city,
+      paymentStatus: order.paymentStatus,
+      checkoutUrl: paymentLink?.checkoutUrl || null,
+    };
+  }
+
+  async handlePayosWebhook(payload: any) {
+    let verified: any;
+    try {
+      verified = await this.payosService.verifyWebhook(payload);
+    } catch {
+      throw new BadRequestException('Chữ ký webhook PayOS không hợp lệ.');
+    }
+    const order = await this.orderModel.findOne({ payosOrderCode: verified.orderCode });
+
+    // payOS gửi giao dịch mẫu khi xác nhận webhook; vẫn cần trả 2xx.
+    if (!order) return { success: true };
+    if (order.paymentMethod !== 'payos' || order.total !== verified.amount) {
+      throw new BadRequestException('Thông tin thanh toán PayOS không khớp với đơn hàng.');
+    }
+
+    if (payload.success === true && verified.code === '00' && order.paymentStatus !== 'paid') {
+      order.paymentStatus = 'paid';
+      order.payosPaymentLinkId = verified.paymentLinkId;
+      order.payosReference = verified.reference;
+      await order.save();
+    }
+    return { success: true };
+  }
+
+  async syncPayosPaymentStatus(id: string) {
+    const isObjectId = /^[a-f\d]{24}$/i.test(id);
+    const order = await this.orderModel.findOne(isObjectId ? { _id: id } : { orderNumber: id.toUpperCase() });
+    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+
+    if (order.paymentMethod === 'payos' && order.payosOrderCode && order.paymentStatus !== 'paid') {
+      const payment = await this.payosService.getPayment(order.payosOrderCode);
+      if (payment.status === 'PAID' && payment.amountPaid >= order.total) order.paymentStatus = 'paid';
+      if (['CANCELLED', 'EXPIRED', 'FAILED'].includes(payment.status)) order.paymentStatus = 'failed';
+      if (order.isModified('paymentStatus')) await order.save();
+    }
+
+    return {
+      orderNumber: order.orderNumber,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      orderStatus: order.orderStatus,
+      total: order.total,
+      fullName: order.fullName,
     };
   }
 

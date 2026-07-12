@@ -37,6 +37,12 @@ export class User {
     default: [],
   })
   cart: { productId: string; quantity: number }[];
+
+  @Prop({ select: false })
+  resetPasswordTokenHash?: string;
+
+  @Prop({ select: false })
+  resetPasswordExpiresAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

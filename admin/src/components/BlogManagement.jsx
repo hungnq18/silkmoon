@@ -112,7 +112,7 @@ export function BlogPostsManager() {
                   {categories.find((c) => c._id === post.categoryId)?.name ||
                     "—"}
                 </td>
-                <td><span className="category-type">{{ standard: "Tiêu chuẩn", featured: "Nổi bật", editorial: "Tạp chí", guide: "Hướng dẫn", split: "Chia đôi ảnh", gallery: "Thư viện ảnh" }[post.layout || "standard"]}</span></td>
+                <td><span className="category-type">{{ standard: "Tiêu chuẩn", featured: "Nổi bật", editorial: "Tạp chí", guide: "Hướng dẫn", split: "Chia đôi ảnh", gallery: "Thư viện ảnh", "silkmoon-product": "Sản phẩm Silkmoon" }[post.layout || "standard"]}</span></td>
                 <td>
                   <span
                     className={`status ${post.status === "published" ? "completed" : ""}`}
@@ -197,6 +197,7 @@ export function BlogPostsManager() {
                   <option value="guide">Hướng dẫn — từng bước</option>
                   <option value="split">Chia đôi — ảnh và nội dung</option>
                   <option value="gallery">Thư viện — nhiều ảnh</option>
+                  <option value="silkmoon-product">Sản phẩm Silkmoon — tài liệu nhiều phần</option>
                 </select>
               </label>
               {form.layout !== "standard" && <div className="blog-cover-field full"><div><strong>Ảnh bìa theo layout</strong><span>JPG, PNG hoặc WebP, tối đa 8 MB.</span></div>{form.featuredImage && <img src={form.featuredImage} alt="Ảnh bìa"/>}<label className="image-upload-button">{uploading ? "Đang tải…" : form.featuredImage ? "Thay ảnh bìa" : "Tải ảnh bìa"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e)=>{uploadCover(e.target.files[0]);e.target.value=""}}/></label></div>}

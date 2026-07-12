@@ -8,6 +8,20 @@ import QRCode from 'react-qr-code';
 // ── Mode: 'ai' = AI-generated image (AR Try on), 'ar' = Realtime WebXR
 const MODES = { AI: 'ai', AR: 'ar' };
 
+const safeArErrorMessage = (error) => {
+  const message = String(error?.message || '').toLowerCase();
+  if (message.includes('too many') || message.includes('quota') || message.includes('429') || message.includes('đang bận')) {
+    return 'Hệ thống tạo ảnh đang bận. Anh/chị vui lòng thử lại sau ít phút.';
+  }
+  if (message.includes('network') || message.includes('failed to fetch')) {
+    return 'Kết nối mạng chưa ổn định. Anh/chị vui lòng kiểm tra kết nối và thử lại.';
+  }
+  if (message.includes('image') || message.includes('ảnh')) {
+    return 'Không thể xử lý ảnh này. Anh/chị vui lòng chọn ảnh JPG, PNG hoặc WebP khác.';
+  }
+  return 'Không thể tạo ảnh lúc này. Anh/chị vui lòng thử lại sau.';
+};
+
 export default function ARRoomPreview({ isOpen, onClose, productColor, productImage }) {
   const [roomImg, setRoomImg]               = useState(null);
   const [roomImgSrc, setRoomImgSrc]         = useState(null); // original base64 for AI
@@ -19,6 +33,8 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
   const [isGenerating, setIsGenerating]     = useState(false);
   const [aiError, setAiError]               = useState(null);
   const [retryCountdown, setRetryCountdown] = useState(null);
+  const [shareUrl, setShareUrl]             = useState('');
+  const [shareCopied, setShareCopied]       = useState(false);
 
   // ── Load image file ──────────────────────────────────────
   const loadImage = (file) => {
@@ -40,7 +56,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
 
   // ── AI mode: generate image ──────────────────────────────
   const runGenerate = async (overrideSrc, targetFabricId = activeFabricId) => {
-    const srcToUse = overrideSrc || roomImgSrc;
+    const srcToUse = typeof overrideSrc === 'string' ? overrideSrc : roomImgSrc;
     if (!srcToUse) return;
     setIsGenerating(true);
     setAiError(null);
@@ -87,8 +103,8 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
           }
         }, 1000);
       } else {
-        console.error('[AR] Generate failed:', e);
-        setAiError('Không thể tạo ảnh. Kiểm tra lại API Token hoặc log server.');
+        console.error('[AR] Generate failed');
+        setAiError(safeArErrorMessage(e));
       }
     } finally {
       setIsGenerating(false);
@@ -101,6 +117,25 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
       setAiImage(null);
       setAiError(null);
       loadImage(e.target.files[0]);
+    }
+  };
+
+  const downloadAiImage = async () => {
+    if (!aiImage) return;
+    try {
+      const response = await fetch(aiImage);
+      if (!response.ok) throw new Error('Không thể tải ảnh');
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `Silkmoon_AR_${fabric.label.replace(/\s+/g, '_')}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      alert('Không thể tải ảnh xuống. Vui lòng thử lại.');
     }
   };
 
@@ -192,25 +227,17 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
               {aiImage && !isGenerating && !aiError && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 z-30 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-slate-deep/10 px-1.5 py-1.5">
                   <button
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = aiImage;
-                      link.download = `Slikmoon_AR_${fabric.label}.jpg`;
-                      link.click();
-                    }}
+                    onClick={downloadAiImage}
                     className="px-4 py-1.5 text-[13px] font-medium text-slate-deep hover:bg-slate-deep/5 rounded-full transition-colors flex items-center gap-1.5"
                   >
-                    Lưu ảnh
+                    <span className="material-symbols-outlined text-[16px]">download</span>
+                    Tải ảnh
                   </button>
                   <div className="w-[1px] h-4 bg-slate-deep/20 mx-1" />
                   <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(aiImage);
-                        alert('Đã sao chép đường dẫn (link) ảnh vào khay nhớ tạm!');
-                      } catch (err) {
-                        alert('Lỗi khi sao chép link, bạn vui lòng thử lại nhé!');
-                      }
+                    onClick={() => {
+                      setShareCopied(false);
+                      setShareUrl(`${window.location.origin}/ar-share?image=${encodeURIComponent(aiImage)}&fabric=${encodeURIComponent(fabric.label)}`);
                     }}
                     className="px-4 py-1.5 text-[13px] font-medium text-slate-deep hover:bg-slate-deep/5 rounded-full transition-colors flex items-center gap-1.5"
                   >
@@ -275,7 +302,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
                       <span className="material-symbols-outlined text-3xl text-red-400 mb-3">error_outline</span>
                       <p className="text-sm text-on-surface-variant text-center px-4">{aiError}</p>
                       <button
-                        onClick={runGenerate}
+                        onClick={() => runGenerate()}
                         className="mt-4 px-4 py-2 bg-slate-deep text-linen-white text-[11px] font-label-caps uppercase tracking-wider hover:bg-slate-deep/80 transition-colors"
                       >
                         Thử lại
@@ -327,6 +354,15 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
 
       {/* Hidden global file input for uploads from anywhere (Sidebar or Dropzone) */}
       <input id="roomUploadInput" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+
+      {shareUrl && (
+        <div className="fixed inset-0 z-[260] bg-slate-deep/55 backdrop-blur-sm flex items-center justify-center p-5" onMouseDown={(event) => event.target === event.currentTarget && setShareUrl('')}>
+          <div className="w-full max-w-lg rounded-2xl bg-linen-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4"><div><p className="font-headline-sm text-xl text-slate-deep">Chia sẻ ảnh AR</p><p className="mt-1 text-sm text-on-surface-variant">Sao chép link Silkmoon bên dưới để gửi cho bạn bè.</p></div><button onClick={() => setShareUrl('')} className="material-symbols-outlined text-slate-deep/60 hover:text-slate-deep">close</button></div>
+            <div className="mt-5 flex items-center gap-2 rounded-lg border border-slate-deep/15 bg-white p-2"><input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="min-w-0 flex-1 bg-transparent px-2 text-sm text-slate-deep outline-none" /><button onClick={async () => { try { await navigator.clipboard.writeText(shareUrl); setShareCopied(true); } catch { setShareCopied(false); } }} className="shrink-0 rounded-md bg-slate-deep px-4 py-2 text-xs font-semibold text-white">{shareCopied ? 'Đã sao chép' : 'Sao chép'}</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

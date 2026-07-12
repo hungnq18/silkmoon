@@ -105,9 +105,9 @@ export default function Showroom() {
       </section>
 
       {/* --- SHOWROOM LOCATIONS --- */}
-      <section className="py-20 md:py-28 px-margin-mobile md:px-margin-desktop">
+      <section className="px-margin-mobile py-8 md:px-margin-desktop md:py-10">
         <div className="max-w-container-max mx-auto">
-          <div className="text-center mb-16">
+          <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display-md font-bold text-slate-deep mb-4">
               Khám Phá Showroom Của Chúng Tôi
             </h2>
@@ -154,7 +154,7 @@ export default function Showroom() {
       </section>
 
       {/* --- PERKS SECTION --- */}
-      <section className="bg-slate-deep py-20 text-white">
+      <section className="bg-slate-deep py-10 text-white">
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-center lg:text-left">
             {PERKS.map((perk, idx) => (
@@ -173,7 +173,7 @@ export default function Showroom() {
       </section>
 
       {/* --- BOOKING SECTION --- */}
-      <section id="booking" className="py-20 md:py-28 px-margin-mobile md:px-margin-desktop relative">
+      <section id="booking" className="relative px-margin-mobile py-8 md:px-margin-desktop md:py-10">
         <div className="absolute inset-0 bg-bone/30 z-0"></div>
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden relative z-10 flex flex-col md:flex-row">
           

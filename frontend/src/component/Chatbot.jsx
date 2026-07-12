@@ -66,7 +66,8 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
-      const response = await assistantApi.chat(userMessage.text);
+      const history = messages.slice(-10).map((item) => ({ role: item.sender === 'bot' ? 'assistant' : 'user', text: item.text }));
+      const response = await assistantApi.chat(userMessage.text, history);
       setMessages((prev) => [...prev, { id: Date.now() + 1, sender: 'bot', text: response.message }]);
     } catch {
       setMessages((prev) => [...prev, { id: Date.now() + 1, sender: 'bot', text: config?.chatbot?.fallbackResponse || 'Xin lỗi, trợ lý đang bận. Vui lòng thử lại sau.' }]);

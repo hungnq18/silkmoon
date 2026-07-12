@@ -46,10 +46,10 @@ export default function About() {
           {/* Content Right */}
           <div className="order-2 md:order-2">
             <span className="text-secondary font-bold text-sm tracking-widest uppercase mb-4 block">{content.missionEyebrow}</span>
-            <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-8 text-slate-deep font-light leading-tight">
+            <h2 className="mb-5 font-display-lg text-display-lg-mobile font-light leading-tight text-slate-deep md:text-display-lg">
               {content.missionTitle}
             </h2>
-            <div className="font-body-lg text-slate-deep/80 space-y-6 leading-relaxed mb-10">
+            <div className="mb-6 space-y-4 font-body-lg leading-relaxed text-slate-deep/80">
               <p>{content.missionBody1}</p>
               <p>{content.missionBody2}</p>
             </div>
@@ -60,7 +60,7 @@ export default function About() {
       {/* 3. Giá Trị Cốt Lõi (Core Values) */}
       <section className="py-section-gap bg-bone px-margin-mobile md:px-margin-desktop w-full">
         <div className="max-w-container-max mx-auto">
-          <div className="text-center mb-16">
+          <div className="mb-8 text-center">
             <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep">{content.valuesTitle}</h2>
             <p className="mt-4 font-body-md text-slate-deep/70 max-w-2xl mx-auto">
               {content.valuesSubtitle}

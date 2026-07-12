@@ -71,7 +71,7 @@ export default {
       spacing: {
         "container-max": "1280px",
         "stack-sm": "8px",
-        "section-gap": "120px",
+        "section-gap": "48px",
         "margin-desktop": "64px",
         "gutter": "24px",
         "margin-mobile": "16px",

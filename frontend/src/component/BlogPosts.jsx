@@ -67,10 +67,10 @@ export default function BlogPosts() {
   };
 
   return (
-    <section className="py-20 px-margin-mobile md:px-margin-desktop bg-white w-full">
+    <section className="w-full bg-white px-margin-mobile py-8 md:px-margin-desktop md:py-10">
       <div className="max-w-container-max mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-end mb-8">
+        <div className="mb-6 flex items-end justify-between">
           <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep font-bold">
             Blog posts
           </h2>
@@ -80,7 +80,7 @@ export default function BlogPosts() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-10">
+        <div className="mb-6 flex flex-wrap gap-3">
           <button 
             onClick={() => setActiveCategory('Tất cả')}
             className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors ${

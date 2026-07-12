@@ -15,6 +15,7 @@ const allowed = new Set([
   "a",
   "div",
   "center",
+  "img",
 ]);
 function SafeArticle({ html }) {
   const nodes = useMemo(() => {
@@ -34,6 +35,15 @@ function SafeArticle({ html }) {
           href,
           target: "_blank",
           rel: "noopener noreferrer",
+        });
+      }
+      if (tag === "img") {
+        const src = n.getAttribute("src") || "";
+        if (!src.startsWith("https://")) return null;
+        Object.assign(props, {
+          src,
+          alt: n.getAttribute("alt") || "Hình ảnh bài viết Silkmoon",
+          loading: "lazy",
         });
       }
       return createElement(tag, props, children);
@@ -135,6 +145,17 @@ export function GalleryLayout({ post, category }) {
     </article>
   );
 }
+export function SilkmoonProductLayout({ post, category }) {
+  return (
+    <article className="blog-layout silkmoon-product">
+      <Header post={post} category={category} />
+      <Cover post={post} />
+      <div className="silkmoon-product-document">
+        <SafeArticle html={post.content} />
+      </div>
+    </article>
+  );
+}
 export default function BlogLayout({ post, category }) {
   const layouts = {
     standard: StandardLayout,
@@ -143,6 +164,7 @@ export default function BlogLayout({ post, category }) {
     guide: GuideLayout,
     split: SplitLayout,
     gallery: GalleryLayout,
+    "silkmoon-product": SilkmoonProductLayout,
   };
   const Component = layouts[post.layout] || StandardLayout;
   return <Component post={post} category={category} />;

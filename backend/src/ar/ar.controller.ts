@@ -111,7 +111,8 @@ export class ARController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('upload')
   async uploadImage(@Body() body: { image: string }) {
     if (!body.image) throw new HttpException('Missing image data', HttpStatus.BAD_REQUEST);
@@ -174,7 +175,7 @@ export class ARController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 2, ttl: 60000 } }) // 2 requests per minute per IP
   @Post('generate-preview')
   async generatePreview(@Body() body: { imageUrl?: string; image?: string; color: string; fabricName?: string }) {
@@ -206,14 +207,27 @@ export class ARController {
 
       return { success: true, image: resultUrl }; // Return Cloudinary URL
     } catch (error) {
-      if (error.message?.startsWith('QUOTA_EXCEEDED') || (error as any).code === 'QUOTA_EXCEEDED') {
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.startsWith('QUOTA_EXCEEDED') || (error as any).code === 'QUOTA_EXCEEDED') {
         throw new HttpException(
-          { success: false, error: 'quota_exceeded', message: 'AI đang bận. Vui lòng đợi ~60 giây và thử lại.' },
+          { success: false, error: 'quota_exceeded', message: 'Hệ thống tạo ảnh đang bận. Anh/chị vui lòng thử lại sau ít phút.' },
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
+      if (errorMessage.startsWith('BILLING_REQUIRED')) {
+        throw new HttpException(
+          { success: false, error: 'service_unavailable', message: 'Tính năng tạo ảnh đang tạm thời chưa khả dụng. Anh/chị vui lòng thử lại sau.' },
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      if (errorMessage.startsWith('API_KEY_INVALID')) {
+        throw new HttpException(
+          { success: false, error: 'service_unavailable', message: 'Dịch vụ tạo ảnh đang được bảo trì. Anh/chị vui lòng quay lại sau.' },
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
       throw new HttpException(
-        { success: false, error: 'generate_failed', message: error.message || 'Failed to generate preview' },
+        { success: false, error: 'generate_failed', message: 'Không thể tạo ảnh lúc này. Anh/chị vui lòng thử lại với ảnh khác hoặc quay lại sau.' },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

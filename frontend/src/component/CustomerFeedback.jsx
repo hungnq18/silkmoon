@@ -27,8 +27,8 @@ export default function CustomerFeedback() {
   const allFeedbacks = [...feedbacks, ...feedbacks, ...feedbacks, ...feedbacks];
 
   return (
-    <section className="py-20 bg-bone w-full overflow-hidden">
-      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-16">
+    <section className="w-full overflow-hidden bg-bone py-8 md:py-10">
+      <div className="mx-auto mb-8 max-w-container-max px-margin-mobile md:px-margin-desktop">
         <h2 className="text-[32px] md:text-[44px] text-slate-deep text-center uppercase tracking-widest font-extrabold leading-tight">
           Khách Hàng Nói Gì Về <br className="md:hidden" /><span className="text-sage-haze font-black text-[36px] md:text-[52px]">SILKMOON</span>
         </h2>

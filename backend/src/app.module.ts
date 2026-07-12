@@ -20,12 +20,14 @@ import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AdminModule } from './admin/admin.module';
 import { BlogModule } from './blog/blog.module';
+import { join } from 'path';
 
 @Module({
   imports: [
     // Config module - loads .env
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: join(__dirname, '..', '.env'),
     }),
 
     // Rate Limiting globally (default to 10 requests per 10 seconds per IP, can be overridden)

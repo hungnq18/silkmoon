@@ -24,8 +24,14 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const data = await authApi.login(credentials);
-    localStorage.setItem('token', data.accessToken);
-    // Usually backend returns user object, or we need to fetch profile
+    localStorage.setItem('token', data.access_token);
+    const profile = await authApi.getProfile();
+    setUser(profile);
+  };
+
+  const register = async (information) => {
+    const data = await authApi.register(information);
+    localStorage.setItem('token', data.access_token);
     const profile = await authApi.getProfile();
     setUser(profile);
   };
@@ -36,7 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,10 +10,10 @@ export class AssistantController {
   @Post('chat')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async chat(@Body('message') message: string) {
+  async chat(@Body('message') message: string, @Body('history') history: Array<{ role: string; text: string }> = []) {
     const setting = await this.settingsService.findByKey('assistant_config');
     const config = setting?.value?.chatbot || {};
     if (config.enabled === false) throw new ServiceUnavailableException('Chatbot đang tạm tắt');
-    return this.arService.chat(message, config.systemPrompt);
+    return this.arService.chat(message, config.systemPrompt, Array.isArray(history) ? history : []);
   }
 }

@@ -11,6 +11,7 @@ const apiRequest = async (path, options = {}) => {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: getHeaders(),
+    cache: options.cache || "no-store",
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
@@ -31,7 +32,7 @@ export const adminApi = {
   createPromotion: (data) => apiRequest("/promotions", { method: "POST", body: JSON.stringify(data) }),
   updatePromotion: (id,data) => apiRequest(`/promotions/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deletePromotion: (id) => apiRequest(`/promotions/${id}`, { method: "DELETE" }),
-  getSettings: () => apiRequest("/settings"),
+  getSettings: () => apiRequest(`/settings?_=${Date.now()}`, { cache: "no-store" }),
   saveSetting: (key,data) => apiRequest(`/settings/${key}`, { method: "POST", body: JSON.stringify(data) }),
   getAnalytics: () => apiRequest("/admin/analytics"),
   getAnalyticsReport: () => apiRequest("/admin/analytics/report"),

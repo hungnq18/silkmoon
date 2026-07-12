@@ -18,7 +18,7 @@ export default function Categories() {
   if (!categories.length) return null;
 
   return (
-    <section className="py-section-gap px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
+    <section className="w-full max-w-container-max mx-auto px-margin-mobile pb-6 pt-section-gap md:px-margin-desktop md:pb-10">
       <div className="flex justify-between items-end mb-stack-lg">
         <h2 className="font-headline-md text-headline-sm md:text-headline-md text-slate-deep">Danh Mục Nổi Bật</h2>
         <Link className="font-label-caps text-label-caps text-slate-deep border-b border-slate-deep pb-1 hover:opacity-85 transition-opacity" to="/shop">XEM TẤT CẢ</Link>

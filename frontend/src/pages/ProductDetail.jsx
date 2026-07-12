@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { analyticsApi, productsApi, settingsApi } from '../services/api';
 import ProductImageGallery from '../component/ProductImageGallery';
 import ProductInfoPanel from '../component/ProductInfoPanel';
@@ -64,6 +64,13 @@ export default function ProductDetail() {
     <div className="bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Detail Section */}
       <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-24 md:pt-32">
+        <nav aria-label="Đường dẫn sản phẩm" className="no-scrollbar col-span-full -mb-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm text-slate-deep/70 lg:hidden">
+          <Link to="/" className="shrink-0 transition-colors hover:text-slate-deep">Trang chủ</Link>
+          <span className="material-symbols-outlined shrink-0 text-[18px]">chevron_right</span>
+          <Link to={`/shop?category=${encodeURIComponent(product.category || '')}`} className="shrink-0 transition-colors hover:text-slate-deep">{product.category || 'Sản phẩm'}</Link>
+          <span className="material-symbols-outlined shrink-0 text-[18px]">chevron_right</span>
+          <span className="truncate font-semibold text-slate-deep">{product.name}</span>
+        </nav>
         {/* Left Column: Image Gallery */}
         <div className="lg:col-span-7">
           <ProductImageGallery images={galleryImages} />
@@ -81,7 +88,7 @@ export default function ProductDetail() {
       </section>
 
       {/* Tabs description section */}
-      <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-section-gap border-t border-slate-deep/5 mt-10">
+      <section className="mx-auto mt-6 max-w-container-max border-t border-slate-deep/5 px-margin-mobile py-8 md:px-margin-desktop md:py-section-gap">
         <ProductTabs product={product} />
       </section>
 

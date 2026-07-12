@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useCart } from '../context/CartContext';
+import { productsApi } from '../services/api';
 
 export default function OrderSummary() {
+  const { cart } = useCart();
   const [items, setItems] = useState([]);
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -10,29 +13,19 @@ export default function OrderSummary() {
   });
 
   useEffect(() => {
-    // Read cart items
-    const rawCart = localStorage.getItem('silkmoon_cart');
-    const cartItems = rawCart ? JSON.parse(rawCart) : [];
-    setItems(cartItems);
+    let active = true;
+    Promise.all((cart || []).map(async (item) => {
+      const product = await productsApi.getById(item.productId);
+      return { ...item, id: item.productId, name: product.name, price: product.price, image: product.images?.[0] || '', spec: product.category || '' };
+    })).then((nextItems) => { if (active) setItems(nextItems); }).catch(() => { if (active) setItems([]); });
 
     // Read calculated totals from cart page
     const rawTotals = localStorage.getItem('silkmoon_checkout_totals');
     if (rawTotals) {
       setTotals(JSON.parse(rawTotals));
-    } else {
-      const sub = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      const savedDiscount = localStorage.getItem('silkmoon_discount');
-      const discountPct = savedDiscount ? Number(savedDiscount) : 0;
-      const discAmt = Math.round(sub * (discountPct / 100));
-      const tot = sub - discAmt;
-      setTotals({
-        subtotal: sub,
-        discountAmount: discAmt,
-        discountPercent: discountPct,
-        total: tot
-      });
     }
-  }, []);
+    return () => { active = false; };
+  }, [cart]);
 
   return (
     <aside className="select-none">
