@@ -27,7 +27,10 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: true, // Allow all origins for the AR relay to work across different domains (localtunnel etc)
+    origin: [
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+    ].filter((origin): origin is string => Boolean(origin)),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

@@ -7,6 +7,7 @@ import {
   PromotionDocument,
 } from '../promotions/schemas/promotion.schema';
 import { Review, ReviewDocument } from '../reviews/schemas/review.schema';
+import { Category, CategoryDocument } from '../categories/schemas/category.schema';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -17,12 +18,33 @@ export class SeedService implements OnApplicationBootstrap {
     @InjectModel(Promotion.name)
     private promotionModel: Model<PromotionDocument>,
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
+    @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
   ) {}
 
   async onApplicationBootstrap() {
+    await this.seedCategories();
     await this.seedProducts();
     await this.seedPromotions();
     await this.seedReviews();
+  }
+
+  private async seedCategories() {
+    const categories = [
+      { name: 'Chăn Ga Gối', slug: 'chan-ga-goi', description: 'Êm ái từ cái chạm đầu tiên', isFeatured: true, coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDi68zqwIVtcVZ9xD7d69hOdwmxPOd9F-qjyv64Qs8OaR5v2NEmeJ3KlmfQVRBiEn5mYfrzSBhPlXlWbCVLEWyFYndHW9Vd0l8LZE1oOy7wvBAv7u8A8U5GMRa_E5ge9RBIYonFsgXtFuVYLS84ytjRrfY7vUwj4R5wllGGcle5MSdrOZNIAXTPxdfeV6NZCB5eEx7Gf9rkLYWRZmHC1Vw39Eyno7Ah-gHx2dgET1FvFhUJmoP7y2ELlfns40xjvdh-tklHUH_Pf8Y' },
+      { name: 'Chăn', slug: 'chan', description: 'Ôm trọn từng giấc êm', isFeatured: true, coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBJbhsTCwF4xH7z1WLMrs5fPQu5V4ZbldfAuJIgsFgzDHlmSxs5dQeKRUQVt3VZCB9U8spht-Jbzg44VON0lkHD7kWAJogxqL13ZX8Qevx50d7U9in2bKbZcKiG1U6pOGKYCIh11lZgF6HMeCeRHe3xeIy6M38G9cuKv1w8ZCdUBOjrqyhDNy_Xgo4l1lnaa31iwwjHvwCyIavTvcTdohgfmrFw0vDOJio96HieIuSK-jqXpZojQQyisDWzYKy9N4afpwQLh4IgREY' },
+      { name: 'Gối', slug: 'goi', description: 'Nâng niu làn da & mái tóc', isFeatured: true, coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGTC7hToMtDZJJIiLTwC-XhTakzhpN03VH61HzaCZRV8Ob4RmRu5-mbRCpSX2FnqacZH7R0SNG4Sx8zZYj7jHC_j8ovC3vsTTCDx2FNS4Lh2cOHYEsQKa8fAcxZ7P36eeVmg0K6PQWdGVmXlAZ3CoA19rWu_qOJGKrRAWJrjdU7FN87d3BvSVtiH6KkZUv_b8OXAifptf1u_m35-Xfo1hi0m0mxNcuMO8kuoR51mtGDDsUzLsdbGvNq2bIMtYO_9Ih0vDV85ibUlU' },
+      { name: 'Đồ Ngủ', slug: 'do-ngu', description: 'Tự do trong từng chuyển động, nhẹ nhàng trong từng hơi thở.', isFeatured: true, coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD-9vCtOEhZSSVUnVCp_QcJsw1QVKcajQqAak1kCppQWN4vJQyabIVs1eaRPn7wlyp81-NdfBJONHyOrIHIWVHAvHVCzPKkv7F-ybmJdueIIPnBeFFPB0gyVNT8vaCA44j_5YnSdkf1Ql2JLtww9HJa9_rplcdByntqvuiNcODKYT6qxHqMMSqiLN-_QszLwCb4mazPwmEOLej58npNchvkdXWErBWdgkflbHm99vq1eu9EyPtWufwpZ8ygZwsrrfDCbDnEzlh2fxM' },
+      { name: 'Phụ Kiện', slug: 'phu-kien', description: 'Phụ kiện dành cho phòng ngủ và sản phẩm Silkmoon.', isFeatured: false, coverImage: '' },
+    ];
+
+    await this.categoryModel.bulkWrite(categories.map(category => ({
+      updateOne: {
+        filter: { slug: category.slug },
+        update: { $set: { ...category, categoryType: 'product', isActive: true } },
+        upsert: true,
+      },
+    })));
+    this.logger.log(`Seeded ${categories.length} product categories`);
   }
 
   private async seedProducts() {

@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +15,25 @@ export class UsersService {
     return newUser.save();
   }
 
+  async createByAdmin(data: CreateUserDto) {
+    const email = data.email.trim().toLowerCase();
+    if (await this.userModel.exists({ email })) {
+      throw new BadRequestException('Email đã được sử dụng');
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    const user = await this.userModel.create({
+      email,
+      passwordHash,
+      fullName: data.fullName.trim(),
+      phone: data.phone?.trim() || '',
+      role: data.role,
+    });
+
+    const { passwordHash: _passwordHash, ...result } = user.toObject();
+    return result;
+  }
+
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).exec();
   }
@@ -20,12 +42,27 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
-  async findAll() {
-    return this.userModel.find().select('-passwordHash').exec();
+  async findAll(query: { page?: string; limit?: string; search?: string; role?: string } = {}) {
+    const pageNum = Math.max(1, parseInt(query.page || '1', 10));
+    const limitNum = Math.max(1, parseInt(query.limit || '20', 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter: any = {};
+    if (query.search?.trim()) filter.$text = { $search: query.search.trim() };
+    if (query.role) filter.role = query.role;
+    const [items, total] = await Promise.all([
+      this.userModel.find(filter).select('-passwordHash').skip(skip).limit(limitNum).exec(),
+      this.userModel.countDocuments(filter),
+    ]);
+
+    return { items, total, page: pageNum, totalPages: Math.ceil(total / limitNum) };
   }
 
-  async update(id: string, updateData: Partial<User>) {
-    return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).select('-passwordHash').exec();
+  async update(id: string, updateData: UpdateUserDto) {
+    const { password, ...fields } = updateData;
+    const changes: Partial<User> = { ...fields };
+    if (password) changes.passwordHash = await bcrypt.hash(password, 10);
+    return this.userModel.findByIdAndUpdate(id, changes, { returnDocument: 'after' }).select('-passwordHash').exec();
   }
 
   async remove(id: string) {
@@ -38,7 +75,7 @@ export class UsersService {
   }
 
   async updateCart(id: string, cart: { productId: string; quantity: number }[]) {
-    return this.userModel.findByIdAndUpdate(id, { cart }, { new: true }).select('cart').exec();
+    return this.userModel.findByIdAndUpdate(id, { cart }, { returnDocument: 'after' }).select('cart').exec();
   }
 }
 

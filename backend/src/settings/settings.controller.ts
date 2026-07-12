@@ -6,7 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 
-@Controller('api/v1/settings')
+@Controller('settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 

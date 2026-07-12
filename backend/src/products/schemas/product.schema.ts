@@ -20,6 +20,9 @@ class ColorOption {
 
   @Prop({ required: true })
   label: string;
+
+  @Prop({ type: [String], default: [] })
+  images: string[];
 }
 
 class RatingInfo {
@@ -32,6 +35,9 @@ class RatingInfo {
 
 @Schema({ timestamps: true })
 export class Product {
+  @Prop({ unique: true, sparse: true, trim: true, uppercase: true })
+  sku?: string;
+
   @Prop({ required: true })
   name: string;
 
@@ -43,9 +49,22 @@ export class Product {
 
   @Prop({ required: true, min: 0 })
   price: number;
+  @Prop({ default: 0, min: 0 }) costPrice: number;
 
   @Prop({ default: 0 })
   embroideryPrice: number;
+
+  @Prop({ default: false })
+  allowEmbroidery: boolean;
+
+  @Prop({ default: 12, min: 1, max: 50 })
+  embroideryMaxLength: number;
+
+  @Prop({ default: false })
+  allowCustomSize: boolean;
+
+  @Prop({ default: 0, min: 0 })
+  customSizePrice: number;
 
   @Prop({ required: true })
   material: string;
@@ -76,3 +95,8 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ isBestSeller: 1, 'ratings.count': -1 });
+ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ name: 'text', description: 'text', material: 'text' });

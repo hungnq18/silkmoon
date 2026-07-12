@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { productsApi } from '../services/api';
+import { analyticsApi, productsApi, settingsApi } from '../services/api';
 import ProductImageGallery from '../component/ProductImageGallery';
 import ProductInfoPanel from '../component/ProductInfoPanel';
 import ProductTabs from '../component/ProductTabs';
@@ -23,12 +23,18 @@ export default function ProductDetail() {
   const [isAROpen, setIsAROpen] = useState(false);
   const [activeColorLabel, setActiveColorLabel] = useState('');
   const [activeColorId, setActiveColorId] = useState('champagne'); // default for AR fallback
+  const [arEnabled, setArEnabled] = useState(true);
+
+  useEffect(() => {
+    settingsApi.get('assistant_config').then((row) => setArEnabled(row?.value?.ar?.enabled !== false)).catch(() => null);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     productsApi.getById(id || 'mulberry-silk-bedding')
       .then((data) => {
         setProduct(data);
+        analyticsApi.track({ type: 'product_view', path: window.location.pathname, entityId: data._id, label: data.name });
         if (data.colors?.length > 0) {
           setActiveColorLabel(data.colors[0].label);
           setActiveColorId(data.colors[0].id);
@@ -38,9 +44,9 @@ export default function ProductDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleColorChange = (colorLabel) => {
-    setActiveColorLabel(colorLabel);
-    setActiveColorId(colorLabel.split(' ')[0].toLowerCase());
+  const handleColorChange = (color) => {
+    setActiveColorLabel(color.label);
+    setActiveColorId(color.id);
   };
 
   if (loading) {
@@ -51,28 +57,32 @@ export default function ProductDetail() {
     return <div className="min-h-screen flex items-center justify-center bg-linen-white text-slate-deep">Sản phẩm không tồn tại.</div>;
   }
 
+  const activeColor = product.colors?.find((color) => color.id === activeColorId);
+  const galleryImages = activeColor?.images?.length ? activeColor.images : (product.images || []);
+
   return (
     <div className="bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Detail Section */}
       <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-24 md:pt-32">
         {/* Left Column: Image Gallery */}
         <div className="lg:col-span-7">
-          <ProductImageGallery images={product.images || []} />
+          <ProductImageGallery images={galleryImages} />
         </div>
 
         {/* Right Column: Selections and Details */}
         <div className="lg:col-span-5">
           <ProductInfoPanel
             product={product}
-            onOpenAR={() => setIsAROpen(true)}
+            onOpenAR={() => { setIsAROpen(true); analyticsApi.track({ type: 'ar_open', path: window.location.pathname, entityId: product._id, label: product.name }); }}
             onColorChange={handleColorChange}
+            arEnabled={arEnabled}
           />
         </div>
       </section>
 
       {/* Tabs description section */}
       <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-section-gap border-t border-slate-deep/5 mt-10">
-        <ProductTabs />
+        <ProductTabs product={product} />
       </section>
 
       {/* Related Products Grid */}
@@ -82,12 +92,12 @@ export default function ProductDetail() {
       <ProductReviews productId={product._id || product.id} />
 
       {/* AR Room Preview */}
-      <ARRoomPreview
+      {arEnabled && <ARRoomPreview
         isOpen={isAROpen}
         onClose={() => setIsAROpen(false)}
         productColor={activeColorId}
-        productImage={PRODUCT_IMAGES[activeColorId] || PRODUCT_IMAGES.champagne}
-      />
+        productImage={activeColor?.images?.[0] || PRODUCT_IMAGES[activeColorId] || product.images?.[0] || PRODUCT_IMAGES.champagne}
+      />}
     </div>
   );
 }

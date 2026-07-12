@@ -1,7 +1,10 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { settingsApi } from '../services/api';
 
 export default function About() {
+  const [content, setContent] = useState(null);
+  useEffect(() => { settingsApi.get('website_content').then((setting) => setContent(setting?.value?.about || null)).catch(() => setContent(null)); }, []);
+  if (!content) return null;
   return (
     <div className="w-full bg-linen-white text-slate-deep">
       {/* 1. Hero Banner */}
@@ -9,8 +12,8 @@ export default function About() {
         {/* Background Image */}
         <div className="absolute inset-0 w-full h-full">
           <img 
-            src="https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1920&q=80" 
-            alt="Nghệ thuật của sự nghỉ ngơi" 
+            src={content.heroImageUrl}
+            alt={content.heroTitle}
             className="w-full h-full object-cover"
           />
           {/* Overlay to ensure text readability */}
@@ -20,10 +23,10 @@ export default function About() {
         {/* Content */}
         <div className="relative z-10 text-center px-margin-mobile md:px-margin-desktop max-w-3xl mx-auto mt-20 md:mt-0">
           <h1 className="font-display-lg text-display-lg-mobile md:text-[56px] leading-tight text-linen-white mb-6">
-            Nghệ Thuật Của Sự Nghỉ Ngơi
+            {content.heroTitle}
           </h1>
           <p className="font-body-lg text-body-lg-mobile md:text-body-lg text-linen-white/90">
-            Khám phá hành trình SILKMOON mang đến trải nghiệm giấc ngủ hoàn mỹ từ những chất liệu tự nhiên thuần khiết nhất.
+            {content.heroSubtitle}
           </p>
         </div>
       </section>
@@ -34,29 +37,22 @@ export default function About() {
           {/* Image Left */}
           <div className="order-1 md:order-1 rounded-2xl overflow-hidden relative shadow-md">
             <img 
-              src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1000&q=80" 
-              alt="Hơn cả một giấc ngủ ngon" 
+              src={content.missionImageUrl}
+              alt={content.missionTitle}
               className="w-full h-full object-cover aspect-square md:aspect-[4/5]"
             />
           </div>
           
           {/* Content Right */}
           <div className="order-2 md:order-2">
-            <span className="text-secondary font-bold text-sm tracking-widest uppercase mb-4 block">Về chúng tôi</span>
+            <span className="text-secondary font-bold text-sm tracking-widest uppercase mb-4 block">{content.missionEyebrow}</span>
             <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-8 text-slate-deep font-light leading-tight">
-              Hơn Cả Một<br/>Giấc Ngủ Ngon
+              {content.missionTitle}
             </h2>
             <div className="font-body-lg text-slate-deep/80 space-y-6 leading-relaxed mb-10">
-              <p>
-                Tại silkMoon, chúng tôi tin rằng ngôi nhà là thánh đường của sự bình yên. Mỗi sản phẩm được ra đời từ niềm đam mê với chất liệu bền vững và thiết kế tối giản, giúp bạn tách biệt khỏi sự ồn ào của thế giới bên ngoài.
-              </p>
-              <p>
-                Chúng tôi chọn lọc những sợi cotton tốt nhất và quy trình sản xuất thân thiện với môi trường để đảm bảo rằng mỗi đêm của bạn đều là một hành trình nghỉ ngơi đích thực.
-              </p>
+              <p>{content.missionBody1}</p>
+              <p>{content.missionBody2}</p>
             </div>
-            <Link to="/about" className="inline-flex items-center gap-2 text-slate-deep font-medium uppercase tracking-wide hover:opacity-70 transition-opacity border-b border-transparent hover:border-slate-deep pb-1">
-              Câu chuyện thương hiệu <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-            </Link>
           </div>
         </div>
       </section>
@@ -65,9 +61,9 @@ export default function About() {
       <section className="py-section-gap bg-bone px-margin-mobile md:px-margin-desktop w-full">
         <div className="max-w-container-max mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep">Giá Trị Cốt Lõi</h2>
+            <h2 className="font-display-md text-display-md-mobile md:text-display-md text-slate-deep">{content.valuesTitle}</h2>
             <p className="mt-4 font-body-md text-slate-deep/70 max-w-2xl mx-auto">
-              Những tiêu chí không bao giờ thay đổi trong suốt quá trình phát triển sản phẩm của SILKMOON.
+              {content.valuesSubtitle}
             </p>
           </div>
           
@@ -79,7 +75,7 @@ export default function About() {
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Trách nhiệm</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Silkmoon coi trọng trách nhiệm trong công việc, sự chú trọng đến từng chi tiết trong mỗi sản phẩm và tính chuyên nghiệp đối với khách hàng, đồng nghiệp và các mục tiêu chung của công ty.
+                {content.responsibilityText}
               </p>
             </div>
             {/* Value 2 */}
@@ -89,7 +85,7 @@ export default function About() {
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Đổi mới</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Silkmoon áp dụng các công nghệ hiện đại như chatbot AI và thực tế ảo để nâng cao trải nghiệm mua sắm trực tuyến. Công ty liên tục tìm kiếm các giải pháp mới để mang lại sự tiện lợi hơn, cá nhân hóa hơn và kết nối khách hàng mạnh mẽ hơn.
+                {content.innovationText}
               </p>
             </div>
             {/* Value 3 */}
@@ -99,7 +95,7 @@ export default function About() {
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Hợp tác</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Silkmoon xây dựng một môi trường làm việc cởi mở, tôn trọng và hỗ trợ, nơi các thành viên trong nhóm hợp tác và cùng nhau phát triển hướng tới các mục tiêu kinh doanh chung.
+                {content.collaborationText}
               </p>
             </div>
             {/* Value 4 */}
@@ -109,7 +105,7 @@ export default function About() {
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Minh bạch</h3>
               <p className="font-body-sm text-slate-deep/70">
-                Silkmoon thúc đẩy sự trung thực, cởi mở và giao tiếp rõ ràng trong tất cả các hoạt động kinh doanh. Công ty coi trọng tính minh bạch trong việc ra quyết định, làm việc nhóm và các mối quan hệ với đối tác và khách hàng, tạo dựng lòng tin và sự phát triển bền vững lâu dài.
+                {content.transparencyText}
               </p>
             </div>
           </div>

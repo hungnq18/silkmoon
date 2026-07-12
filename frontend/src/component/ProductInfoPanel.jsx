@@ -16,7 +16,7 @@ const colors = [
   { id: 'slate', hex: '#334641', label: 'Slate Silk' },
 ];
 
-export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
+export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState('queen');
@@ -28,6 +28,9 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
   const [embroideryText, setEmbroideryText] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [customSize, setCustomSize] = useState({ length: '', width: '', height: '' });
+  const allowCustomSize = product.allowCustomSize ?? true;
+  const allowEmbroidery = product.allowEmbroidery ?? product?.category === 'Đồ Ngủ';
+  const embroideryMaxLength = product.embroideryMaxLength || 12;
 
   const activeColorInfo = productColors.find((c) => c.id === selectedColor) || productColors[0];
 
@@ -35,13 +38,13 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
     setSelectedColor(colorId);
     const colorInfo = productColors.find((c) => c.id === colorId);
     if (onColorChange && colorInfo) {
-      onColorChange(colorInfo.label);
+      onColorChange(colorInfo);
     }
   };
 
   const handleEmbroideryChange = (e) => {
     const val = e.target.value;
-    if (val.length <= 12) {
+    if (val.length <= embroideryMaxLength) {
       setEmbroideryText(val);
     }
   };
@@ -89,7 +92,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
       </div>
 
       {/* AR Preview Trigger */}
-      <button
+      {arEnabled && <button
         onClick={onOpenAR}
         className="group flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-stack-sm border border-slate-deep/10 py-4 px-4 md:px-6 rounded-full hover:bg-slate-deep hover:text-linen-white transition-all duration-300 bg-primary text-white shadow-sm active:scale-98 w-full"
       >
@@ -97,7 +100,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
         <span className="font-button text-[11px] md:text-button uppercase tracking-wide text-center">
           Thử trong phòng của bạn
         </span>
-      </button>
+      </button>}
 
       {/* Configuration Options */}
       <div className="space-y-stack-lg">
@@ -107,7 +110,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
             <span className="font-label-caps text-label-caps text-slate-deep">CHỌN KÍCH THƯỚC</span>
           </div>
           <div className="flex flex-wrap gap-stack-sm">
-            {[...(product.sizes?.length > 0 ? product.sizes : sizes), { id: 'custom', label: 'May size riêng' }].map((size) => {
+            {[...(product.sizes?.length > 0 ? product.sizes : sizes), ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
               const isSelected = selectedSize === size.id;
               return (
                 <button
@@ -127,6 +130,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
           
           {selectedSize === 'custom' && (
             <div className="mt-4 grid grid-cols-3 gap-3 animate-fade-in">
+              {product.customSizePrice > 0 && <p className="col-span-3 text-xs text-slate-deep/70">Phụ thu may size riêng: +{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</p>}
               <div>
                 <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Chiều dài (cm)</label>
                 <input 
@@ -192,25 +196,25 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
         </div>
 
         {/* Personalized Customization */}
-        {product?.category === 'Đồ Ngủ' && (
+        {allowEmbroidery && (
           <div className="bg-bone/50 p-stack-md border-l-2 border-sand-silk space-y-stack-sm rounded-r-md">
             <div className="flex items-center gap-stack-sm text-slate-deep">
               <span className="material-symbols-outlined text-[20px]">edit</span>
               <span className="font-label-caps text-label-caps">TÙY CHỌN IN TÊN CÁ NHÂN</span>
             </div>
             <p className="text-sm text-on-surface-variant opacity-80 leading-snug">
-              Thêu tên hoặc chữ ký của bạn lên sản phẩm (+250k VNĐ)
+              May tên hoặc chữ ký của bạn lên sản phẩm{product.embroideryPrice > 0 ? ` (+${product.embroideryPrice.toLocaleString('vi-VN')} VNĐ)` : ''}
             </p>
             <div className="relative">
               <input
                 className="w-full bg-transparent border-0 border-b border-slate-deep/20 py-2 pr-12 focus:outline-none focus:ring-0 focus:border-slate-deep transition-all font-body-md text-slate-deep"
-                placeholder="Nhập nội dung thêu (Tối đa 12 ký tự)"
+                placeholder={`Nhập nội dung may (Tối đa ${embroideryMaxLength} ký tự)`}
                 type="text"
                 value={embroideryText}
                 onChange={handleEmbroideryChange}
               />
               <span className="absolute right-0 bottom-2 text-xs text-on-surface-variant/40 font-mono">
-                {embroideryText.length}/12
+                {embroideryText.length}/{embroideryMaxLength}
               </span>
             </div>
           </div>
@@ -263,4 +267,5 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange }) {
 ProductInfoPanel.propTypes = {
   onOpenAR: PropTypes.func.isRequired,
   onColorChange: PropTypes.func,
+  arEnabled: PropTypes.bool,
 };

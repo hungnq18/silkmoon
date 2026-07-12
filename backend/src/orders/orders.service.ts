@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
@@ -31,6 +31,10 @@ export class OrdersService {
         throw new NotFoundException(`Sản phẩm với ID ${item.productId} không tồn tại`);
       }
       
+      if (product.stock < item.quantity) {
+        throw new BadRequestException(`Sản phẩm "${product.name}" không đủ hàng (hiện còn ${product.stock}).`);
+      }
+      
       const itemTotal = product.price * item.quantity;
       subtotal += itemTotal;
       
@@ -40,6 +44,7 @@ export class OrdersService {
         spec: product.category || 'N/A',
         quantity: item.quantity,
         price: product.price,
+        costPriceSnapshot: product.costPrice || 0,
         image: product.images?.[0] || '',
         embroidery: null, // Depending on custom requirements
       });
@@ -69,6 +74,16 @@ export class OrdersService {
       await this.promotionsService.markUsed(dto.promoCode);
     }
 
+    // Deduct stock
+    for (const item of dto.items) {
+      const product = await this.productsService.findById(item.productId);
+      if (product) {
+        await this.productsService.update(product._id.toString(), { 
+          stock: Math.max(0, product.stock - item.quantity) 
+        });
+      }
+    }
+
     return {
       _id: order._id,
       orderNumber: order.orderNumber,
@@ -90,15 +105,32 @@ export class OrdersService {
     return order;
   }
 
-  async findAll() {
-    return this.orderModel.find().sort({ createdAt: -1 }).lean();
+  async findAll(query: { page?: string; limit?: string; search?: string; status?: string } = {}) {
+    const pageNum = Math.max(1, parseInt(query.page || '1', 10));
+    const limitNum = Math.max(1, parseInt(query.limit || '15', 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter: any = {};
+    if (query.search?.trim()) filter.$text = { $search: query.search.trim() };
+    if (query.status) filter.orderStatus = query.status;
+    const [items, total] = await Promise.all([
+      this.orderModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
+      this.orderModel.countDocuments(filter),
+    ]);
+
+    return {
+      items,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    };
   }
 
   async updateStatus(id: string, status: string) {
     const order = await this.orderModel.findByIdAndUpdate(
       id,
       { orderStatus: status },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
     if (!order) {
       throw new NotFoundException('Đơn hàng không tồn tại');

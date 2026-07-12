@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
 import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AdminModule } from './admin/admin.module';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   imports: [
@@ -25,6 +27,12 @@ import { AdminModule } from './admin/admin.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    // Rate Limiting globally (default to 10 requests per 10 seconds per IP, can be overridden)
+    ThrottlerModule.forRoot([{
+      ttl: 10000,
+      limit: 10,
+    }]),
 
     // MongoDB connection
     MongooseModule.forRootAsync({
@@ -54,6 +62,7 @@ import { AdminModule } from './admin/admin.module';
     SettingsModule,
     CategoriesModule,
     AdminModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

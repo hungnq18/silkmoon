@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Patch, Query } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -10,6 +11,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 đơn hàng / phút / IP để chống spam
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
@@ -18,8 +21,8 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(@Query() query: any) {
+    return this.ordersService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

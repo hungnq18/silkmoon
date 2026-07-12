@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import Replicate from 'replicate';
 import { v2 as cloudinary } from 'cloudinary';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AiUsage, AiUsageDocument } from './ai-usage.schema';
 
 /**
  * Bed detection strategy:
@@ -28,7 +31,7 @@ export class ARService {
   private ai: GoogleGenAI | null = null;
   private replicate: Replicate | null = null;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, @InjectModel(AiUsage.name) private usageModel: Model<AiUsageDocument>) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (apiKey) {
       this.ai = new GoogleGenAI({ apiKey });
@@ -53,6 +56,23 @@ export class ARService {
     } else {
       this.logger.warn('CLOUDINARY_URL is not set. Image uploads will fail.');
     }
+  }
+
+  private async recordUsage(feature: string, model: string, response: any) {
+    const usage = response?.usageMetadata || {};
+    await this.usageModel.create({ feature, provider: 'gemini', modelName: model, promptTokens: usage.promptTokenCount || 0, outputTokens: usage.candidatesTokenCount || 0, totalTokens: usage.totalTokenCount || 0, success: true });
+  }
+
+  async chat(message: string, systemPrompt?: string) {
+    if (!this.ai) throw new Error('Gemini API is not configured.');
+    const modelName = 'gemini-2.5-flash';
+    const response = await this.ai.models.generateContent({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: `${systemPrompt || 'Bạn là trợ lý tư vấn của Silkmoon.'}\n\nKhách hàng: ${String(message || '').slice(0, 2000)}` }] }],
+      config: { temperature: 0.35, maxOutputTokens: 500 },
+    });
+    await this.recordUsage('chatbot', modelName, response);
+    return { message: response.text?.trim() || 'Xin lỗi, tôi chưa thể trả lời câu hỏi này.' };
   }
 
   async detectBedCorners(base64Image: string): Promise<any> {
@@ -122,6 +142,7 @@ Output ONLY this JSON format:
             ],
             config: { temperature: 0.05 },
           });
+          await this.recordUsage('ar_detection', modelName, response);
 
           let raw = response.text?.trim() || '';
           if (!raw) throw new Error(`Empty response from ${modelName}`);
@@ -194,6 +215,7 @@ Output ONLY this JSON format:
     base64Image: string,
     colorHex: string,
     fabricName: string,
+    customPrompt?: string,
   ): Promise<string> {
     if (!this.ai) {
       throw new Error('Gemini API is not configured.');
@@ -201,7 +223,7 @@ Output ONLY this JSON format:
 
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    const prompt = `You are an expert interior design visualizer.
+    const defaultPrompt = `You are an expert interior design visualizer.
 
 Task: Edit this bedroom photo to show what the bed would look like with a new bed sheet.
 
@@ -214,6 +236,9 @@ Instructions:
 - Maintain photorealistic quality — this should look like a real product photo
 
 Output: The edited bedroom photo with the entire bedding set color changed to ${fabricName}.`;
+    const prompt = customPrompt
+      ? `${customPrompt}\nMàu sản phẩm: ${fabricName} (${colorHex}). Giữ nguyên phối cảnh, ánh sáng, nội thất và chỉ thay đổi bộ chăn ga trên giường.`
+      : defaultPrompt;
 
     const freeModels = [
       'gemini-3.1-flash-image',         // Nano Banana 2 — latest
@@ -249,6 +274,7 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
             temperature: 0.4,
           } as any,
         });
+        await this.recordUsage('ar_generation', modelName, response);
 
         const parts = response.candidates?.[0]?.content?.parts ?? [];
         const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));

@@ -25,3 +25,5 @@ export class Promotion {
 }
 
 export const PromotionSchema = SchemaFactory.createForClass(Promotion);
+PromotionSchema.index({ code: 'text' });
+PromotionSchema.index({ isActive: 1, createdAt: -1 });

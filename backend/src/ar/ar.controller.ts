@@ -1,16 +1,24 @@
-import { Controller, Post, Body, Get, HttpException, HttpStatus, Query, Res, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpException, HttpStatus, Query, Res, UseInterceptors, UploadedFile, Req, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ARService } from './ar.service';
 import type { Response, Request } from 'express';
 import * as multer from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SettingsService } from '../settings/settings.service';
 
 @Controller('ar')
 export class ARController {
-  constructor(private readonly arService: ARService) { }
+  constructor(private readonly arService: ARService, private readonly settingsService: SettingsService) { }
 
   // ── Temporary: list models to find image generation support ──
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get('list-models')
   async listModels() {
     return this.arService.listAvailableModels();
@@ -40,6 +48,11 @@ export class ARController {
       return res.status(HttpStatus.BAD_REQUEST).send('URL is required');
     }
     try {
+      const parsedUrl = new URL(url);
+      const allowedDomains = ['res.cloudinary.com', 'images.unsplash.com'];
+      if (!allowedDomains.includes(parsedUrl.hostname)) {
+        return res.status(HttpStatus.FORBIDDEN).send('Domain not allowed for proxying');
+      }
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch image');
       
@@ -53,6 +66,7 @@ export class ARController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('upload-usdz')
   @UseInterceptors(FileInterceptor('file', {
     storage: multer.diskStorage({
@@ -97,23 +111,7 @@ export class ARController {
     };
   }
 
-  @Post('segment')
-  async segmentBed(@Body() body: { image: string }) {
-    if (!body.image) throw new HttpException('No image provided', HttpStatus.BAD_REQUEST);
-
-    // Future implementation: Send body.image to Python Microservice (SAM2 + Grounding DINO)
-    // to get exact pixel masks for mattress, blanket, pillows.
-    return {
-      success: true,
-      message: 'Segmentation mask endpoint scaffolding ready (Phase 1)',
-      masks: {
-        mattress: null,
-        blanket: null,
-        pillows: null
-      }
-    };
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Post('upload')
   async uploadImage(@Body() body: { image: string }) {
     if (!body.image) throw new HttpException('Missing image data', HttpStatus.BAD_REQUEST);
@@ -125,6 +123,7 @@ export class ARController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('auto-tryon')
   async autoTryOn(@Body() body: { roomImageUrl: string, productImageUrl?: string, prompt: string }) {
     if (!body.roomImageUrl) throw new HttpException('Missing room image URL', HttpStatus.BAD_REQUEST);
@@ -155,6 +154,7 @@ export class ARController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('inpaint')
   async inpaintBed(@Body() body: { imageUrl: string, maskUrl: string, prompt: string, productImageUrl?: string }) {
     if (!body.imageUrl || !body.maskUrl) throw new HttpException('Missing image or mask URL', HttpStatus.BAD_REQUEST);
@@ -174,6 +174,8 @@ export class ARController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 2, ttl: 60000 } }) // 2 requests per minute per IP
   @Post('generate-preview')
   async generatePreview(@Body() body: { imageUrl?: string; image?: string; color: string; fabricName?: string }) {
     if (!body.image && !body.imageUrl) {
@@ -191,10 +193,12 @@ export class ARController {
       }
 
       // Generate with Gemini
+      const assistantConfig = await this.settingsService.findByKey('assistant_config');
       const resultBase64 = await this.arService.generateBedOverlay(
         base64Input,
         body.color || '#C9A882',
         body.fabricName || 'champagne silk',
+        assistantConfig?.value?.ar?.defaultPrompt,
       );
 
       // Upload the result to Cloudinary to save bandwidth

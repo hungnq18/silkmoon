@@ -5,6 +5,9 @@ export type CategoryDocument = Category & Document;
 
 @Schema({ timestamps: true })
 export class Category {
+  @Prop({ default: 'product', enum: ['product'] })
+  categoryType: string;
+
   @Prop({ required: true })
   name: string;
 
@@ -19,6 +22,14 @@ export class Category {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: false })
+  isFeatured: boolean;
+
+  @Prop()
+  coverImage?: string;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
+CategorySchema.index({ name: 'text', slug: 'text', description: 'text' });
+CategorySchema.index({ isFeatured: 1, isActive: 1, createdAt: -1 });

@@ -1,42 +1,95 @@
-import { useState } from 'react';
-import { adminApi } from '../services/api';
+import { useState } from "react";
+import { adminApi } from "../services/api";
+import silkmoonLogo from "../../../frontend/src/assets/xanh_ngang.png";
 
 export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
     try {
       const { access_token, user } = await adminApi.login(email, password);
-      if (user.role !== 'admin') {
-        throw new Error('Access denied. Admin role required.');
-      }
-      localStorage.setItem('admin_token', access_token);
+      if (user.role !== "admin")
+        throw new Error("Tài khoản này không có quyền quản trị.");
+      localStorage.setItem("admin_token", access_token);
       onLoginSuccess();
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(
+        err.message === "Login failed"
+          ? "Email hoặc mật khẩu không chính xác."
+          : err.message || "Không thể đăng nhập.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="login-container" style={{ display: 'flex', height: '100vh', width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-      <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '2rem', width: '300px' }}>
-        <h2>Admin Login</h2>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }}/>
+    <main className="login-page">
+      <section className="login-visual">
+        <div className="brand-mark">
+          <img
+            className="brand-logo login-brand-logo"
+            src={silkmoonLogo}
+            alt="Silkmoon - Premium Bedding & Sleepwear"
+          />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }}/>
+        <div className="login-quote">
+          <p>
+            Chăm chút giấc ngủ,
+            <br />
+            nâng niu từng khoảnh khắc.
+          </p>
+          <span>KHÔNG GIAN QUẢN TRỊ SILKMOON</span>
         </div>
-        <button type="submit" style={{ width: '100%', padding: '0.75rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>
-          Login
-        </button>
-      </form>
-    </div>
+      </section>
+      <section className="login-form-area">
+        <form className="login-form" onSubmit={handleSubmit}>
+          <span className="login-eyebrow">QUẢN TRỊ CỬA HÀNG</span>
+          <h1>Chào mừng trở lại</h1>
+          <p className="login-intro">
+            Đăng nhập để quản lý sản phẩm, đơn hàng và khách hàng của Silkmoon.
+          </p>
+          {error && (
+            <p className="login-error" role="alert">
+              {error}
+            </p>
+          )}
+          <label className="form-field">
+            <span>ĐỊA CHỈ EMAIL</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@silkmoon.vn"
+              autoComplete="email"
+              required
+            />
+          </label>
+          <label className="form-field">
+            <span>MẬT KHẨU</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <button className="login-button" type="submit" disabled={loading}>
+            {loading ? "Đang đăng nhập…" : "Đăng nhập"}
+          </button>
+          <p className="login-note">
+            Khu vực dành riêng cho nhân viên được ủy quyền.
+          </p>
+        </form>
+      </section>
+    </main>
   );
 }

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logoImg from '../assets/xanh_ngang.png';
+import { settingsApi } from '../services/api';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [announcement, setAnnouncement] = useState('Giảm giá 20% cho đơn hàng từ 500.000 vnđ');
   const location = useLocation();
   const isTransparentRoute = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/showroom';
   const isSolid = !isTransparentRoute || isScrolled;
@@ -19,6 +21,10 @@ export default function Header() {
       setCartCount(0);
     }
   };
+
+  useEffect(() => {
+    settingsApi.get('website_content').then(setting => { if (setting?.value?.marketing?.announcement) setAnnouncement(setting.value.marketing.announcement); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     updateCartCount();
@@ -56,7 +62,7 @@ export default function Header() {
            </div>
            {/* Center */}
            <div className="flex-1 text-center font-medium">
-             Giảm giá 20% cho đơn hàng từ 500.000 vnđ
+             {announcement}
            </div>
            {/* Right */}
            <div className="flex items-center gap-2 justify-end">
@@ -163,7 +169,7 @@ export default function Header() {
           {/* Top Bar Items on Mobile */}
           <div className="flex flex-col gap-2 pb-4 border-b border-slate-deep/10 mb-2 text-on-surface-variant font-body-sm">
              <div className="bg-slate-deep/5 text-slate-deep font-medium text-center py-2 rounded mb-2 text-xs">
-               Giảm giá 20% cho đơn hàng từ 500.000 vnđ
+               {announcement}
              </div>
              <Link to="/about" className="py-1">Về chúng tôi</Link>
              <Link to="/careers" className="py-1">Careers</Link>

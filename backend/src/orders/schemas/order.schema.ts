@@ -19,6 +19,9 @@ class OrderItem {
   @Prop({ required: true })
   price: number;
 
+  @Prop({ default: 0, min: 0 })
+  costPriceSnapshot: number;
+
   @Prop()
   image: string;
 
@@ -28,6 +31,9 @@ class OrderItem {
 
 @Schema({ timestamps: true })
 export class Order {
+  createdAt: Date;
+  updatedAt: Date;
+
   @Prop({ required: true, unique: true })
   orderNumber: string;
 
@@ -59,7 +65,7 @@ export class Order {
   paymentStatus: string;
 
   @Prop({
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'],
     default: 'pending',
   })
   orderStatus: string;
@@ -81,3 +87,6 @@ export class Order {
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
+OrderSchema.index({ orderNumber: 'text', fullName: 'text', email: 'text', phone: 'text' });
+OrderSchema.index({ orderStatus: 1, createdAt: -1 });
+OrderSchema.index({ paymentStatus: 1, createdAt: -1 });

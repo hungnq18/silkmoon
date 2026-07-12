@@ -9,7 +9,7 @@ export class PromotionsService {
   constructor(
     @InjectModel(Promotion.name)
     private promotionModel: Model<PromotionDocument>,
-  ) {}
+  ) { }
 
   async validate(dto: ValidatePromoDto) {
     const code = dto.code.trim().toUpperCase();
@@ -35,12 +35,37 @@ export class PromotionsService {
       discountPercent: promo.discountPercent,
     };
   }
+  async findAll(query: any = {}) {
+    const page = Math.max(1, parseInt(query.page || '1', 10));
+    const limit = Math.max(1, parseInt(query.limit || '10', 10));
+    const filter: any = {};
+    if (query.search?.trim()) filter.$text = { $search: query.search.trim() };
+    if (query.isActive !== undefined) filter.isActive = query.isActive === 'true';
+    const [items, total] = await Promise.all([this.promotionModel.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), this.promotionModel.countDocuments(filter)]);
+    return { items, total, page, totalPages: Math.ceil(total / limit) };
+  }
+  create(data: any) { return this.promotionModel.create({ ...data, code: data.code.toUpperCase() }) }
+  update(id: string, data: any) { return this.promotionModel.findByIdAndUpdate(id, data, { returnDocument: 'after' }).lean() }
+  remove(id: string) { return this.promotionModel.findByIdAndDelete(id).lean() }
 
   // Called when an order is placed to increment usage
   async markUsed(code: string) {
-    await this.promotionModel.findOneAndUpdate(
-      { code: code.toUpperCase() },
+    const result = await this.promotionModel.findOneAndUpdate(
+      {
+        code: code.toUpperCase(),
+        $expr: {
+          $or: [
+            { $eq: ["$maxUses", null] },
+            { $lt: ["$usedCount", "$maxUses"] }
+          ]
+        }
+      },
       { $inc: { usedCount: 1 } },
+      { returnDocument: 'after' }
     );
+
+    if (!result) {
+      throw new BadRequestException('Mã giảm giá không hợp lệ hoặc đã hết lượt sử dụng.');
+    }
   }
 }

@@ -21,6 +21,14 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+export const analyticsApi = {
+  track: (data) => request('/analytics/track', { method: 'POST', body: JSON.stringify(data) }).catch(() => null),
+};
+
+export const assistantApi = {
+  chat: (message) => request('/assistant/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+};
+
 // ── Products ──────────────────────────────────────────────
 export const productsApi = {
   getAll: (params = {}) => {
@@ -36,6 +44,22 @@ export const productsApi = {
 
   getCategories: () => request('/products/categories'),
 };
+export const categoriesApi = {
+  getAll: async () => {
+    const response = await request('/categories');
+    return Array.isArray(response) ? response : (response?.items || []);
+  },
+};
+export const blogApi = {
+  getPosts: async () => {
+    const response = await request('/blog/posts');
+    return Array.isArray(response) ? response : (response?.items || []);
+  },
+  getPost: (id) => request(`/blog/posts/${id}`),
+  getCategories: () => request('/blog/categories'),
+  createComment: (data) => request('/blog/comments', { method: 'POST', body: JSON.stringify(data) }),
+};
+export const settingsApi = { get: (key) => request(`/settings/${key}`) };
 
 // ── Promotions ────────────────────────────────────────────
 export const promotionsApi = {

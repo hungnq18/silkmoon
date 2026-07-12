@@ -85,7 +85,7 @@ export default function ProductListGrid({ products }) {
             {product.name}
           </h4>
           <p className="text-on-surface-variant font-body-md mb-2">
-            {product.description}
+            {product.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
           </p>
           <div className="flex items-center gap-3 mt-auto">
             <span className="font-semibold text-slate-deep">

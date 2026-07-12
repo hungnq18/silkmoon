@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import slide3Img from '../assets/carousel-slide3.png';
+import { settingsApi } from '../services/api';
 
 const SLIDES = [
   {
@@ -40,20 +41,23 @@ const SLIDES = [
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slides, setSlides] = useState(SLIDES);
+
+  useEffect(() => { settingsApi.get('website_content').then(setting => { if (setting?.value?.hero?.slides?.length) setSlides(setting.value.hero.slides); }).catch(() => {}); }, []);
 
   // Auto-slide effect
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1));
+      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 12000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   return (
     <section className="relative h-[650px] md:h-[921px] w-full flex items-center overflow-hidden bg-bone">
 
       {/* Slides Container */}
-      {SLIDES.map((slide, index) => (
+      {slides.map((slide, index) => (
         <div
           key={slide.id}
           className={`absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -101,7 +105,7 @@ export default function Hero() {
 
       {/* Navigation Dots */}
       <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-3">
-        {SLIDES.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}

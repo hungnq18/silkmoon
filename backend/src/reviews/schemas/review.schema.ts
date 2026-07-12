@@ -25,3 +25,5 @@ export const ReviewSchema = SchemaFactory.createForClass(Review);
 
 // Index for fast lookup by productId
 ReviewSchema.index({ productId: 1, createdAt: -1 });
+ReviewSchema.index({ authorName: 'text', comment: 'text' });
+ReviewSchema.index({ isVerified: 1, createdAt: -1 });

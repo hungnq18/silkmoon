@@ -13,12 +13,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'supersecret'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d') as any,
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d') as any,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

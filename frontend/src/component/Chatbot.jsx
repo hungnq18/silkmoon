@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import chatLogoImg from '../assets/no-bg.png';
+import { analyticsApi, assistantApi, settingsApi } from '../services/api';
 
 export default function Chatbot() {
   const [isVisible, setIsVisible] = useState(true);
@@ -7,6 +8,7 @@ export default function Chatbot() {
   const [showGreeting, setShowGreeting] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [config, setConfig] = useState(null);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -22,6 +24,14 @@ export default function Chatbot() {
   };
 
   useEffect(() => {
+    settingsApi.get('assistant_config').then((row) => {
+      const next = row?.value || null;
+      setConfig(next);
+      if (next?.chatbot?.greeting) setMessages((current) => [{ ...current[0], text: next.chatbot.greeting }, ...current.slice(1)]);
+    }).catch(() => null);
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
 
@@ -35,10 +45,13 @@ export default function Chatbot() {
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
-    if (!isOpen) setShowGreeting(false);
+    if (!isOpen) {
+      setShowGreeting(false);
+      analyticsApi.track({ type: 'chatbot_open', path: window.location.pathname });
+    }
   };
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
@@ -52,40 +65,24 @@ export default function Chatbot() {
     setInputText('');
     setIsTyping(true);
 
-    // Simulate AI typing delay and smart responses
-    setTimeout(() => {
-      let botResponseText = '';
-      const textLower = userMessage.text.toLowerCase();
-
-      if (textLower.includes('mùa hè') || textLower.includes('nóng') || textLower.includes('mát')) {
-        botResponseText = 'Với thời tiết nóng bức, tôi gợi ý dòng French Linen hoặc Bamboo. Cả hai đều có khả năng thấm hút mồ hôi tốt và cực kỳ thoáng mát. Bạn có muốn xem thêm hình ảnh hoặc bảng giá của các dòng này không?';
-      } else if (textLower.includes('giá') || textLower.includes('bao nhiêu') || textLower.includes('tổng')) {
-        botResponseText = 'Dòng chăn ga Signature Cotton có giá từ 2.450.000đ, vỏ gối lụa tơ tằm là 850.000đ và bộ đồ ngủ Bamboo là 1.250.000đ. Tất cả đơn hàng trên 2.000.000đ đều được miễn phí vận chuyển toàn quốc.';
-      } else if (textLower.includes('khuyến mãi') || textLower.includes('sale') || textLower.includes('giảm giá')) {
-        botResponseText = 'Hiện tại chúng tôi đang tặng mã giảm giá 10% cho khách hàng đăng ký nhận bản tin ở cuối trang web. Ngoài ra, mua theo bộ (Bedding Set) sẽ được chiết khấu thêm 5%.';
-      } else {
-        botResponseText = 'Cảm ơn bạn đã nhắn tin. Hiện tại tôi là Trợ lý Tư vấn AI của SILKMOON. Bạn có thể hỏi tôi về các chất liệu chăn ga (như cotton, linen, bamboo, tơ tằm) hoặc giá bán sản phẩm nhé!';
-      }
-
-      const botMessage = {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: botResponseText,
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
+    try {
+      const response = await assistantApi.chat(userMessage.text);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, sender: 'bot', text: response.message }]);
+    } catch {
+      setMessages((prev) => [...prev, { id: Date.now() + 1, sender: 'bot', text: config?.chatbot?.fallbackResponse || 'Xin lỗi, trợ lý đang bận. Vui lòng thử lại sau.' }]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
-  if (!isVisible) return null;
+  if (!isVisible || config?.chatbot?.enabled === false) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[60] flex items-end" id="chatbot-container">
       {/* Greeting Bubble */}
       {showGreeting && !isOpen && (
         <div className="absolute bottom-full right-full mb-2 mr-3 hidden md:flex animate-fade-in-up items-center bg-white shadow-xl rounded-2xl rounded-br-sm px-4 py-3 border border-slate-deep/5 w-max">
-          <p className="text-body-md text-slate-deep font-medium">Xin chào! Bạn cần tư vấn sản phẩm?</p>
+          <p className="text-body-md text-slate-deep font-medium">{config?.chatbot?.greeting || 'Xin chào! Bạn cần tư vấn sản phẩm?'}</p>
           <button 
             onClick={() => setShowGreeting(false)} 
             className="ml-3 text-slate-deep/40 hover:text-slate-deep"

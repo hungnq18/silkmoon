@@ -14,8 +14,21 @@ export class CategoriesService {
     return createdCategory.save();
   }
 
-  async findAll() {
-    return this.categoryModel.find().populate('parentId').exec();
+  async findAll(query: { page?: string; limit?: string; search?: string; isFeatured?: string; isActive?: string } = {}) {
+    const pageNum = Math.max(1, parseInt(query.page || '1', 10));
+    const limitNum = Math.max(1, parseInt(query.limit || '9999', 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter: any = {};
+    if (query.search?.trim()) filter.$text = { $search: query.search.trim() };
+    if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === 'true';
+    if (query.isActive !== undefined) filter.isActive = query.isActive === 'true';
+    const [items, total] = await Promise.all([
+      this.categoryModel.find(filter).populate('parentId').skip(skip).limit(limitNum).exec(),
+      this.categoryModel.countDocuments(filter),
+    ]);
+
+    return { items, total, page: pageNum, totalPages: Math.ceil(total / limitNum) };
   }
 
   async findOne(id: string) {
@@ -23,7 +36,7 @@ export class CategoriesService {
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
-    return this.categoryModel.findByIdAndUpdate(id, updateCategoryDto, { new: true }).exec();
+    return this.categoryModel.findByIdAndUpdate(id, updateCategoryDto, { returnDocument: 'after' }).exec();
   }
 
   async remove(id: string) {

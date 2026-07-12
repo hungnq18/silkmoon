@@ -42,6 +42,13 @@ export class ProductsController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @Post('import')
+  importRows(@Body('rows') rows: any[]) {
+    return this.productsService.importRows(Array.isArray(rows) ? rows : []);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post()
   create(@Body() data: any) {
     return this.productsService.create(data);

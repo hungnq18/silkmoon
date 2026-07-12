@@ -12,8 +12,10 @@ import Policy from './pages/Policy';
 import About from './pages/About';
 import Blog from './pages/Blog';
 import BlogDetail from './pages/BlogDetail';
+import BlogPreview from './pages/BlogPreview';
 import Showroom from './pages/Showroom';
 import './App.css';
+import { analyticsApi } from './services/api';
 
 // Scroll to top on route change for seamless page switching
 function ScrollToTop() {
@@ -21,6 +23,7 @@ function ScrollToTop() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    analyticsApi.track({ type: 'page_view', path: pathname });
   }, [pathname]);
 
   return null;
@@ -46,6 +49,7 @@ function AppContent() {
           <Route path="/about" element={<About />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/blog-preview" element={<BlogPreview />} />
           <Route path="/showroom" element={<Showroom />} />
         </Routes>
       </div>
