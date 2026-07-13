@@ -19,7 +19,7 @@ export default function BlogPreview() {
     );
   return (
     <main className="pt-28 pb-20 bg-white min-h-screen">
-      <BlogLayout post={data.post} category={{ name: data.categoryName }} />
+      <BlogLayout post={data.post} category={{ name: data.categoryName }} preview />
     </main>
   );
 }

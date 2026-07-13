@@ -47,8 +47,23 @@ export class Product {
   @Prop({ required: true })
   description: string;
 
+  @Prop({ default: '' })
+  materialCare: string;
+
+  @Prop({ default: '' })
+  returnPolicy: string;
+
+  @Prop({ default: '' })
+  technicalSpecs: string;
+
+  @Prop({ default: '' })
+  packageIncludes: string;
+
   @Prop({ required: true, min: 0 })
   price: number;
+
+  @Prop({ min: 0 })
+  originalPrice?: number;
   @Prop({ default: 0, min: 0 }) costPrice: number;
 
   @Prop({ default: 0 })

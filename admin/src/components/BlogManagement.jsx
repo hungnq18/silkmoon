@@ -43,13 +43,38 @@ export function BlogPostsManager() {
       setTotalPages(data.totalPages || 1);
     });
 
+  const normalizeBlogContent = async (html) => {
+    const documentNode = new DOMParser().parseFromString(html || "", "text/html");
+    const images = [...documentNode.querySelectorAll("img")];
+    for (const image of images) {
+      const source = image.getAttribute("src") || "";
+      if (source.startsWith("data:image/")) {
+        const uploadedUrl = await adminApi.uploadProductImage(source);
+        if (!uploadedUrl?.startsWith("https://")) throw new Error("Ảnh trong bài chưa được upload thành công.");
+        image.setAttribute("src", uploadedUrl);
+      } else if (source.startsWith("http://res.cloudinary.com/")) {
+        image.setAttribute("src", source.replace("http://", "https://"));
+      } else if (!source.startsWith("https://")) {
+        throw new Error("Bài viết chứa ảnh không hợp lệ. Hãy upload lại ảnh.");
+      }
+    }
+    const normalized = documentNode.body.innerHTML;
+    if (!documentNode.body.textContent?.trim() && images.length === 0) throw new Error("Nội dung bài viết đang trống.");
+    return normalized;
+  };
+
   const save = async (e) => {
     e.preventDefault();
-    const data = { ...form, slug: form.slug || slugify(form.title) };
-    if (form._id) await adminApi.updateBlogPost(form._id, data);
-    else await adminApi.createBlogPost(data);
-    setForm(null);
-    load(page);
+    try {
+      const content = await normalizeBlogContent(form.content);
+      const data = { ...form, content, slug: form.slug || slugify(form.title) };
+      const saved = form._id ? await adminApi.updateBlogPost(form._id, data) : await adminApi.createBlogPost(data);
+      if (!saved?.content || saved.content.length < Math.min(20, content.length)) throw new Error("Backend không lưu đầy đủ nội dung bài viết.");
+      setForm(null);
+      load(page);
+    } catch (error) {
+      alert(error.message || "Không thể lưu bài viết.");
+    }
   };
   const uploadCover = (file) => {
     if (!file) return;
@@ -86,7 +111,6 @@ export function BlogPostsManager() {
               content: "",
               categoryId: "",
               status: "draft",
-              layout: "standard",
             })
           }
         >
@@ -99,7 +123,6 @@ export function BlogPostsManager() {
             <tr>
               <th>TIÊU ĐỀ</th>
               <th>DANH MỤC</th>
-              <th>LAYOUT</th>
               <th>TRẠNG THÁI</th>
               <th>THAO TÁC</th>
             </tr>
@@ -112,7 +135,6 @@ export function BlogPostsManager() {
                   {categories.find((c) => c._id === post.categoryId)?.name ||
                     "—"}
                 </td>
-                <td><span className="category-type">{{ standard: "Tiêu chuẩn", featured: "Nổi bật", editorial: "Tạp chí", guide: "Hướng dẫn", split: "Chia đôi ảnh", gallery: "Thư viện ảnh", "silkmoon-product": "Sản phẩm Silkmoon" }[post.layout || "standard"]}</span></td>
                 <td>
                   <span
                     className={`status ${post.status === "published" ? "completed" : ""}`}
@@ -123,7 +145,7 @@ export function BlogPostsManager() {
                 <td>
                   <button
                     className="action-button"
-                    onClick={() => setForm({ ...post, layout: post.layout || "standard" })}
+                    onClick={() => setForm({ ...post })}
                   >
                     Chỉnh sửa
                   </button>
@@ -188,20 +210,7 @@ export function BlogPostsManager() {
                   ))}
                 </select>
               </label>
-              <label className="modal-field">
-                <span>Layout bài viết</span>
-                <select value={form.layout || "standard"} onChange={(e) => setForm({ ...form, layout: e.target.value })}>
-                  <option value="standard">Tiêu chuẩn — một cột</option>
-                  <option value="featured">Nổi bật — ảnh bìa lớn</option>
-                  <option value="editorial">Tạp chí — editorial</option>
-                  <option value="guide">Hướng dẫn — từng bước</option>
-                  <option value="split">Chia đôi — ảnh và nội dung</option>
-                  <option value="gallery">Thư viện — nhiều ảnh</option>
-                  <option value="silkmoon-product">Sản phẩm Silkmoon — tài liệu nhiều phần</option>
-                </select>
-              </label>
-              {form.layout !== "standard" && <div className="blog-cover-field full"><div><strong>Ảnh bìa theo layout</strong><span>JPG, PNG hoặc WebP, tối đa 8 MB.</span></div>{form.featuredImage && <img src={form.featuredImage} alt="Ảnh bìa"/>}<label className="image-upload-button">{uploading ? "Đang tải…" : form.featuredImage ? "Thay ảnh bìa" : "Tải ảnh bìa"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e)=>{uploadCover(e.target.files[0]);e.target.value=""}}/></label></div>}
-              {form.layout === "gallery" && <div className="blog-cover-field full"><div><strong>Thư viện ảnh</strong><span>Chọn nhiều ảnh để hiển thị dạng gallery.</span></div><label className="image-upload-button">Thêm nhiều ảnh<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e)=>{uploadGallery(e.target.files);e.target.value=""}}/></label><div className="blog-gallery-admin">{(form.galleryImages||[]).map((image,index)=><div key={`${image}-${index}`}><img src={image} alt={`Gallery ${index+1}`}/><button type="button" onClick={()=>setForm(current=>({...current,galleryImages:current.galleryImages.filter((_,i)=>i!==index)}))}>×</button></div>)}</div></div>}
+              <div className="blog-cover-field full"><div><strong>Ảnh bìa bài viết</strong><span>JPG, PNG hoặc WebP, tối đa 8 MB.</span></div>{form.featuredImage && <img src={form.featuredImage} alt="Ảnh bìa"/>}<label className="image-upload-button">{uploading ? "Đang tải…" : form.featuredImage ? "Thay ảnh bìa" : "Tải ảnh bìa"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e)=>{uploadCover(e.target.files[0]);e.target.value=""}}/></label></div>
               <label className="modal-field">
                 <span>Trạng thái</span>
                 
@@ -228,6 +237,8 @@ export function BlogPostsManager() {
                 <span>Nội dung bài viết</span>
                 <RichTextEditor
                   value={form.content}
+                  wordMode
+                  placeholder="Soạn nội dung bài viết như trên Word…"
                   onChange={(content) =>
                     setForm((current) => ({ ...current, content }))
                   }

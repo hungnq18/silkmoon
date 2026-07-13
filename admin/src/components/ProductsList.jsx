@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
+import mammoth from "mammoth";
 import { adminApi } from "../services/api";
 import Pagination from "./Pagination";
 import ListSearch, { ListFilter, useListFilter, useListSearch } from "./ListSearch";
@@ -10,11 +11,14 @@ const currency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
-export function RichTextEditor({ value, onChange }) {
+export function RichTextEditor({ value, onChange, wordMode = false, placeholder = "Nhập nội dung…" }) {
   const editorRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const docInputRef = useRef(null);
   const savedRangeRef = useRef(null);
   const historyRef = useRef([value || ""]);
   const historyIndexRef = useRef(0);
+  const [selectedImage, setSelectedImage] = useState(null);
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
       editorRef.current.innerHTML = value || "";
@@ -117,6 +121,105 @@ export function RichTextEditor({ value, onChange }) {
     const url = prompt("Nhập liên kết bắt đầu bằng https://");
     if (url?.startsWith("https://")) command("createLink", url);
   };
+  const insertTable = () => {
+    const rows = Math.min(10, Math.max(1, Number(prompt("Số hàng", "2")) || 2));
+    const columns = Math.min(6, Math.max(1, Number(prompt("Số cột", "2")) || 2));
+    const cells = Array.from({ length: rows }, () => `<tr>${Array.from({ length: columns }, () => '<td>&nbsp;</td>').join('')}</tr>`).join('');
+    command("insertHTML", `<table><tbody>${cells}</tbody></table><p><br></p>`);
+  };
+  const uploadInlineImage = async (file) => {
+    if (!file || !file.type.startsWith("image/") || file.size > 8 * 1024 * 1024) return alert("Ảnh phải nhỏ hơn 8 MB.");
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    try {
+      const url = await adminApi.uploadProductImage(dataUrl);
+      command("insertImage", url);
+    } catch (error) {
+      alert(error.message || "Không thể tải ảnh.");
+    }
+  };
+  const uploadWordDoc = async (file) => {
+    if (!file) return;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml(
+        { arrayBuffer },
+        {
+          styleMap: [
+            "p[style-name='Title'] => h1:fresh",
+            "p[style-name='Subtitle'] => p.word-subtitle:fresh",
+            "p[style-name='Heading 1'] => h2:fresh",
+            "p[style-name='Heading 2'] => h3:fresh",
+            "p[style-name='Quote'] => blockquote:fresh",
+          ],
+          convertImage: mammoth.images.imgElement(async (image) => {
+            const base64 = await image.read("base64");
+            const dataUrl = `data:${image.contentType || "image/png"};base64,${base64}`;
+            try {
+              const src = await adminApi.uploadProductImage(dataUrl);
+              return { src };
+            } catch (error) {
+              console.error("Không thể upload ảnh trong Word", error);
+              return { src: dataUrl };
+            }
+          }),
+        },
+      );
+      const importedDocument = new DOMParser().parseFromString(`<div class="word-document-import">${result.value}</div>`, "text/html");
+      const importedRoot = importedDocument.querySelector(".word-document-import");
+      const importedImages = [...importedRoot.querySelectorAll("img")];
+      importedImages.forEach((image, index) => {
+        const parent = image.parentElement;
+        const siblingImages = parent ? [...parent.querySelectorAll(":scope > img")] : [];
+        const hasTextInSameBlock = Boolean(parent?.textContent?.trim());
+        const layout = siblingImages.length > 1
+          ? "inline"
+          : hasTextInSameBlock
+            ? (index % 2 === 0 ? "wrap-left" : "wrap-right")
+            : "break";
+        image.className = `word-image word-image-${layout}`;
+        image.dataset.layout = layout;
+        if (parent?.tagName === "P" && !hasTextInSameBlock && parent.children.length === 1) {
+          parent.replaceWith(image);
+        }
+      });
+      const importedHtml = `${importedRoot.outerHTML}<p><br></p>`;
+      if (!editorRef.current) throw new Error("Trình soạn thảo chưa sẵn sàng");
+      editorRef.current.innerHTML = importedHtml;
+      commit(importedHtml);
+      setSelectedImage(null);
+      editorRef.current.focus();
+      if (result.messages?.length) console.info("Word import:", result.messages);
+    } catch (error) {
+      alert("Không thể đọc tệp Word: " + error.message);
+    }
+  };
+  const applyImageLayout = (layout) => {
+    if (!selectedImage || !editorRef.current?.contains(selectedImage)) return;
+    selectedImage.className = `word-image word-image-${layout}`;
+    selectedImage.dataset.layout = layout;
+    commit(editorRef.current.innerHTML);
+  };
+  const selectEditorImage = (target) => {
+    const image = target?.closest?.("img") || null;
+    if (image && editorRef.current?.contains(image)) {
+      setSelectedImage(image);
+    } else {
+      setSelectedImage(null);
+    }
+  };
+  const imageLayouts = [
+    ["inline", "Trong dòng", "view_agenda"],
+    ["wrap-left", "Bao quanh trái", "wrap_text"],
+    ["wrap-right", "Bao quanh phải", "wrap_text"],
+    ["break", "Ngắt văn bản", "format_text_wrap"],
+    ["behind", "Phía sau văn bản", "flip_to_back"],
+    ["front", "Phía trước văn bản", "flip_to_front"],
+  ];
   const tools = [
     ["formatBlock", "P", "Đoạn văn", "format_paragraph"],
     ["formatBlock", "H2", "Tiêu đề", "title"],
@@ -131,6 +234,12 @@ export function RichTextEditor({ value, onChange }) {
   return (
     <div className="rich-editor">
       <div className="rich-toolbar">
+        {wordMode && <>
+          <select aria-label="Kiểu đoạn" defaultValue="P" onChange={(event) => command("formatBlock", event.target.value)}><option value="P">Đoạn văn</option><option value="H1">Tiêu đề 1</option><option value="H2">Tiêu đề 2</option><option value="H3">Tiêu đề 3</option><option value="BLOCKQUOTE">Trích dẫn</option></select>
+          <select aria-label="Phông chữ" defaultValue="Arial" onChange={(event) => command("fontName", event.target.value)}><option>Arial</option><option>Manrope</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select>
+          <select aria-label="Cỡ chữ" defaultValue="3" onChange={(event) => command("fontSize", event.target.value)}><option value="2">12</option><option value="3">14</option><option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option></select>
+          <label className="rich-color-tool" title="Màu chữ"><span className="material-symbols-outlined">format_color_text</span><input type="color" defaultValue="#1c2c58" onChange={(event) => command("foreColor", event.target.value)} /></label>
+        </>}
         {tools.map(([name, commandValue, title, icon]) => (
           <button
             key={`${name}-${commandValue}`}
@@ -164,6 +273,16 @@ export function RichTextEditor({ value, onChange }) {
         >
           <span className="material-symbols-outlined">format_clear</span>
         </button>
+        {wordMode && <>
+          <button type="button" title="Căn phải" onMouseDown={(event) => { event.preventDefault(); command("justifyRight"); }}><span className="material-symbols-outlined">format_align_right</span></button>
+          <button type="button" title="Căn đều" onMouseDown={(event) => { event.preventDefault(); command("justifyFull"); }}><span className="material-symbols-outlined">format_align_justify</span></button>
+          <button type="button" title="Chèn ảnh" onMouseDown={(event) => { event.preventDefault(); rememberSelection(); imageInputRef.current?.click(); }}><span className="material-symbols-outlined">image</span></button>
+          <button type="button" title="Chèn bảng" onMouseDown={(event) => { event.preventDefault(); insertTable(); }}><span className="material-symbols-outlined">table</span></button>
+          <button type="button" title="Đường phân cách" onMouseDown={(event) => { event.preventDefault(); command("insertHorizontalRule"); }}><span className="material-symbols-outlined">horizontal_rule</span></button>
+          <button type="button" title="Tải tệp Word" onMouseDown={(event) => { event.preventDefault(); rememberSelection(); docInputRef.current?.click(); }}><span className="material-symbols-outlined">upload_file</span></button>
+          <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => { uploadInlineImage(event.target.files[0]); event.target.value = ""; }} />
+          <input ref={docInputRef} type="file" accept=".docx" hidden onChange={(event) => { uploadWordDoc(event.target.files[0]); event.target.value = ""; }} />
+        </>}
         <span className="toolbar-spacer" />
         <button
           type="button"
@@ -186,17 +305,24 @@ export function RichTextEditor({ value, onChange }) {
           <span className="material-symbols-outlined">redo</span>
         </button>
       </div>
+      {wordMode && selectedImage && <div className="image-layout-toolbar">
+        <strong>Bố trí ảnh</strong>
+        {imageLayouts.map(([layout, label, icon]) => <button key={layout} type="button" className={selectedImage.dataset.layout === layout ? "active" : ""} onMouseDown={(event) => { event.preventDefault(); applyImageLayout(layout); }}><span className="material-symbols-outlined">{icon}</span>{label}</button>)}
+        <button type="button" className="image-layout-close" onMouseDown={(event) => { event.preventDefault(); setSelectedImage(null); }} aria-label="Đóng">×</button>
+      </div>}
       <div
         ref={editorRef}
         className="rich-content"
         contentEditable
         suppressContentEditableWarning
-        data-placeholder="Nhập mô tả chi tiết sản phẩm…"
+        data-placeholder={placeholder}
         onInput={(event) => {
           rememberSelection();
           commit(event.currentTarget.innerHTML);
         }}
         onMouseUp={rememberSelection}
+        onMouseDownCapture={(event) => selectEditorImage(event.target)}
+        onClick={(event) => selectEditorImage(event.target)}
         onKeyUp={rememberSelection}
         onBlur={rememberSelection}
       />
@@ -268,7 +394,12 @@ export default function ProductsList() {
         category: editingProduct.category.trim(),
         material: editingProduct.material.trim(),
         description: editingProduct.description.trim(),
+        materialCare: (editingProduct.materialCare || "").trim(),
+        returnPolicy: (editingProduct.returnPolicy || "").trim(),
+        technicalSpecs: (editingProduct.technicalSpecs || "").trim(),
+        packageIncludes: (editingProduct.packageIncludes || "").trim(),
         price: Number(editingProduct.price),
+        originalPrice: editingProduct.originalPrice ? Number(editingProduct.originalPrice) : undefined,
         costPrice: Number(editingProduct.costPrice || 0),
         stock: Number(editingProduct.stock),
         isBestSeller: Boolean(editingProduct.isBestSeller),
@@ -438,30 +569,34 @@ export default function ProductsList() {
           <button className="secondary-button" onClick={downloadTemplate}><span className="material-symbols-outlined">download</span>File mẫu</button>
           <button className="secondary-button" onClick={() => excelInputRef.current?.click()}><span className="material-symbols-outlined">upload_file</span>Nhập Excel</button>
           <input ref={excelInputRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={(event) => importExcel(event.target.files[0])} />
-        <button
-          className="primary-button"
-          onClick={() =>
-            setEditingProduct({
-              name: "",
-              sku: "",
-              category: "",
-              material: "",
-              description: "",
-              price: "",
-              stock: 0,
-              isBestSeller: false,
-              images: [],
-              colors: [],
-              allowEmbroidery: false,
-              embroideryPrice: 0,
-              embroideryMaxLength: 12,
-              allowCustomSize: false,
-              customSizePrice: 0,
-            })
-          }
-        >
-          <span className="material-symbols-outlined">add</span>Thêm sản phẩm
-        </button>
+          <button
+            className="primary-button"
+            onClick={() =>
+              setEditingProduct({
+                name: "",
+                sku: "",
+                category: "",
+                material: "",
+                description: "",
+                materialCare: "",
+                returnPolicy: "",
+                technicalSpecs: "",
+                packageIncludes: "",
+                price: "",
+                stock: 0,
+                isBestSeller: false,
+                images: [],
+                colors: [],
+                allowEmbroidery: false,
+                embroideryPrice: 0,
+                embroideryMaxLength: 12,
+                allowCustomSize: false,
+                customSizePrice: 0,
+              })
+            }
+          >
+            <span className="material-symbols-outlined">add</span>Thêm sản phẩm
+          </button>
         </div>
       </div>
       <div className="table-wrap">
@@ -613,6 +748,16 @@ export default function ProductsList() {
                     })
                   }
                   required
+                />
+              </label>
+              <label className="modal-field">
+                <span>Giá gốc trước giảm (VNĐ)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editingProduct.originalPrice ?? ""}
+                  placeholder="Để trống nếu không Sale"
+                  onChange={(e) => setEditingProduct({ ...editingProduct, originalPrice: e.target.value })}
                 />
               </label>
               <label className="modal-field">
@@ -772,6 +917,22 @@ export default function ProductsList() {
                     }))
                   }
                 />
+              </div>
+              <div className="modal-field full">
+                <span>Thông số kỹ thuật (mỗi dòng một thông số)</span>
+                <textarea rows="5" value={editingProduct.technicalSpecs || ""} placeholder={'Chất liệu: 100% Lụa Mulberry 22 Momme\nTiêu chuẩn: OEKO-TEX Standard 100'} onChange={(e) => setEditingProduct({ ...editingProduct, technicalSpecs: e.target.value })} />
+              </div>
+              <div className="modal-field full">
+                <span>Bộ sản phẩm bao gồm (mỗi dòng một mục)</span>
+                <textarea rows="5" value={editingProduct.packageIncludes || ""} placeholder={'01 Ga bọc nệm\n01 Vỏ chăn\n02 Vỏ gối'} onChange={(e) => setEditingProduct({ ...editingProduct, packageIncludes: e.target.value })} />
+              </div>
+              <div className="modal-field full">
+                <span>Chất liệu &amp; bảo quản</span>
+                <RichTextEditor value={editingProduct.materialCare || ""} onChange={(materialCare) => setEditingProduct((current) => ({ ...current, materialCare }))} />
+              </div>
+              <div className="modal-field full">
+                <span>Chính sách đổi trả của sản phẩm</span>
+                <RichTextEditor value={editingProduct.returnPolicy || ""} onChange={(returnPolicy) => setEditingProduct((current) => ({ ...current, returnPolicy }))} />
               </div>
               <div className="option-card full">
                 <label className="option-toggle">

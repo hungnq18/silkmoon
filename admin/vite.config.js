@@ -7,6 +7,9 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  optimizeDeps: {
+    include: ['mammoth'],
+  },
   server: {
     port: 5175,
     strictPort: true,

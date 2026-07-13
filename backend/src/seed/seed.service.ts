@@ -49,7 +49,13 @@ export class SeedService implements OnApplicationBootstrap {
 
   private async seedProducts() {
     const count = await this.productModel.countDocuments();
-    if (count > 0) return;
+    if (count > 0) {
+      await this.productModel.bulkWrite([
+        { updateOne: { filter: { slug: 'bo-ga-giuong-organic-cloud' }, update: { $set: { originalPrice: 3100000 } } } },
+        { updateOne: { filter: { slug: 'chan-chan-tencel-silk' }, update: { $set: { originalPrice: 4500000 } } } },
+      ]);
+      return;
+    }
 
     this.logger.log('🌱 Seeding products...');
 

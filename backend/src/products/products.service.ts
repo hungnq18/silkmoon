@@ -120,6 +120,7 @@ export class ProductsService {
           material: String(row.material).trim(),
           description: String(row.description || row.name).trim(),
           price: Number(row.price || 0),
+          originalPrice: Number(row.originalPrice || 0) || undefined,
           costPrice: Number(row.costPrice || 0),
           stock: Number(row.stock || 0),
           images: String(row.images || '').split(',').map((value) => value.trim()).filter(Boolean),

@@ -17,6 +17,7 @@ function RichDescription({ html }) {
         if (href.startsWith('https://')) Object.assign(props, { href, target: '_blank', rel: 'noopener noreferrer' });
         else return children;
       }
+      if (tag === 'br') return createElement(tag, props);
       return createElement(tag, props, children);
     };
     return Array.from(documentNode.body.childNodes).map((node, index) => convert(node, `rich-${index}`));
@@ -32,6 +33,8 @@ const tabs = [
 
 export default function ProductTabs({ product }) {
   const [activeTab, setActiveTab] = useState('description');
+  const technicalSpecs = (product?.technicalSpecs || '').split('\n').map((item) => item.trim()).filter(Boolean);
+  const packageIncludes = (product?.packageIncludes || '').split('\n').map((item) => item.trim()).filter(Boolean);
 
   return (
     <div className="max-w-4xl mx-auto space-y-stack-lg select-none">
@@ -73,19 +76,13 @@ export default function ProductTabs({ product }) {
               <div className="bg-bone p-stack-lg rounded-lg">
                 <h4 className="font-label-caps text-label-caps mb-stack-sm text-slate-deep">Thông số kỹ thuật</h4>
                 <ul className="text-sm space-y-2 list-disc pl-4 opacity-95">
-                  <li>Chất liệu: 100% Lụa Mulberry 22 Momme</li>
-                  <li>Tiêu chuẩn chất lượng: OEKO-TEX Standard 100</li>
-                  <li>Kiểu dệt: Satin bóng mượt sang trọng</li>
-                  <li>Đường thêu trang trí: Thủ công tỉ mỉ</li>
+                  {(technicalSpecs.length ? technicalSpecs : ['Chất liệu: ' + (product?.material || 'Đang cập nhật')]).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
               </div>
               <div className="bg-bone p-stack-lg rounded-lg">
                 <h4 className="font-label-caps text-label-caps mb-stack-sm text-slate-deep">Bộ sản phẩm bao gồm</h4>
                 <ul className="text-sm space-y-2 list-disc pl-4 opacity-95">
-                  <li>01 Ga bọc nệm cao cấp (fitted sheet)</li>
-                  <li>01 Vỏ chăn lụa (duvet cover)</li>
-                  <li>02 Vỏ gối tiêu chuẩn (pillow cases)</li>
-                  <li>Hộp quà tặng thương hiệu SILKMOON sang trọng</li>
+                  {(packageIncludes.length ? packageIncludes : ['Thông tin bộ sản phẩm đang được cập nhật']).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
               </div>
             </div>
@@ -94,6 +91,7 @@ export default function ProductTabs({ product }) {
 
         {activeTab === 'materials' && (
           <article className="space-y-stack-md animate-fade-in">
+            {product?.materialCare ? <RichDescription html={product.materialCare} /> : <>
             <p>
               Sợi lụa tự nhiên 100% có tính chất vật lý mềm mại và rất nhạy cảm với các hóa chất tẩy rửa mạnh hoặc ma sát cơ học cao. Việc chăm sóc đúng cách sẽ giúp sản phẩm giữ được vẻ bóng mượt và độ bền lên đến hàng chục năm.
             </p>
@@ -106,11 +104,13 @@ export default function ProductTabs({ product }) {
                 <li>Là/ủi ở mặt trái sản phẩm bằng bàn là hơi nước ở chế độ nhiệt dành riêng cho Lụa (nhiệt độ thấp nhất).</li>
               </ul>
             </div>
+            </>}
           </article>
         )}
 
         {activeTab === 'returns' && (
           <article className="space-y-stack-md animate-fade-in">
+            {product?.returnPolicy ? <RichDescription html={product.returnPolicy} /> : <>
             <p>
               Với tôn chỉ mang lại sự hài lòng tuyệt đối, SILKMOON áp dụng chính sách đổi trả hàng linh hoạt và nhanh chóng đối với dòng sản phẩm cao cấp này.
             </p>
@@ -122,6 +122,7 @@ export default function ProductTabs({ product }) {
                 <li>Sản phẩm đổi trả phải còn nguyên tem mác, hộp quà đi kèm, chưa qua giặt ủi và chưa được đưa vào sử dụng thực tế.</li>
               </ul>
             </div>
+            </>}
           </article>
         )}
       </div>

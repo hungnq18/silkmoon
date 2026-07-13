@@ -25,7 +25,7 @@ export default function Categories() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:min-h-[700px]">
         {categories.map((category, index) => (
-          <Link key={category._id} to={`/shop?category=${encodeURIComponent(category.slug)}`} className={`${cardClasses[index] || 'md:col-span-4 h-[250px]'} relative overflow-hidden rounded-xl bg-bone group block`}>
+          <Link key={category._id} to={`/shop?category=${encodeURIComponent(category.name)}`} className={`${cardClasses[index] || 'md:col-span-4 h-[250px]'} relative overflow-hidden rounded-xl bg-bone group block`}>
             <img alt={category.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={category.coverImage} />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/55 to-transparent" />
             <div className="absolute bottom-stack-lg left-stack-lg right-stack-lg text-linen-white">

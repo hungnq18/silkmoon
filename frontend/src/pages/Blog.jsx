@@ -34,18 +34,10 @@ export default function Blog() {
       ? items
       : items.filter((post) => post.categoryId === active);
   }, [posts, active]);
-  const featured =
-    visible.find((post) => post.layout === "featured") || visible[0];
-  const subPosts = visible
-    .filter((post) => post._id !== featured?._id)
-    .slice(0, 3);
-  const popularMain =
-    visible.find((post) => post.layout === "editorial") || visible[1];
-  const popularList = visible
-    .filter(
-      (post) => post._id !== featured?._id && post._id !== popularMain?._id,
-    )
-    .slice(0, 3);
+  const featured = visible[0];
+  const subPosts = visible.slice(1, 4);
+  const popularMain = visible[4];
+  const popularList = visible.slice(5, 8);
   return (
     <main className="pt-32 pb-20 bg-white min-h-screen">
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
