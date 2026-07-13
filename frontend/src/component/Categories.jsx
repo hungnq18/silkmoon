@@ -29,8 +29,8 @@ export default function Categories() {
             <img alt={category.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={category.coverImage} />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-deep/55 to-transparent" />
             <div className="absolute bottom-stack-lg left-stack-lg right-stack-lg text-linen-white">
-              <h3 className="font-headline-sm text-headline-sm mb-2">{category.name}</h3>
-              {category.description && <p className="font-body-md opacity-90">{category.description}</p>}
+              <h3 className="type-card-title font-headline-sm text-headline-sm mb-2">{category.name}</h3>
+              {category.description && <p className="type-card-body font-body-md opacity-90">{category.description}</p>}
             </div>
           </Link>
         ))}

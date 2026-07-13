@@ -1,4 +1,25 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const LOCATION_API_URL = 'https://provinces.open-api.vn/api/v2';
+let provincesPromise;
+const wardsPromises = new Map();
+
+async function locationRequest(path) {
+  const response = await fetch(`${LOCATION_API_URL}${path}`);
+  if (!response.ok) throw new Error('Không thể tải dữ liệu địa giới Việt Nam.');
+  return response.json();
+}
+
+export const locationApi = {
+  getProvinces: () => {
+    if (!provincesPromise) provincesPromise = locationRequest('/p/').catch((error) => { provincesPromise = undefined; throw error; });
+    return provincesPromise;
+  },
+  getWards: (provinceCode) => {
+    const code = Number(provinceCode);
+    if (!wardsPromises.has(code)) wardsPromises.set(code, locationRequest(`/w/?province=${code}`).catch((error) => { wardsPromises.delete(code); throw error; }));
+    return wardsPromises.get(code);
+  },
+};
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('token');
@@ -62,6 +83,13 @@ export const blogApi = {
 };
 export const settingsApi = {
   get: (key) => request(`/settings/${encodeURIComponent(key)}?_=${Date.now()}`, { cache: 'no-store' }),
+};
+
+export const newsletterApi = {
+  subscribe: (contact) => request('/newsletter/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({ contact }),
+  }),
 };
 
 // ── Promotions ────────────────────────────────────────────
@@ -143,9 +171,23 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
 
+  verifyRegistration: (email, otp) =>
+    request('/auth/verify-registration', { method: 'POST', body: JSON.stringify({ email, otp }) }),
+  resendRegistrationOtp: (email) =>
+    request('/auth/resend-registration-otp', { method: 'POST', body: JSON.stringify({ email }) }),
+
   getProfile: () => request('/auth/profile'),
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
+};
+
+export const usersApi = {
+  updateProfile: (data) => request('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+  uploadAvatar: (image) => request('/users/profile/avatar', { method: 'POST', body: JSON.stringify({ image }) }),
+  changePassword: (currentPassword, newPassword) => request('/users/profile/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  }),
 };
 
 // ── Cart (For Logged-in Users) ────────────────────────────

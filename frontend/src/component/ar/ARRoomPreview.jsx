@@ -4,6 +4,7 @@ import { arApi } from '../../services/api';
 import { FABRICS } from './arUtils';
 import ARSidebar from './ARSidebar';
 import QRCode from 'react-qr-code';
+import arLoadingUrl from '../../assets/ar-loading.svg';
 
 // ── Mode: 'ai' = AI-generated image (AR Try on), 'ar' = Realtime WebXR
 const MODES = { AI: 'ai', AR: 'ar' };
@@ -262,7 +263,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
               {/* Generating spinner */}
               {isGenerating && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-linen-white/85 backdrop-blur-sm">
-                  <div className="w-10 h-10 border-2 border-slate-deep border-t-transparent rounded-full animate-spin mb-4" />
+                  <img src={arLoadingUrl} alt="" aria-hidden="true" className="mb-5 w-48 max-w-[55%] opacity-80 motion-safe:animate-pulse" />
                   <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest text-center px-4">Đang trải chăn ga lụa {fabric.label} lên giường của bạn</p>
                   <p className="text-sm text-on-surface-variant mt-1 text-center px-4">
                     Thử trước không gian mơ ước

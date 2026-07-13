@@ -3,38 +3,60 @@ import { Link, useLocation } from 'react-router-dom';
 import logoImg from '../assets/xanh_ngang.png';
 import { productsApi, settingsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
-const mainMenu = [
-  { label: 'Chăn', to: '/shop?category=Chăn', category: 'Chăn', dropdown: true },
-  { label: 'Ga', to: '/shop?category=Ga', category: 'Ga', dropdown: true },
-  { label: 'Gối', to: '/shop?category=Gối', category: 'Gối', dropdown: true },
-  { label: 'Bộ đồ ngủ', to: '/shop?category=Đồ ngủ', category: 'Đồ ngủ', dropdown: true },
-  { label: 'Phụ kiện', to: '/shop?category=Phụ kiện', category: 'Phụ kiện', dropdown: true },
-  { label: 'Hướng dẫn chăm sóc', to: '/blog?type=care', blogType: 'care' },
-  { label: 'Sale', to: '/shop?sale=true', sale: true },
-];
+const defaultHeader = {
+  logoUrl: '',
+  topLinks: 'Về chúng tôi|/about\nBlog|/blog',
+  mainLinks: 'Chăn|/shop?category=Chăn\nGa|/shop?category=Ga\nGối|/shop?category=Gối\nBộ đồ ngủ|/shop?category=Đồ ngủ\nPhụ kiện|/shop?category=Phụ kiện\nHướng dẫn chăm sóc|/blog?type=care\nSale|/shop?sale=true',
+  flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg',
+};
+
+const parseHeaderLinks = (value) => (value || '').split('\n').map((line) => {
+  const separator = line.indexOf('|');
+  if (separator < 0) return null;
+  const label = line.slice(0, separator).trim();
+  const to = line.slice(separator + 1).trim();
+  if (!label || !to) return null;
+  const query = new URLSearchParams(to.split('?')[1] || '');
+  const category = query.get('category');
+  return { label, to, category, dropdown: Boolean(category), sale: query.get('sale') === 'true', blogType: query.get('type') };
+}).filter(Boolean);
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('Giảm giá 20% cho đơn hàng từ 500.000 vnđ');
+  const [headerContent, setHeaderContent] = useState(defaultHeader);
   const [menuProducts, setMenuProducts] = useState([]);
   const [hoveredMenu, setHoveredMenu] = useState(null);
   const { cart } = useCart();
+  const { user } = useAuth();
   const cartCount = (cart || []).reduce((total, item) => total + (Number(item.quantity) || 0), 0);
   const location = useLocation();
   const isTransparentRoute = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/showroom';
   const isSolid = !isTransparentRoute || isScrolled;
   const params = new URLSearchParams(location.search);
+  const mainMenu = parseHeaderLinks(headerContent.mainLinks);
+  const topLinks = parseHeaderLinks(headerContent.topLinks);
   const isMenuActive = (item) => item.category
     ? location.pathname === '/shop' && params.get('category') === item.category
     : item.sale
       ? location.pathname === '/shop' && params.get('sale') === 'true'
-      : location.pathname === '/blog' && params.get('type') === item.blogType;
+      : item.blogType
+        ? location.pathname === '/blog' && params.get('type') === item.blogType
+        : location.pathname === item.to.split('?')[0];
 
   useEffect(() => {
-    settingsApi.get('website_content').then(setting => { if (setting?.value?.marketing?.announcement) setAnnouncement(setting.value.marketing.announcement); }).catch(() => {});
+    const loadHeader = () => settingsApi.get('website_content').then(setting => {
+      if (setting?.value?.marketing?.announcement) setAnnouncement(setting.value.marketing.announcement);
+      setHeaderContent({ ...defaultHeader, ...(setting?.value?.header || {}) });
+    }).catch(() => {});
+    loadHeader();
+    window.addEventListener('focus', loadHeader);
+    const timer = window.setInterval(loadHeader, 5000);
     productsApi.getAll().then((data) => setMenuProducts(data?.items || [])).catch(() => setMenuProducts([]));
+    return () => { window.removeEventListener('focus', loadHeader); window.clearInterval(timer); };
   }, []);
 
   useEffect(() => {
@@ -55,19 +77,14 @@ export default function Header() {
       <div className={`${isSolid ? 'bg-slate-deep' : 'bg-transparent'} text-linen-white py-2 px-margin-mobile md:px-margin-desktop text-[12px] md:text-sm font-body-sm w-full hidden md:block transition-colors duration-300`}>
         <div className="max-w-container-max mx-auto flex justify-between items-center w-full">
            {/* Left */}
-           <div className="flex items-center gap-6">
-             <Link to="/about" className="hover:opacity-80 transition-opacity flex items-center gap-1 font-medium">
-               Về chúng tôi
-             </Link>
-             <Link to="/blog" className="hover:opacity-80 transition-opacity font-medium">Blog</Link>
-           </div>
+           <div className="flex items-center gap-6">{topLinks.map((item) => <Link key={`${item.label}-${item.to}`} to={item.to} className="hover:opacity-80 transition-opacity flex items-center gap-1 font-medium">{item.label}</Link>)}</div>
            {/* Center */}
            <div className="flex-1 text-center font-medium">
              {announcement}
            </div>
            {/* Right */}
            <div className="flex items-center gap-2 justify-end">
-             <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" alt="VN" className="w-5 h-auto rounded-sm object-cover shadow-sm" />
+             {headerContent.flagUrl && <img src={headerContent.flagUrl} alt="VN" className="w-5 h-auto rounded-sm object-cover shadow-sm" />}
            </div>
         </div>
       </div>
@@ -84,7 +101,7 @@ export default function Header() {
           {/* Brand Logo */}
           <Link to="/" className="flex items-center select-none w-[150px] shrink-0">
             <img
-              src={logoImg}
+              src={headerContent.logoUrl || logoImg}
               alt="SILKMOON Logo"
               className="h-8 md:h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
             />
@@ -97,8 +114,8 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-stack-sm md:gap-stack-md w-[150px] shrink-0">
-            <Link to="/account" aria-label="Tài khoản" className={`hidden rounded-full border-b-2 p-2 transition-all duration-200 ease-out hover:-translate-y-px hover:border-slate-deep hover:bg-slate-deep hover:text-white hover:shadow-md xl:block ${location.pathname === '/account' ? 'border-current' : 'border-transparent'} ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}>
-              <span className="material-symbols-outlined text-[24px]">account_circle</span>
+            <Link to={user ? '/profile' : '/account'} aria-label="Tài khoản" className={`hidden rounded-full border-b-2 p-2 transition-all duration-200 ease-out hover:-translate-y-px hover:border-slate-deep hover:bg-slate-deep hover:text-white hover:shadow-md xl:block ${location.pathname === '/account' || location.pathname === '/profile' ? 'border-current' : 'border-transparent'} ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}>
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="Avatar" className="h-7 w-7 rounded-full object-cover"/> : <span className="material-symbols-outlined text-[24px]">account_circle</span>}
             </Link>
             <Link to="/cart" className={`relative flex items-center rounded-full p-2 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-slate-deep hover:text-white hover:shadow-md ${isSolid ? 'text-slate-deep' : 'text-linen-white'}`}>
               <span className="material-symbols-outlined text-[24px]">shopping_cart</span>
@@ -128,64 +145,17 @@ export default function Header() {
           }`}
       >
         <nav className="flex flex-col p-stack-md gap-stack-sm max-h-[70vh] overflow-y-auto">
+          <Link to={user ? '/profile' : '/account'} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg bg-slate-deep/5 px-3 py-3 font-medium text-slate-deep"><span className="material-symbols-outlined">account_circle</span>{user ? 'Hồ sơ của tôi' : 'Đăng nhập / Đăng ký'}</Link>
           {/* Top Bar Items on Mobile */}
           <div className="flex flex-col gap-2 pb-4 border-b border-slate-deep/10 mb-2 text-on-surface-variant font-body-sm">
              <div className="bg-slate-deep/5 text-slate-deep font-medium text-center py-2 rounded mb-2 text-xs">
                {announcement}
              </div>
-             <Link to="/about" className="py-1">Về chúng tôi</Link>
+             {topLinks.map((item) => <Link key={`${item.label}-${item.to}`} to={item.to} onClick={() => setIsMobileMenuOpen(false)} className="py-1">{item.label}</Link>)}
           </div>
           
           {/* Main Links on Mobile */}
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Chăn <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Ga <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Gối <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Bộ đồ ngủ <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Phụ kiện <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md border-b border-slate-deep/5 text-slate-deep font-medium flex justify-between items-center"
-            to="/blog"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Hướng dẫn chăm sóc <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </Link>
-          <Link
-            className="py-3 font-body-md text-body-md text-slate-deep font-medium flex justify-between items-center"
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Sale
-          </Link>
+          {mainMenu.map((item, index) => <Link key={`${item.label}-${item.to}`} className={`py-3 font-body-md text-body-md text-slate-deep font-medium flex justify-between items-center ${index < mainMenu.length - 1 ? 'border-b border-slate-deep/5' : ''}`} to={item.to} onClick={() => setIsMobileMenuOpen(false)}>{item.label}<span className="material-symbols-outlined text-[20px]">chevron_right</span></Link>)}
         </nav>
       </div>
     </header>

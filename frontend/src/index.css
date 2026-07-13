@@ -2,6 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
+.location-combobox { position: relative; width: 100%; text-transform: none; letter-spacing: normal; }
+.location-combobox-trigger { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px !important; font-weight: 400; line-height: 1.5; text-align: left; cursor: pointer; }
+.location-combobox-trigger:disabled { cursor: not-allowed; opacity: .55; }
+.location-combobox-trigger .material-symbols-outlined { flex: 0 0 auto; font-size: 20px; transition: transform .2s; }
+.location-combobox-trigger[aria-expanded="true"] .material-symbols-outlined { transform: rotate(180deg); }
+.location-combobox-popover { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; width: 100%; min-width: 280px; overflow: hidden; border: 1px solid rgba(15, 34, 63, .2); border-radius: 10px; background: #fff; box-shadow: 0 18px 45px rgba(15, 34, 63, .18); }
+.location-combobox-search { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-bottom: 1px solid rgba(15, 34, 63, .12); background: #fff; }
+.location-combobox-search .material-symbols-outlined { color: #667085; font-size: 20px; }
+.location-combobox-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #0f223f; font-size: 15px; font-weight: 400; text-transform: none; letter-spacing: normal; }
+.location-combobox-options { max-height: 280px; overflow-y: auto; padding: 6px; }
+.location-combobox-options button { width: 100%; min-height: 42px; padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 0; border-radius: 6px; background: transparent; color: #0f223f; font-size: 15px; font-weight: 400; text-align: left; text-transform: none; letter-spacing: normal; }
+.location-combobox-options button:hover, .location-combobox-options button.selected { background: #e8f1ff; }
+.location-combobox-options button.selected { color: #1d5fae; font-weight: 600; }
+.location-combobox-options button .material-symbols-outlined { font-size: 18px; }
+.location-combobox-options p { padding: 18px 12px; color: #667085; font-size: 14px; text-align: center; }
+
+.website-typography {
+  font-family: var(--site-body-font-mobile); font-size: var(--site-body-size-mobile);
+  --type-pageTitle-font: var(--type-pageTitle-font-mobile); --type-pageTitle-size: var(--type-pageTitle-size-mobile);
+  --type-intro-font: var(--type-intro-font-mobile); --type-intro-size: var(--type-intro-size-mobile);
+  --type-eyebrow-font: var(--type-eyebrow-font-mobile); --type-eyebrow-size: var(--type-eyebrow-size-mobile);
+  --type-sectionTitle-font: var(--type-sectionTitle-font-mobile); --type-sectionTitle-size: var(--type-sectionTitle-size-mobile);
+  --type-body-font: var(--type-body-font-mobile); --type-body-size: var(--type-body-size-mobile);
+  --type-cardTitle-font: var(--type-cardTitle-font-mobile); --type-cardTitle-size: var(--type-cardTitle-size-mobile);
+  --type-cardBody-font: var(--type-cardBody-font-mobile); --type-cardBody-size: var(--type-cardBody-size-mobile);
+  --type-meta-font: var(--type-meta-font-mobile); --type-meta-size: var(--type-meta-size-mobile);
+  --type-button-font: var(--type-button-font-mobile); --type-button-size: var(--type-button-size-mobile);
+  --type-price-font: var(--type-price-font-mobile); --type-price-size: var(--type-price-size-mobile);
+  --type-optionLabel-font: var(--type-optionLabel-font-mobile); --type-optionLabel-size: var(--type-optionLabel-size-mobile);
+  --type-optionValue-font: var(--type-optionValue-font-mobile); --type-optionValue-size: var(--type-optionValue-size-mobile);
+  --type-formLabel-font: var(--type-formLabel-font-mobile); --type-formLabel-size: var(--type-formLabel-size-mobile);
+  --type-input-font: var(--type-input-font-mobile); --type-input-size: var(--type-input-size-mobile);
+  --type-stepLabel-font: var(--type-stepLabel-font-mobile); --type-stepLabel-size: var(--type-stepLabel-size-mobile);
+}
+.website-typography :where(h1, h2, h3, h4, h5, h6):not(.hero-slide-title) { font-family: var(--site-heading-font-mobile) !important; }
+.website-typography h1:not(.hero-slide-title) { font-size: var(--site-page-title-mobile) !important; }
+.website-typography h2 { font-size: var(--site-section-title-mobile) !important; }
+.website-typography p:not(.hero-slide-description) { font-family: var(--site-body-font-mobile); font-size: var(--site-body-size-mobile) !important; }
+.product-detail-title { font-size: var(--site-page-title-mobile) !important; }
+.website-typography p.product-detail-price { font-size: var(--product-price-size-mobile) !important; }
+.product-detail-option-label { font-size: var(--product-option-size-mobile) !important; }
+
+@media (min-width: 768px) {
+  .website-typography {
+    font-family: var(--site-body-font-tablet); font-size: var(--site-body-size-tablet);
+    --type-pageTitle-font: var(--type-pageTitle-font-tablet); --type-pageTitle-size: var(--type-pageTitle-size-tablet);
+    --type-intro-font: var(--type-intro-font-tablet); --type-intro-size: var(--type-intro-size-tablet);
+    --type-eyebrow-font: var(--type-eyebrow-font-tablet); --type-eyebrow-size: var(--type-eyebrow-size-tablet);
+    --type-sectionTitle-font: var(--type-sectionTitle-font-tablet); --type-sectionTitle-size: var(--type-sectionTitle-size-tablet);
+    --type-body-font: var(--type-body-font-tablet); --type-body-size: var(--type-body-size-tablet);
+    --type-cardTitle-font: var(--type-cardTitle-font-tablet); --type-cardTitle-size: var(--type-cardTitle-size-tablet);
+    --type-cardBody-font: var(--type-cardBody-font-tablet); --type-cardBody-size: var(--type-cardBody-size-tablet);
+    --type-meta-font: var(--type-meta-font-tablet); --type-meta-size: var(--type-meta-size-tablet);
+    --type-button-font: var(--type-button-font-tablet); --type-button-size: var(--type-button-size-tablet);
+    --type-price-font: var(--type-price-font-tablet); --type-price-size: var(--type-price-size-tablet);
+    --type-optionLabel-font: var(--type-optionLabel-font-tablet); --type-optionLabel-size: var(--type-optionLabel-size-tablet);
+    --type-optionValue-font: var(--type-optionValue-font-tablet); --type-optionValue-size: var(--type-optionValue-size-tablet);
+    --type-formLabel-font: var(--type-formLabel-font-tablet); --type-formLabel-size: var(--type-formLabel-size-tablet);
+    --type-input-font: var(--type-input-font-tablet); --type-input-size: var(--type-input-size-tablet);
+    --type-stepLabel-font: var(--type-stepLabel-font-tablet); --type-stepLabel-size: var(--type-stepLabel-size-tablet);
+  }
+  .website-typography :where(h1, h2, h3, h4, h5, h6):not(.hero-slide-title) { font-family: var(--site-heading-font-tablet) !important; }
+  .website-typography h1:not(.hero-slide-title) { font-size: var(--site-page-title-tablet) !important; }
+  .website-typography h2 { font-size: var(--site-section-title-tablet) !important; }
+  .website-typography p:not(.hero-slide-description) { font-family: var(--site-body-font-tablet); font-size: var(--site-body-size-tablet) !important; }
+  .product-detail-title { font-size: var(--site-page-title-tablet) !important; }
+  .website-typography p.product-detail-price { font-size: var(--product-price-size-tablet) !important; }
+  .product-detail-option-label { font-size: var(--product-option-size-tablet) !important; }
+}
+
+@media (min-width: 1024px) {
+  .website-typography {
+    font-family: var(--site-body-font-desktop); font-size: var(--site-body-size-desktop);
+    --type-pageTitle-font: var(--type-pageTitle-font-desktop); --type-pageTitle-size: var(--type-pageTitle-size-desktop);
+    --type-intro-font: var(--type-intro-font-desktop); --type-intro-size: var(--type-intro-size-desktop);
+    --type-eyebrow-font: var(--type-eyebrow-font-desktop); --type-eyebrow-size: var(--type-eyebrow-size-desktop);
+    --type-sectionTitle-font: var(--type-sectionTitle-font-desktop); --type-sectionTitle-size: var(--type-sectionTitle-size-desktop);
+    --type-body-font: var(--type-body-font-desktop); --type-body-size: var(--type-body-size-desktop);
+    --type-cardTitle-font: var(--type-cardTitle-font-desktop); --type-cardTitle-size: var(--type-cardTitle-size-desktop);
+    --type-cardBody-font: var(--type-cardBody-font-desktop); --type-cardBody-size: var(--type-cardBody-size-desktop);
+    --type-meta-font: var(--type-meta-font-desktop); --type-meta-size: var(--type-meta-size-desktop);
+    --type-button-font: var(--type-button-font-desktop); --type-button-size: var(--type-button-size-desktop);
+    --type-price-font: var(--type-price-font-desktop); --type-price-size: var(--type-price-size-desktop);
+    --type-optionLabel-font: var(--type-optionLabel-font-desktop); --type-optionLabel-size: var(--type-optionLabel-size-desktop);
+    --type-optionValue-font: var(--type-optionValue-font-desktop); --type-optionValue-size: var(--type-optionValue-size-desktop);
+    --type-formLabel-font: var(--type-formLabel-font-desktop); --type-formLabel-size: var(--type-formLabel-size-desktop);
+    --type-input-font: var(--type-input-font-desktop); --type-input-size: var(--type-input-size-desktop);
+    --type-stepLabel-font: var(--type-stepLabel-font-desktop); --type-stepLabel-size: var(--type-stepLabel-size-desktop);
+  }
+  .website-typography :where(h1, h2, h3, h4, h5, h6):not(.hero-slide-title) { font-family: var(--site-heading-font-desktop) !important; }
+  .website-typography h1:not(.hero-slide-title) { font-size: var(--site-page-title-desktop) !important; }
+  .website-typography h2 { font-size: var(--site-section-title-desktop) !important; }
+  .website-typography p:not(.hero-slide-description) { font-family: var(--site-body-font-desktop); font-size: var(--site-body-size-desktop) !important; }
+  .product-detail-title { font-size: var(--site-page-title-desktop) !important; }
+  .website-typography p.product-detail-price { font-size: var(--product-price-size-desktop) !important; }
+  .product-detail-option-label { font-size: var(--product-option-size-desktop) !important; }
+}
+
+.website-typography :where(.type-page-title, main h1:not(.hero-slide-title)) { font-family: var(--type-pageTitle-font) !important; font-size: var(--type-pageTitle-size) !important; }
+.website-typography :where(.type-intro) { font-family: var(--type-intro-font) !important; font-size: var(--type-intro-size) !important; }
+.website-typography :where(.type-eyebrow) { font-family: var(--type-eyebrow-font) !important; font-size: var(--type-eyebrow-size) !important; }
+.website-typography :where(main h2, .type-section-title) { font-family: var(--type-sectionTitle-font) !important; font-size: var(--type-sectionTitle-size) !important; }
+.website-typography :where(main p:not(.hero-slide-description, .type-intro, .type-card-body, .product-detail-price)) { font-family: var(--type-body-font) !important; font-size: var(--type-body-size) !important; }
+.website-typography :where(main h3, main h4, .type-card-title) { font-family: var(--type-cardTitle-font) !important; font-size: var(--type-cardTitle-size) !important; }
+.website-typography :where(.type-card-body) { font-family: var(--type-cardBody-font) !important; font-size: var(--type-cardBody-size) !important; }
+.website-typography :where(.type-meta) { font-family: var(--type-meta-font) !important; font-size: var(--type-meta-size) !important; }
+.website-typography .type-meta > button { font-family: inherit !important; font-size: inherit !important; }
+.website-typography :where(main button, main a.type-button, .type-button) { font-family: var(--type-button-font) !important; font-size: var(--type-button-size) !important; }
+.website-typography :where(.type-price, .product-detail-price) { font-family: var(--type-price-font) !important; font-size: var(--type-price-size) !important; }
+.website-typography :where(.product-detail-option-label, .type-option-label) { font-family: var(--type-optionLabel-font) !important; font-size: var(--type-optionLabel-size) !important; }
+.website-typography :where(.type-option-value) { font-family: var(--type-optionValue-font) !important; font-size: var(--type-optionValue-size) !important; }
+.website-typography :where(main label, .type-form-label) { font-family: var(--type-formLabel-font) !important; font-size: var(--type-formLabel-size) !important; }
+.website-typography :where(main input, main textarea, main select, .type-input) { font-family: var(--type-input-font) !important; font-size: var(--type-input-size) !important; }
+.website-typography :where(.type-step-label) { font-family: var(--type-stepLabel-font) !important; font-size: var(--type-stepLabel-size) !important; }
+
 @layer base {
 
   html,
@@ -20,9 +135,31 @@
 }
 
 @layer components {
+  .hero-slide-copy { font-family: var(--hero-font-mobile); }
+  .hero-slide-label { font-size: var(--hero-label-mobile); }
+  .hero-slide-title { font-size: var(--hero-title-mobile); font-weight: 300; }
+  .hero-slide-description { font-size: var(--hero-desc-mobile); line-height: 1.6; }
+
+  @media (min-width: 768px) {
+    .hero-slide-copy { font-family: var(--hero-font-tablet); }
+    .hero-slide-label { font-size: var(--hero-label-tablet); }
+    .hero-slide-title { font-size: var(--hero-title-tablet); }
+    .hero-slide-description { font-size: var(--hero-desc-tablet); }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-slide-copy { font-family: var(--hero-font-desktop); }
+    .hero-slide-label { font-size: var(--hero-label-desktop); }
+    .hero-slide-title { font-size: var(--hero-title-desktop); }
+    .hero-slide-description { font-size: var(--hero-desc-desktop); }
+  }
+
   .input-underline {
     @apply min-h-[48px] rounded-lg border border-slate-deep/25 bg-white px-4 py-3 text-slate-deep outline-none transition-all duration-200;
     width: 100%;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
     box-shadow: 0 1px 2px rgba(28, 44, 88, 0.04);
   }
 

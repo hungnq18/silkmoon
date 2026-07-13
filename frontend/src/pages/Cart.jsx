@@ -3,6 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { promotionsApi, productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
 
+const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
+  .filter((measurement) => measurement.label && measurement.value !== undefined && measurement.value !== null && measurement.value !== '')
+  .map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit || ''}`)
+  .join(' · ');
+const formatCustomMeasurements = (item) => (item.customMeasurements || [])
+  .filter((measurement) => measurement.label && measurement.value)
+  .map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit || ''}`)
+  .join(' · ');
+const formatCustomSize = (item) => formatCustomMeasurements(item) || (item.customSize ? `${[item.customSize.width, item.customSize.length, item.customSize.height].filter(Boolean).join(' × ')} cm` : '');
+
 export default function Cart() {
   const navigate = useNavigate();
   const { cart, updateQuantity, removeFromCart, loading: cartLoading } = useCart();
@@ -25,11 +35,14 @@ export default function Cart() {
         const detailsPromises = cart.map(async (item) => {
           // If the backend has getById, fetch it
           const product = await productsApi.getById(item.productId);
+          const customizationPrice =
+            (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
+            (item.customSize ? Number(product.customSizePrice || 0) : 0);
           return {
             ...item,
             id: item.productId, // use productId as id for UI
             name: product.name,
-            price: product.price,
+            price: Number(product.price || 0) + customizationPrice,
             image: product.images?.[0] || '',
             spec: product.category || 'N/A'
           };
@@ -149,7 +162,7 @@ export default function Cart() {
                 </thead>
                 <tbody className="divide-y divide-slate-deep/5">
                   {cartDetails.map((item) => (
-                    <tr key={item.id} className="align-middle">
+                    <tr key={item.cartItemId || item.id} className="align-middle">
                       {/* Product details */}
                       <td className="py-6 pr-4">
                         <div className="flex gap-4">
@@ -160,6 +173,7 @@ export default function Cart() {
                             <div>
                               <h4 className="font-body-md font-medium text-slate-deep truncate">{item.name}</h4>
                               <p className="text-xs text-on-surface-variant opacity-75 mt-1 font-mono uppercase tracking-wide">{item.spec}</p>
+                              {item.sizeLabel && <p className="mt-1 text-xs text-slate-deep">Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomSize(item) ? ` · ${formatCustomSize(item)}` : ''}</p>}
                               {item.embroidery && (
                                 <div className="inline-flex items-center gap-1 bg-sand-silk/15 border border-sand-silk/30 px-2 py-0.5 rounded text-[11px] text-slate-deep font-medium mt-2">
                                   <span className="material-symbols-outlined text-[13px]">edit</span>
@@ -174,9 +188,9 @@ export default function Cart() {
                       {/* Quantity Controls */}
                       <td className="py-6 text-center">
                         <div className="inline-flex items-center border border-slate-deep/15 rounded-full overflow-hidden bg-linen-white">
-                          <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">-</button>
+                          <button onClick={() => updateQuantity(item.cartItemId || item.productId, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">-</button>
                           <span className="w-8 text-center font-body-md font-medium text-slate-deep">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">+</button>
+                          <button onClick={() => updateQuantity(item.cartItemId || item.productId, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold">+</button>
                         </div>
                       </td>
 
@@ -189,7 +203,7 @@ export default function Cart() {
                       <td className="py-6 text-right font-body-md text-slate-deep">
                         <div className="flex items-center justify-end gap-4">
                           <span className="font-semibold">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
-                          <button onClick={() => removeFromCart(item.productId)} className="flex items-center justify-center p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-full transition-all" title="Xóa sản phẩm">
+                          <button onClick={() => removeFromCart(item.cartItemId || item.productId)} className="flex items-center justify-center p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-full transition-all" title="Xóa sản phẩm">
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -203,7 +217,7 @@ export default function Cart() {
             {/* Mobile List View */}
             <div className="md:hidden divide-y divide-slate-deep/5">
               {cartDetails.map((item) => (
-                <div key={item.id} className="py-stack-md flex flex-col gap-4">
+                <div key={item.cartItemId || item.id} className="py-stack-md flex flex-col gap-4">
                   {/* Product Details (Image + Spec) */}
                   <div className="flex gap-4 w-full">
                     <div className="w-20 h-24 bg-bone overflow-hidden rounded flex-shrink-0 border border-slate-deep/5">
@@ -221,6 +235,7 @@ export default function Cart() {
                         <p className="text-xs text-on-surface-variant opacity-75 mt-1 font-mono uppercase tracking-wide">
                           {item.spec}
                         </p>
+                        {item.sizeLabel && <p className="mt-1 text-xs text-slate-deep">Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomSize(item) ? ` · ${formatCustomSize(item)}` : ''}</p>}
                         {item.embroidery && (
                           <div className="inline-flex items-center gap-1 bg-sand-silk/15 border border-sand-silk/30 px-2 py-0.5 rounded text-[11px] text-slate-deep font-medium mt-2">
                             <span className="material-symbols-outlined text-[13px]">edit</span>
@@ -229,7 +244,7 @@ export default function Cart() {
                         )}
                       </div>
                       <button
-                        onClick={() => removeFromCart(item.productId)}
+                        onClick={() => removeFromCart(item.cartItemId || item.productId)}
                         className="flex items-center gap-1 text-xs text-error/80 hover:text-error transition-colors mt-2"
                       >
                         <span className="material-symbols-outlined text-[14px]">delete</span>
@@ -242,7 +257,7 @@ export default function Cart() {
                   <div className="flex justify-between items-center w-full pt-2 border-t border-dashed border-slate-deep/5">
                     <div className="flex items-center border border-slate-deep/15 rounded-full overflow-hidden bg-linen-white">
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.cartItemId || item.productId, item.quantity - 1)}
                         className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold"
                       >
                         -
@@ -251,7 +266,7 @@ export default function Cart() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.cartItemId || item.productId, item.quantity + 1)}
                         className="w-8 h-8 flex items-center justify-center text-slate-deep hover:bg-slate-deep/5 transition-colors font-semibold"
                       >
                         +

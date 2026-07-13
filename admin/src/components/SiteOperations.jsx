@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContai
 import { adminApi } from "../services/api";
 import slide3Img from "../../../frontend/src/assets/carousel-slide3.png";
 import footerLogo from "../../../frontend/src/assets/logoweb.silkmoon.png";
+import headerLogo from "../../../frontend/src/assets/xanh_ngang.png";
 import Pagination from "./Pagination";
 import ListSearch, { ListFilter, useListFilter, useListSearch } from "./ListSearch";
 const LIST_PAGE_SIZE = 10;
@@ -320,6 +321,7 @@ export function ContentManager() {
 }
 const contentDefaults = {
   hero: { title: "", subtitle: "", image: "", buttonText: "", buttonLink: "" },
+  header: { logoUrl: "", topLinks: "Về chúng tôi|/about\nBlog|/blog", mainLinks: "Chăn|/shop?category=Chăn\nGa|/shop?category=Ga\nGối|/shop?category=Gối\nBộ đồ ngủ|/shop?category=Đồ ngủ\nPhụ kiện|/shop?category=Phụ kiện\nHướng dẫn chăm sóc|/blog?type=care\nSale|/shop?sale=true", flagUrl: "https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" },
   marketing: { headline: "Nghệ Thuật Của Sự Nghỉ Ngơi", subheadline: "Chăm chút giấc ngủ, nâng niu từng khoảnh khắc.", announcement: "Giảm giá 20% cho đơn hàng từ 500.000 vnđ" },
   about: { heroTitle: "Nghệ Thuật Của Sự Nghỉ Ngơi", heroSubtitle: "Khám phá hành trình SILKMOON mang đến trải nghiệm giấc ngủ hoàn mỹ từ những chất liệu tự nhiên thuần khiết nhất.", heroImageUrl: "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1920&q=80", missionEyebrow: "Về chúng tôi", missionTitle: "Hơn Cả Một Giấc Ngủ Ngon", missionBody1: "Tại SILKMOON, chúng tôi tin rằng ngôi nhà là thánh đường của sự bình yên. Mỗi sản phẩm được ra đời từ niềm đam mê với chất liệu bền vững và thiết kế tối giản.", missionBody2: "Chúng tôi chọn lọc những sợi cotton tốt nhất và quy trình sản xuất thân thiện với môi trường để mỗi đêm của bạn là một hành trình nghỉ ngơi đích thực.", missionImageUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1000&q=80", valuesTitle: "Giá Trị Cốt Lõi", valuesSubtitle: "Những tiêu chí không bao giờ thay đổi trong suốt quá trình phát triển sản phẩm của SILKMOON.", responsibilityText: "Silkmoon coi trọng trách nhiệm, sự chú trọng đến từng chi tiết và tính chuyên nghiệp.", innovationText: "Silkmoon ứng dụng công nghệ hiện đại để nâng cao trải nghiệm mua sắm.", collaborationText: "Silkmoon xây dựng môi trường cởi mở, tôn trọng và hỗ trợ.", transparencyText: "Silkmoon thúc đẩy sự trung thực, cởi mở và giao tiếp rõ ràng." },
   footer: { companyName: "CÔNG TY TNHH SILKMOON", taxCode: "0314604108", description: "Premium Bedding & Sleepwear", address: "Phố Duy Tân, phường Cầu Giấy, thành phố Hà Nội", workingHours: "8h30 - 21h (Hàng ngày)", phone: "086.777.0989 · 035.365.6383", email: "", newsletterTitle: "Nhận thông tin ưu đãi từ SILKMOON", copyright: "© SILKMOON" },
@@ -349,6 +351,56 @@ const previewLinks = (value) =>
     .split("\n")
     .map((line) => line.split("|")[0]?.trim())
     .filter(Boolean);
+
+const parsePreviewLinks = (value) =>
+  (value || "")
+    .split("\n")
+    .map((line) => {
+      const separator = line.indexOf("|");
+      if (separator < 0) return null;
+      const label = line.slice(0, separator).trim();
+      const path = line.slice(separator + 1).trim();
+      return label && path
+        ? { label, path, hasDropdown: path.includes("category=") }
+        : null;
+    })
+    .filter(Boolean);
+
+function HeaderPreview({ values, announcement }) {
+  const topLinks = parsePreviewLinks(values.topLinks);
+  const mainLinks = parsePreviewLinks(values.mainLinks);
+  return (
+    <div className="header-site-preview">
+      <div className="header-preview-topbar">
+        <div className="header-preview-toplinks">
+          {topLinks.map((item) => <span key={`${item.label}-${item.path}`}>{item.label}</span>)}
+        </div>
+        <strong>{announcement}</strong>
+        <div className="header-preview-language">
+          {values.flagUrl && <img src={values.flagUrl} alt="Việt Nam" />}
+        </div>
+      </div>
+      <div className="header-preview-main">
+        <div className="header-preview-brand">
+          <img src={values.logoUrl || headerLogo} alt="SILKMOON Logo" />
+        </div>
+        <nav className="header-preview-navigation" aria-label="Bản xem trước menu chính">
+          {mainLinks.map((item) => (
+            <span key={`${item.label}-${item.path}`}>
+              {item.label}
+              {item.hasDropdown && <span className="material-symbols-outlined">expand_more</span>}
+            </span>
+          ))}
+        </nav>
+        <div className="header-preview-actions">
+          <span className="material-symbols-outlined">account_circle</span>
+          <span className="material-symbols-outlined">shopping_cart</span>
+          <span className="material-symbols-outlined header-preview-menu-icon">menu</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function FooterSocialPreview({ label, children }) {
   return <span className="footer-social-preview" title={label}>{children}</span>;
@@ -475,6 +527,7 @@ function WebsiteSectionManager({ section, title, description, labels }) {
         </div>
       </div>
       {section === "marketing" && <div className="marketing-preview"><div className="marketing-announcement">{values.announcement}</div><div><small>TIÊU ĐỀ MARKETING ĐANG HIỂN THỊ</small><h2>{values.headline}</h2><p>{values.subheadline}</p></div></div>}
+      {section === "header" && <HeaderPreview values={values} announcement={all.marketing?.announcement || contentDefaults.marketing.announcement} />}
       {section === "about" && <AboutPagePreview values={values} />}
       {section === "footer" && (
         <div className="footer-preview">
@@ -518,7 +571,7 @@ function WebsiteSectionManager({ section, title, description, labels }) {
         </div>
       )}
       <div className="content-fields">
-        {Object.entries(values).filter(([key]) => !["productLinks", "policyLinks", "aboutLinks"].includes(key)).map(([key, value]) => (
+        {Object.entries(values).filter(([key]) => !["productLinks", "policyLinks", "aboutLinks", "topLinks", "mainLinks"].includes(key)).map(([key, value]) => (
           <Field key={key} label={labels[key] || socialFieldLabels[key] || key}>
             {key === "logoUrl" || key.endsWith("ImageUrl") ? (
               <div className="footer-logo-editor">
@@ -560,6 +613,10 @@ function WebsiteSectionManager({ section, title, description, labels }) {
           <Field label={socialFieldLabels.productLinks}><LinkListEditor value={values.productLinks} onChange={(productLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, productLinks } }))} /></Field>
           <Field label={socialFieldLabels.policyLinks}><LinkListEditor value={values.policyLinks} onChange={(policyLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, policyLinks } }))} /></Field>
           <Field label={socialFieldLabels.aboutLinks}><LinkListEditor value={values.aboutLinks} onChange={(aboutLinks) => setAll((current) => ({ ...current, footer: { ...current.footer, aboutLinks } }))} /></Field>
+        </div>}
+        {section === "header" && <div className="footer-link-columns">
+          <Field label="Liên kết thanh trên"><LinkListEditor value={values.topLinks} onChange={(topLinks) => setAll((current) => ({ ...current, header: { ...current.header, topLinks } }))} /></Field>
+          <Field label="Menu điều hướng chính"><LinkListEditor value={values.mainLinks} onChange={(mainLinks) => setAll((current) => ({ ...current, header: { ...current.header, mainLinks } }))} /></Field>
         </div>}
       </div>
       <div className="section-save">
@@ -605,10 +662,92 @@ const currentSlides = [
     btnSecondaryLink: "/blog",
   },
 ];
+const bannerTypographyDefaults = {
+  desktop: { fontFamily: "Manrope", labelSize: 12, titleSize: 64, descSize: 18 },
+  tablet: { fontFamily: "Manrope", labelSize: 11, titleSize: 52, descSize: 17 },
+  mobile: { fontFamily: "Manrope", labelSize: 10, titleSize: 38, descSize: 15 },
+};
+const bannerFonts = ["Manrope", "Be Vietnam Pro", "Montserrat", "Playfair Display", "Lora", "Roboto"];
+const typographyDeviceSizes = {
+  desktop: { pageTitle: 48, intro: 18, eyebrow: 12, sectionTitle: 32, body: 16, cardTitle: 20, cardBody: 14, meta: 12, button: 13, price: 24, optionLabel: 12, optionValue: 16, formLabel: 12, input: 16, stepLabel: 12 },
+  tablet: { pageTitle: 42, intro: 17, eyebrow: 11, sectionTitle: 28, body: 16, cardTitle: 19, cardBody: 14, meta: 12, button: 13, price: 23, optionLabel: 12, optionValue: 15, formLabel: 12, input: 16, stepLabel: 11 },
+  mobile: { pageTitle: 34, intro: 15, eyebrow: 10, sectionTitle: 25, body: 15, cardTitle: 18, cardBody: 13, meta: 11, button: 12, price: 21, optionLabel: 11, optionValue: 14, formLabel: 11, input: 15, stepLabel: 10 },
+};
+const makeWebsiteTypography = (device) => {
+  const sizes = typographyDeviceSizes[device];
+  return {
+    headingFontFamily: "Manrope",
+    bodyFontFamily: "Manrope",
+    pageTitleSize: sizes.pageTitle,
+    sectionTitleSize: sizes.sectionTitle,
+    bodySize: sizes.body,
+    priceSize: sizes.price,
+    optionLabelSize: sizes.optionLabel,
+    ...Object.fromEntries(Object.entries(sizes).flatMap(([role, size]) => [
+      [`${role}Size`, size],
+      [`${role}FontFamily`, ["pageTitle", "sectionTitle", "cardTitle", "price"].includes(role) ? "Manrope" : "Manrope"],
+    ])),
+  };
+};
+const websiteTypographyDefaults = Object.fromEntries(["desktop", "tablet", "mobile"].map((device) => [device, makeWebsiteTypography(device)]));
+const typographyPages = [
+  ["global", "Toàn website"], ["home", "Trang chủ"], ["shop", "Cửa hàng"],
+  ["productDetail", "Chi tiết sản phẩm"], ["blog", "Blog"], ["about", "Về chúng tôi"],
+  ["checkout", "Thanh toán"], ["account", "Tài khoản"],
+];
+const typographyElementGroups = {
+  global: [["pageTitle", "Tiêu đề trang"], ["intro", "Mô tả đầu trang"], ["eyebrow", "Nhãn nhỏ"], ["sectionTitle", "Tiêu đề nội dung"], ["body", "Nội dung thường"], ["cardTitle", "Tiêu đề thẻ"], ["cardBody", "Nội dung thẻ"], ["meta", "Thông tin phụ"], ["button", "Nút bấm"]],
+  home: [["sectionTitle", "Tiêu đề khu vực"], ["body", "Mô tả khu vực"], ["cardTitle", "Tên danh mục / sản phẩm"], ["cardBody", "Mô tả thẻ"], ["price", "Giá sản phẩm"], ["button", "Nút và liên kết"]],
+  shop: [["pageTitle", "Tiêu đề cửa hàng"], ["intro", "Mô tả cửa hàng"], ["meta", "Bộ lọc và sắp xếp"], ["cardTitle", "Tên sản phẩm"], ["cardBody", "Mô tả sản phẩm"], ["price", "Giá sản phẩm"], ["button", "Nút thêm giỏ"]],
+  productDetail: [["eyebrow", "Danh mục sản phẩm"], ["pageTitle", "Tên sản phẩm"], ["meta", "Đánh giá / thông tin phụ"], ["price", "Giá sản phẩm"], ["optionLabel", "Nhãn tùy chọn"], ["optionValue", "Tên size / giá trị"], ["body", "Mô tả sản phẩm"], ["button", "Nút thao tác"]],
+  blog: [["pageTitle", "Tiêu đề Blog"], ["intro", "Mô tả Blog"], ["sectionTitle", "Tiêu đề khu vực"], ["cardTitle", "Tiêu đề bài viết"], ["cardBody", "Mô tả bài viết"], ["meta", "Ngày đăng / danh mục"], ["button", "Nút xem thêm"]],
+  about: [["eyebrow", "Nhãn giới thiệu"], ["pageTitle", "Tiêu đề ảnh bìa"], ["intro", "Mô tả ảnh bìa"], ["sectionTitle", "Tiêu đề nội dung"], ["body", "Nội dung câu chuyện"], ["cardTitle", "Tiêu đề giá trị"], ["cardBody", "Mô tả giá trị"]],
+  checkout: [["stepLabel", "Các bước thanh toán"], ["pageTitle", "Tiêu đề thanh toán"], ["sectionTitle", "Tiêu đề khu vực"], ["formLabel", "Nhãn biểu mẫu"], ["input", "Nội dung ô nhập"], ["body", "Nội dung đơn hàng"], ["price", "Tổng tiền"], ["button", "Nút thanh toán"]],
+  account: [["body", "Khẩu hiệu trên ảnh"], ["eyebrow", "Nhãn tài khoản"], ["pageTitle", "Tiêu đề tài khoản"], ["intro", "Mô tả hướng dẫn"], ["meta", "Tab đăng nhập / đăng ký"], ["formLabel", "Nhãn biểu mẫu"], ["input", "Nội dung ô nhập"], ["button", "Nút và liên kết"]],
+};
+
+const typographyRoleStyle = (values, role) => ({
+  fontFamily: `'${values[`${role}FontFamily`] || (["pageTitle", "sectionTitle", "cardTitle", "price"].includes(role) ? values.headingFontFamily : values.bodyFontFamily)}', sans-serif`,
+  fontSize: values[`${role}Size`] || values.bodySize,
+});
+
+function TypographyPagePreview({ page, device, values }) {
+  const s = (role) => typographyRoleStyle(values, role);
+  const productCard = <article className="type-preview-card"><div className="type-preview-image" /><h3 style={s("cardTitle")}>Bộ Chăn Ga Signature Cotton</h3><p style={s("cardBody")}>Mềm mại, thoáng mát cho giấc ngủ trọn vẹn.</p><strong style={s("price")}>2.590.000đ</strong></article>;
+  const previews = {
+    global: <><span className="type-preview-eyebrow" style={s("eyebrow")}>SILKMOON / TOÀN WEBSITE</span><h1 style={s("pageTitle")}>Nghệ thuật của sự nghỉ ngơi</h1><p className="type-preview-intro" style={s("intro")}>Chăm chút giấc ngủ, nâng niu từng khoảnh khắc.</p><section><h2 style={s("sectionTitle")}>Bộ sưu tập nổi bật</h2><p style={s("body")}>Thiết lập mặc định được dùng khi trang chưa có cấu hình riêng.</p></section></>,
+    home: <><section className="type-preview-heading-row"><div><h2 style={s("sectionTitle")}>Danh Mục Nổi Bật</h2><p style={s("body")}>Khám phá không gian nghỉ ngơi dành riêng cho bạn.</p></div><button style={s("button")}>XEM TẤT CẢ</button></section><div className="type-preview-grid">{productCard}{productCard}{productCard}</div></>,
+    shop: <><h1 style={s("pageTitle")}>Tất cả sản phẩm</h1><p className="type-preview-intro" style={s("intro")}>Khám phá bộ sưu tập chăn ga gối đệm từ chất liệu tự nhiên bền vững.</p><div className="type-preview-toolbar" style={s("meta")}><span>BỘ LỌC</span><span>Hiển thị 24 sản phẩm</span><span>Sắp xếp: Mới nhất</span></div><div className="type-preview-grid">{productCard}{productCard}{productCard}</div></>,
+    productDetail: <div className="type-preview-product"><div className="type-preview-product-photo" /><div><span className="type-preview-eyebrow" style={s("eyebrow")}>BỘ CHĂN GA</span><h1 style={s("pageTitle")}>Bộ Chăn Ga Signature Cotton</h1><p style={s("meta")}>★★★★★ (124 đánh giá)</p><strong className="type-preview-product-price" style={s("price")}>2.590.000 VNĐ</strong><label style={s("optionLabel")}>CHỌN KÍCH THƯỚC</label><div className="type-preview-options"><button style={s("optionValue")}>Queen (160×200)</button><button style={s("optionValue")}>King (180×200)</button></div><p style={s("body")}>Chất liệu cotton cao cấp, mềm mại và thoáng khí.</p><button className="type-preview-primary" style={s("button")}>THÊM VÀO GIỎ</button></div></div>,
+    blog: <><h1 style={s("pageTitle")}>Blog</h1><p className="type-preview-intro" style={s("intro")}>Câu chuyện về giấc ngủ và phong cách sống.</p><section className="type-preview-feature"><div className="type-preview-image" /><div><span style={s("meta")}>CHĂM SÓC · 14/07/2026</span><h2 style={s("sectionTitle")}>Bí quyết để có một giấc ngủ sâu</h2><p style={s("cardBody")}>Những thói quen đơn giản giúp bạn tái tạo năng lượng mỗi ngày.</p><button style={s("button")}>ĐỌC THÊM</button></div></section><div className="type-preview-grid">{productCard}{productCard}</div></>,
+    about: <><section className="type-preview-about-hero"><span style={s("eyebrow")}>VỀ CHÚNG TÔI</span><h1 style={s("pageTitle")}>Nghệ Thuật Của Sự Nghỉ Ngơi</h1><p style={s("intro")}>Hành trình mang đến trải nghiệm giấc ngủ hoàn mỹ.</p></section><section className="type-preview-story"><div className="type-preview-image" /><div><h2 style={s("sectionTitle")}>Hơn Cả Một Giấc Ngủ Ngon</h2><p style={s("body")}>Mỗi sản phẩm được tạo nên từ niềm đam mê với chất liệu bền vững và thiết kế tối giản.</p><h3 style={s("cardTitle")}>Trách nhiệm</h3><p style={s("cardBody")}>Chú trọng đến từng chi tiết trong trải nghiệm khách hàng.</p></div></section></>,
+    checkout: <><div className="type-preview-steps" style={s("stepLabel")}><b>GIỎ HÀNG</b><span>›</span><b>THÔNG TIN</b><span>›</span><b>HOÀN TẤT</b></div><h1 style={s("pageTitle")}>Thông tin thanh toán</h1><div className="type-preview-checkout"><section><h2 style={s("sectionTitle")}>Địa chỉ nhận hàng</h2><label style={s("formLabel")}>HỌ VÀ TÊN</label><div className="type-preview-input" style={s("input")}>Nguyễn Quý Hưng</div><label style={s("formLabel")}>ĐỊA CHỈ CHI TIẾT</label><div className="type-preview-input" style={s("input")}>Số nhà, tên đường, tòa nhà...</div></section><aside><h2 style={s("sectionTitle")}>Đơn hàng</h2><p style={s("body")}>Bộ Chăn Ga Signature Cotton</p><strong style={s("price")}>2.590.000đ</strong><button style={s("button")}>THANH TOÁN</button></aside></div></>,
+    account: <div className="type-preview-account">
+      <section className="type-preview-account-visual" style={{ backgroundImage: `linear-gradient(to top, rgba(15,34,63,.95), rgba(15,34,63,.18)), url(${slide3Img})` }}>
+        <img src={headerLogo} alt="SILKMOON" />
+        <div><p style={s("body")}>Chăm chút giấc ngủ,<br />nâng niu từng khoảnh khắc.</p><span style={s("eyebrow")}>KHÔNG GIAN KHÁCH HÀNG SILKMOON</span></div>
+      </section>
+      <section className="type-preview-account-form">
+        <div>
+          <span className="type-preview-eyebrow" style={s("eyebrow")}>TÀI KHOẢN SILKMOON</span>
+          <h1 style={s("pageTitle")}>Chào mừng trở lại</h1>
+          <p style={s("intro")}>Đăng nhập là tùy chọn. Anh/chị vẫn có thể mua hàng và thanh toán mà không cần tài khoản.</p>
+          <div className="type-preview-account-tabs" style={s("meta")}><b>Đăng nhập</b><span>Đăng ký</span></div>
+          <label style={s("formLabel")}>EMAIL</label><div className="type-preview-account-input" style={s("input")}>silkmoon.vn@gmail.com</div>
+          <label style={s("formLabel")}>MẬT KHẨU</label><div className="type-preview-account-input" style={s("input")}>••••••••</div>
+          <button className="type-preview-account-forgot" style={s("button")}>Quên mật khẩu?</button>
+          <button className="type-preview-account-submit" style={s("button")}>ĐĂNG NHẬP</button>
+        </div>
+      </section>
+    </div>,
+  };
+  return <div className={`typography-site-preview typography-real-preview ${device} page-${page}`}>{previews[page]}</div>;
+}
 export function BannerManager() {
   const [all, setAll] = useState(contentDefaults),
     [slides, setSlides] = useState(currentSlides),
     [active, setActive] = useState(0),
+    [previewDevice, setPreviewDevice] = useState("desktop"),
     [uploading, setUploading] = useState(false),
     [saving, setSaving] = useState(false);
   useEffect(() => {
@@ -626,6 +765,11 @@ export function BannerManager() {
         index === active ? { ...slide, [key]: value } : slide,
       ),
     );
+  const currentTypography = { ...bannerTypographyDefaults[previewDevice], ...(slides[active]?.typography?.[previewDevice] || {}) };
+  const updateTypography = (key, value) => update("typography", {
+    ...(slide.typography || {}),
+    [previewDevice]: { ...currentTypography, [key]: key === "fontFamily" ? value : Math.max(8, Number(value) || 8) },
+  });
   const upload = (file) => {
     if (!file) return;
     setUploading(true);
@@ -700,20 +844,29 @@ export function BannerManager() {
         </div>
         {slide && (
           <>
-            <div
-              className="banner-live-preview"
-              style={{
-                backgroundImage: `linear-gradient(rgba(15,34,63,.32),rgba(15,34,63,.32)),url("${slide.img}")`,
-              }}
-            >
-              <div>
-                <small>{slide.label}</small>
-                <h2>{slide.title}</h2>
-                <p>{slide.desc}</p>
-                <button>{slide.btnPrimary}</button>
+            <div className="banner-device-toolbar"><strong>Xem trước theo thiết bị</strong><div>{[["desktop","desktop_windows","Desktop"],["tablet","tablet_mac","Tablet"],["mobile","smartphone","Mobile"]].map(([device, icon, label]) => <button key={device} type="button" className={previewDevice === device ? "active" : ""} onClick={() => setPreviewDevice(device)} title={label}><span className="material-symbols-outlined">{icon}</span>{label}</button>)}</div></div>
+            <div className={`banner-preview-stage ${previewDevice}`}>
+              <div
+                className="banner-live-preview"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(15,34,63,.32),rgba(15,34,63,.32)),url("${slide.img}")`,
+                  fontFamily: `'${currentTypography.fontFamily}', sans-serif`,
+                }}
+              >
+                <div>
+                  <small style={{ fontSize: currentTypography.labelSize }}>{slide.label}</small>
+                  <h2 style={{ fontSize: currentTypography.titleSize }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                  <p style={{ fontSize: currentTypography.descSize }}>{slide.desc}</p>
+                  <button>{slide.btnPrimary}</button>
+                </div>
               </div>
             </div>
             <div className="content-fields banner-fields">
+              <div className="banner-typography-title"><span className="material-symbols-outlined">text_fields</span><div><strong>Kiểu chữ — {previewDevice === "desktop" ? "Desktop" : previewDevice === "tablet" ? "Tablet" : "Mobile"}</strong><small>Cấu hình được lưu riêng cho thiết bị đang xem trước.</small></div></div>
+              <Field label="Font chữ"><select value={currentTypography.fontFamily} onChange={(e) => updateTypography("fontFamily", e.target.value)}>{bannerFonts.map((font) => <option key={font} value={font}>{font}</option>)}</select></Field>
+              <Field label="Cỡ nhãn (px)"><input type="number" min="8" max="32" value={currentTypography.labelSize} onChange={(e) => updateTypography("labelSize", e.target.value)} /></Field>
+              <Field label="Cỡ tiêu đề (px)"><input type="number" min="20" max="120" value={currentTypography.titleSize} onChange={(e) => updateTypography("titleSize", e.target.value)} /></Field>
+              <Field label="Cỡ mô tả (px)"><input type="number" min="10" max="40" value={currentTypography.descSize} onChange={(e) => updateTypography("descSize", e.target.value)} /></Field>
               {[
                 ["label", "Nhãn phía trên"],
                 ["title", "Tiêu đề banner"],
@@ -770,6 +923,67 @@ export function BannerManager() {
     </div>
   );
 }
+
+export function TypographyManager() {
+  const [all, setAll] = useState(contentDefaults);
+  const [typography, setTypography] = useState(websiteTypographyDefaults);
+  const [pageTypography, setPageTypography] = useState({});
+  const [selectedPage, setSelectedPage] = useState("global");
+  const [previewDevice, setPreviewDevice] = useState("desktop");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    adminApi.getSettings().then((rows) => {
+      const row = rows.find((item) => item.key === "website_content");
+      if (!row) return;
+      setAll({ ...contentDefaults, ...row.value });
+      setTypography({
+        desktop: { ...websiteTypographyDefaults.desktop, ...(row.value?.typography?.desktop || {}) },
+        tablet: { ...websiteTypographyDefaults.tablet, ...(row.value?.typography?.tablet || {}) },
+        mobile: { ...websiteTypographyDefaults.mobile, ...(row.value?.typography?.mobile || {}) },
+      });
+      setPageTypography(row.value?.pageTypography || {});
+    });
+  }, []);
+
+  const current = selectedPage === "global"
+    ? typography[previewDevice]
+    : { ...typography[previewDevice], ...(pageTypography[selectedPage]?.[previewDevice] || {}) };
+  const update = (key, value) => {
+    const nextValue = key.includes("FontFamily") ? value : Math.max(10, Number(value) || 10);
+    if (selectedPage === "global") setTypography((values) => ({ ...values, [previewDevice]: { ...values[previewDevice], [key]: nextValue } }));
+    else setPageTypography((pages) => ({ ...pages, [selectedPage]: { ...(pages[selectedPage] || {}), [previewDevice]: { ...(pages[selectedPage]?.[previewDevice] || {}), [key]: nextValue } } }));
+  };
+  const save = async () => {
+    setSaving(true);
+    const value = { ...all, typography, pageTypography };
+    await adminApi.saveSetting("website_content", { value, description: "Nội dung website Silkmoon" });
+    setAll(value);
+    setSaving(false);
+  };
+
+  return (
+    <div className="panel section-manager typography-manager">
+      <div className="section-location"><span className="material-symbols-outlined">font_download</span><div><small>ĐANG CHỈNH SỬA</small><h2>Font chữ toàn website</h2><p>Áp dụng cho tiêu đề trang, tiêu đề nội dung và văn bản trên các trang ngoài banner.</p></div></div>
+      <div className="typography-page-tabs">{typographyPages.map(([key, label]) => <button type="button" key={key} className={selectedPage === key ? "active" : ""} onClick={() => setSelectedPage(key)}>{label}</button>)}</div>
+      <div className="banner-device-toolbar"><strong>Xem trước theo thiết bị</strong><div>{[["desktop","desktop_windows","Desktop"],["tablet","tablet_mac","Tablet"],["mobile","smartphone","Mobile"]].map(([device, icon, label]) => <button key={device} type="button" className={previewDevice === device ? "active" : ""} onClick={() => setPreviewDevice(device)}><span className="material-symbols-outlined">{icon}</span>{label}</button>)}</div></div>
+      <TypographyPagePreview page={selectedPage} device={previewDevice} values={current} />
+      <div className="content-fields banner-fields">
+        <div className="banner-typography-title"><span className="material-symbols-outlined">text_fields</span><div><strong>Kiểu chữ — {previewDevice === "desktop" ? "Desktop" : previewDevice === "tablet" ? "Tablet" : "Mobile"}</strong><small>Mỗi thiết bị có cấu hình riêng và được website tự áp dụng.</small></div></div>
+        <div className="typography-element-list">
+          {(typographyElementGroups[selectedPage] || typographyElementGroups.global).map(([role, label]) => (
+            <div className="typography-element-editor" key={role}>
+              <div><strong>{label}</strong><small>{role}</small></div>
+              <label><span>Font chữ</span><select value={current[`${role}FontFamily`] || current.bodyFontFamily} onChange={(event) => update(`${role}FontFamily`, event.target.value)}>{bannerFonts.map((font) => <option key={font} value={font}>{font}</option>)}</select></label>
+              <label><span>Cỡ chữ (px)</span><input type="number" min="8" max="120" value={current[`${role}Size`] || current.bodySize} onChange={(event) => update(`${role}Size`, event.target.value)} /></label>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="section-save"><button className="primary-button" disabled={saving} onClick={save}>{saving ? "Đang lưu…" : "Lưu font toàn website"}</button></div>
+    </div>
+  );
+}
 export function MarketingManager() {
   return (
     <WebsiteSectionManager
@@ -783,6 +997,9 @@ export function MarketingManager() {
       }}
     />
   );
+}
+export function HeaderManager() {
+  return <WebsiteSectionManager section="header" title="Header" description="Quản lý logo, cờ ngôn ngữ và các liên kết điều hướng ở đầu website." labels={{ logoUrl: "Logo header", flagUrl: "URL cờ ngôn ngữ" }} />;
 }
 export function FooterManager() {
   return (
@@ -944,7 +1161,7 @@ export function FinanceManager() {
 
 const assistantDefaults = {
   chatbot: { enabled: true, greeting: "Xin chào! Bạn cần tư vấn sản phẩm?", fallbackResponse: "Cảm ơn bạn đã nhắn tin. Bạn có thể hỏi tôi về chất liệu, giá bán hoặc sản phẩm Silkmoon.", systemPrompt: "Tư vấn ngắn gọn, chính xác và chỉ sử dụng thông tin sản phẩm Silkmoon." },
-  ar: { enabled: true, aiModeEnabled: true, webxrEnabled: true, defaultPrompt: "Phủ chất liệu sản phẩm lên giường, giữ nguyên bố cục và ánh sáng căn phòng.", retentionDays: 7, monthlyBudget: 0 },
+  ar: { enabled: true, showProductButton: true, aiModeEnabled: true, webxrEnabled: true, defaultPrompt: "Phủ chất liệu sản phẩm lên giường, giữ nguyên bố cục và ánh sáng căn phòng.", retentionDays: 7, monthlyBudget: 0 },
 };
 
 function AssistantSettingsManager({ section, title, description }) {
@@ -980,6 +1197,7 @@ function AssistantSettingsManager({ section, title, description }) {
           <label className="modal-field full"><span>System prompt</span><textarea rows="5" value={values.systemPrompt} onChange={(event) => update("systemPrompt", event.target.value)} /></label>
         </> : <>
           <label className="option-toggle modal-field"><input type="checkbox" checked={values.enabled} onChange={(event) => update("enabled", event.target.checked)} /><span className="toggle-ui" /><span><strong>Bật AR</strong><small>Cho phép mở AR từ trang sản phẩm.</small></span></label>
+          <label className="option-toggle modal-field"><input type="checkbox" checked={values.showProductButton !== false} onChange={(event) => update("showProductButton", event.target.checked)} /><span className="toggle-ui" /><span><strong>Hiển thị nút “Thử trong phòng”</strong><small>Ẩn hoặc hiện nút AR trên trang chi tiết sản phẩm.</small></span></label>
           <label className="option-toggle modal-field"><input type="checkbox" checked={values.aiModeEnabled} onChange={(event) => update("aiModeEnabled", event.target.checked)} /><span className="toggle-ui" /><span><strong>Ảnh AI</strong><small>Cho phép Gemini tạo ảnh xem thử.</small></span></label>
           <label className="option-toggle modal-field"><input type="checkbox" checked={values.webxrEnabled} onChange={(event) => update("webxrEnabled", event.target.checked)} /><span className="toggle-ui" /><span><strong>WebXR</strong><small>Cho phép trải nghiệm AR thời gian thực.</small></span></label>
           <Field label="Số ngày lưu ảnh"><input type="number" min="1" value={values.retentionDays} onChange={(event) => update("retentionDays", Number(event.target.value))} /></Field>

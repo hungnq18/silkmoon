@@ -6,6 +6,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './schemas/user.schema';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -33,8 +35,26 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Put('cart')
-  updateCart(@Request() req: any, @Body() cart: { productId: string; quantity: number }[]) {
+  updateCart(@Request() req: any, @Body() cart: any[]) {
     return this.usersService.updateCart(req.user.userId, cart);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateOwnProfile(req.user.userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/avatar')
+  uploadAvatar(@Request() req: any, @Body('image') image: string) {
+    return this.usersService.uploadAvatar(req.user.userId, image);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/password')
+  changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
+    return this.usersService.changeOwnPassword(req.user.userId, dto);
   }
 
   @Get(':id')

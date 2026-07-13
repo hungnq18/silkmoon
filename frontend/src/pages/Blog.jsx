@@ -46,7 +46,7 @@ export default function Blog() {
           <span className="mx-2">›</span>
           <strong>Cẩm nang</strong>
         </div>
-        <h1 className="mb-5 text-3xl font-bold text-slate-deep md:text-4xl">
+        <h1 className="type-page-title mb-5 text-3xl font-bold text-slate-deep md:text-4xl">
           Cẩm nang
         </h1>
         <div className="mb-6 flex flex-wrap gap-3">
@@ -85,10 +85,10 @@ export default function Blog() {
                 <h2 className="text-xl md:text-2xl font-bold text-slate-deep mb-4 leading-snug">
                   {featured.title}
                 </h2>
-                <p className="text-slate-deep/80 leading-relaxed mb-6">
+                <p className="type-card-body text-slate-deep/80 leading-relaxed mb-6">
                   {featured.excerpt}
                 </p>
-                <div className="text-xs text-slate-deep/60 mt-auto">
+                <div className="type-meta text-xs text-slate-deep/60 mt-auto">
                   {featured.author} ·{" "}
                   {new Date(
                     featured.publishedAt || featured.createdAt,
@@ -135,7 +135,7 @@ export default function Blog() {
                 <h3 className="text-xl font-bold text-slate-deep mb-3">
                   {popularMain.title}
                 </h3>
-                <p className="text-slate-deep/70 text-sm leading-relaxed">
+                <p className="type-card-body text-slate-deep/70 text-sm leading-relaxed">
                   {popularMain.excerpt}
                 </p>
               </Link>
@@ -157,7 +157,7 @@ export default function Blog() {
                       <h4 className="font-bold text-slate-deep mb-2">
                         {post.title}
                       </h4>
-                      <p className="text-slate-deep/70 text-sm line-clamp-3">
+                      <p className="type-card-body text-slate-deep/70 text-sm line-clamp-3">
                         {post.excerpt}
                       </p>
                     </div>

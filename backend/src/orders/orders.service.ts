@@ -37,18 +37,53 @@ export class OrdersService {
         throw new BadRequestException(`Sản phẩm "${product.name}" không đủ hàng (hiện còn ${product.stock}).`);
       }
       
-      const itemTotal = product.price * item.quantity;
+      const embroidery = item.embroidery?.trim() || null;
+      const isCustomSize = item.sizeId === 'custom' || Boolean(item.customSize);
+      const customSize = isCustomSize ? {
+        width: Math.max(0, Number(item.customSize?.width) || 0),
+        length: Math.max(0, Number(item.customSize?.length) || 0),
+        height: Math.max(0, Number(item.customSize?.height) || 0),
+      } : null;
+      const customMeasurements = isCustomSize && Array.isArray(item.customMeasurements) ? item.customMeasurements
+        .filter((measurement) => measurement?.label?.trim())
+        .map((measurement) => ({
+          id: measurement.id || '',
+          label: measurement.label.trim(),
+          value: Math.max(0, Number(measurement.value) || 0),
+          unit: measurement.unit?.trim() || 'cm',
+        })) : [];
+      if (isCustomSize && customMeasurements.length && customMeasurements.some((measurement) => !measurement.value)) throw new BadRequestException(`Vui lòng nhập đầy đủ thông số size riêng cho "${product.name}".`);
+      if (isCustomSize && !customMeasurements.length && (!customSize?.width || !customSize?.length)) throw new BadRequestException(`Vui lòng nhập đầy đủ thông số size riêng cho "${product.name}".`);
+      if (embroidery && embroidery.length > (product.embroideryMaxLength || 12)) throw new BadRequestException(`Nội dung may tên của "${product.name}" vượt quá số ký tự cho phép.`);
+      const sizeMeasurements = Array.isArray(item.sizeMeasurements) ? item.sizeMeasurements
+        .filter((measurement) => measurement?.label?.trim() && measurement.value !== undefined && measurement.value !== null)
+        .map((measurement) => ({
+          id: measurement.id || '',
+          label: measurement.label.trim(),
+          value: Number(measurement.value),
+          unit: measurement.unit?.trim() || 'cm',
+        })) : [];
+      const sizeDetails = sizeMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
+      const customSizeDetails = customMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
+      const unitPrice = product.price + (embroidery ? Number(product.embroideryPrice || 0) : 0) + (isCustomSize ? Number(product.customSizePrice || 0) : 0);
+      const itemTotal = unitPrice * item.quantity;
       subtotal += itemTotal;
       
       items.push({
         productId: product._id.toString(),
         name: product.name,
-        spec: product.category || 'N/A',
+        spec: [product.category || 'N/A', item.sizeLabel, sizeDetails || customSizeDetails].filter(Boolean).join(' · '),
         quantity: item.quantity,
-        price: product.price,
+        price: unitPrice,
         costPriceSnapshot: product.costPrice || 0,
         image: product.images?.[0] || '',
-        embroidery: null, // Depending on custom requirements
+        embroidery,
+        sizeId: item.sizeId || '',
+        sizeLabel: item.sizeLabel || '',
+        sizeMeasurements,
+        customSize,
+        customMeasurements,
+        isCustomSize,
       });
     }
 
@@ -66,6 +101,8 @@ export class OrdersService {
     const order = await this.orderModel.create({
       ...dto,
       items,
+      hasEmbroidery: items.some((item) => Boolean(item.embroidery)),
+      hasCustomSize: items.some((item) => item.isCustomSize),
       subtotal,
       discountAmount,
       total,
@@ -171,7 +208,7 @@ export class OrdersService {
     return order;
   }
 
-  async findAll(query: { page?: string; limit?: string; search?: string; status?: string } = {}) {
+  async findAll(query: { page?: string; limit?: string; search?: string; status?: string; customization?: string } = {}) {
     const pageNum = Math.max(1, parseInt(query.page || '1', 10));
     const limitNum = Math.max(1, parseInt(query.limit || '15', 10));
     const skip = (pageNum - 1) * limitNum;
@@ -179,6 +216,11 @@ export class OrdersService {
     const filter: any = {};
     if (query.search?.trim()) filter.$text = { $search: query.search.trim() };
     if (query.status) filter.orderStatus = query.status;
+    if (query.customization === 'embroidery') filter.$or = [
+      { hasEmbroidery: true },
+      { items: { $elemMatch: { embroidery: { $exists: true, $nin: [null, ''] } } } },
+    ];
+    if (query.customization === 'customSize') filter.$or = [{ hasCustomSize: true }, { 'items.isCustomSize': true }];
     const [items, total] = await Promise.all([
       this.orderModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
       this.orderModel.countDocuments(filter),

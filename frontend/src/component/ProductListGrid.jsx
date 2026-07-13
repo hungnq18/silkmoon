@@ -63,7 +63,7 @@ export default function ProductListGrid({ products }) {
             <div className="absolute bottom-0 left-0 w-full p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
               <button
                 onClick={(e) => handleQuickAdd(e, product)}
-                className="w-full bg-slate-deep text-white py-3 font-button hover:bg-slate-deep/90 rounded shadow-sm active:scale-95 transition-transform"
+                className="type-button w-full bg-slate-deep text-white py-3 font-button hover:bg-slate-deep/90 rounded shadow-sm active:scale-95 transition-transform"
               >
                 THÊM VÀO GIỎ
               </button>
@@ -81,14 +81,14 @@ export default function ProductListGrid({ products }) {
           </div>
 
           {/* Product Details */}
-          <h4 className="font-headline-sm text-[20px] mb-1 group-hover:text-secondary transition-colors">
+          <h4 className="type-card-title font-headline-sm text-[20px] mb-1 group-hover:text-secondary transition-colors">
             {product.name}
           </h4>
-          <p className="text-on-surface-variant font-body-md mb-2">
+          <p className="type-card-body text-on-surface-variant font-body-md mb-2">
             {product.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
           </p>
           <div className="flex items-center gap-3 mt-auto">
-            <span className="font-semibold text-slate-deep">
+            <span className="type-price font-semibold text-slate-deep">
               {product.price.toLocaleString('vi-VN')}₫
             </span>
             {product.originalPrice && (

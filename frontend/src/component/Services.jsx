@@ -31,10 +31,10 @@ export default function Services() {
               <span className="material-symbols-outlined text-[48px] text-slate-deep mb-6" style={{ fontVariationSettings: "'wght' 200" }}>
                 {service.icon}
               </span>
-              <h3 className="font-bold text-slate-deep text-[18px] mb-1">{service.title}</h3>
+              <h3 className="type-card-title font-bold text-slate-deep text-[18px] mb-1">{service.title}</h3>
               {service.subtitle && <p className="text-sm text-slate-deep/70 mb-3">{service.subtitle}</p>}
               {!service.subtitle && <div className="mb-3"></div>}
-              <p className="font-body-md text-slate-deep/80 leading-relaxed">
+              <p className="type-card-body font-body-md text-slate-deep/80 leading-relaxed">
                 {service.text}
               </p>
             </div>

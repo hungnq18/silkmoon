@@ -20,6 +20,7 @@ import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AdminModule } from './admin/admin.module';
 import { BlogModule } from './blog/blog.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 import { join } from 'path';
 
 @Module({
@@ -65,6 +66,7 @@ import { join } from 'path';
     CategoriesModule,
     AdminModule,
     BlogModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

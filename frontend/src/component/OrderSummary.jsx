@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { productsApi } from '../services/api';
 
+const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
+  .filter((measurement) => measurement.label && measurement.value !== undefined && measurement.value !== null && measurement.value !== '')
+  .map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit || ''}`)
+  .join(' · ');
+const formatCustomMeasurements = (item) => (item.customMeasurements || [])
+  .filter((measurement) => measurement.label && measurement.value)
+  .map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit || ''}`)
+  .join(' · ');
+
 export default function OrderSummary() {
   const { cart } = useCart();
   const [items, setItems] = useState([]);
@@ -16,7 +25,10 @@ export default function OrderSummary() {
     let active = true;
     Promise.all((cart || []).map(async (item) => {
       const product = await productsApi.getById(item.productId);
-      return { ...item, id: item.productId, name: product.name, price: product.price, image: product.images?.[0] || '', spec: product.category || '' };
+      const customizationPrice =
+        (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
+        (item.customSize ? Number(product.customSizePrice || 0) : 0);
+      return { ...item, id: item.productId, name: product.name, price: Number(product.price || 0) + customizationPrice, image: product.images?.[0] || '', spec: product.category || '' };
     })).then((nextItems) => { if (active) setItems(nextItems); }).catch(() => { if (active) setItems([]); });
 
     // Read calculated totals from cart page
@@ -42,7 +54,7 @@ export default function OrderSummary() {
             </p>
           ) : (
             items.map((item) => (
-              <div key={item.id} className="flex gap-4">
+              <div key={item.cartItemId || item.id} className="flex gap-4">
                 <div className="w-20 h-24 bg-bone overflow-hidden rounded flex-shrink-0 border border-slate-deep/5">
                   <img
                     className="w-full h-full object-cover"
@@ -60,6 +72,11 @@ export default function OrderSummary() {
                   {item.embroidery && (
                     <div className="text-[11px] text-sand-silk font-medium mt-1">
                       Thêu chữ: "{item.embroidery}"
+                    </div>
+                  )}
+                  {item.sizeLabel && (
+                    <div className="text-[11px] text-slate-deep/70 font-medium mt-1">
+                      Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomMeasurements(item) ? ` · ${formatCustomMeasurements(item)}` : (item.customSize ? ` · ${[item.customSize.width, item.customSize.length, item.customSize.height].filter(Boolean).join(' × ')} cm` : '')}
                     </div>
                   )}
                   <div className="flex justify-between items-end mt-2">
@@ -95,7 +112,7 @@ export default function OrderSummary() {
 
           <div className="flex justify-between font-headline-sm text-headline-sm pt-stack-sm border-t border-slate-deep/10 mt-stack-sm">
             <span>Tổng cộng</span>
-            <span className="text-slate-deep font-bold">
+            <span className="type-price text-slate-deep font-bold">
               {totals.total.toLocaleString('vi-VN')}đ
             </span>
           </div>
@@ -106,7 +123,7 @@ export default function OrderSummary() {
           type="submit"
           form="checkout-form"
           disabled={items.length === 0}
-          className="w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 group hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+          className="type-button w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 group hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ĐẶT HÀNG NGAY
           <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform text-[20px]">

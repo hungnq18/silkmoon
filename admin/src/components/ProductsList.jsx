@@ -11,6 +11,41 @@ const currency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const getSizeMeasurements = (size = {}) => {
+  if (Array.isArray(size.measurements)) return size.measurements;
+  return [['width', 'Rộng'], ['length', 'Dài'], ['height', 'Dày/Cao']]
+    .filter(([key]) => size[key] !== undefined && size[key] !== null && size[key] !== '')
+    .map(([key, label]) => ({ id: key, label, value: size[key], unit: size.unit || 'cm' }));
+};
+const copySizeOption = (size) => ({
+  id: size.id,
+  label: size.label,
+  width: Array.isArray(size.measurements) ? '' : size.width ?? '',
+  length: Array.isArray(size.measurements) ? '' : size.length ?? '',
+  height: Array.isArray(size.measurements) ? '' : size.height ?? '',
+  unit: size.unit || 'cm',
+  measurements: getSizeMeasurements(size).map((item) => ({ ...item })),
+});
+const formatSizeMeasurements = (size) => getSizeMeasurements(size)
+  .filter((item) => item.value !== '' && item.value !== undefined && item.value !== null)
+  .map((item) => `${item.label}: ${item.value}${item.unit || ''}`)
+  .join(' · ');
+
+const EditableSizeMeasurements = ({ size, onChange }) => {
+  const measurements = getSizeMeasurements(size);
+  const update = (index, key, value) => onChange(measurements.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item));
+  return <div className="product-dynamic-measurements">
+    {!measurements.length && <p>Size này chưa có thông số kích thước.</p>}
+    {measurements.map((measurement, index) => <div key={measurement.id || index}>
+      <label><span>Tên thông số</span><input value={measurement.label || ''} placeholder="Đường kính" onChange={(event) => update(index, 'label', event.target.value)} /></label>
+      <label><span>Giá trị</span><input type="number" min="0" value={measurement.value ?? ''} placeholder="60" onChange={(event) => update(index, 'value', event.target.value)} /></label>
+      <label><span>Đơn vị</span><input value={measurement.unit || 'cm'} placeholder="cm" onChange={(event) => update(index, 'unit', event.target.value)} /></label>
+      <button type="button" title="Xóa thông số" onClick={() => onChange(measurements.filter((_, itemIndex) => itemIndex !== index))}><span className="material-symbols-outlined">close</span></button>
+    </div>)}
+    <button type="button" className="product-add-measurement" onClick={() => onChange([...measurements, { id: `measurement-${Date.now()}`, label: '', value: '', unit: 'cm' }])}><span className="material-symbols-outlined">add</span>Thêm thông số</button>
+  </div>;
+};
+
 export function RichTextEditor({ value, onChange, wordMode = false, placeholder = "Nhập nội dung…" }) {
   const editorRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -340,8 +375,13 @@ export default function ProductsList() {
   const [saving, setSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [sizeOptions, setSizeOptions] = useState([]);
+  const sizeCategories = [...new Map(sizeOptions.map((item) => [item.sizeCategoryId || item.group || 'other', { id: item.sizeCategoryId || item.group || 'other', name: item.group || 'Khác' }])).values()];
+  const inferredSizeCategory = editingProduct?.sizeCategoryId || sizeOptions.find((option) => (editingProduct?.sizes || []).some((size) => size.id === option.id))?.sizeCategoryId || '';
+  const activeSizeOptions = sizeOptions.filter((item) => item.sizeCategoryId === inferredSizeCategory);
   const [page, setPage] = useState(1);
   const excelInputRef = useRef(null);
+  const productModalRef = useRef(null);
   const { query, setQuery, filteredItems: searchedProducts } = useListSearch(products);
   const { filter, setFilter, filteredItems: filteredProducts } = useListFilter(searchedProducts, (item) => item.category);
 
@@ -352,6 +392,16 @@ export default function ProductsList() {
         setCategories((data.items || data).filter((c) => c.isActive !== false)),
       )
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    adminApi.getSettings().then((rows) => {
+      const sizes = rows.find((row) => row.key === 'product_sizes')?.value;
+      if (!Array.isArray(sizes)) return setSizeOptions([]);
+      setSizeOptions(sizes.some((item) => Array.isArray(item.sizes))
+        ? sizes.filter((category) => category.isActive !== false).flatMap((category) => (category.sizes || []).filter((size) => size.isActive !== false).map((size) => ({ ...size, group: category.name, sizeCategoryId: category.id })))
+        : sizes.filter((item) => item.isActive !== false));
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -403,6 +453,7 @@ export default function ProductsList() {
         costPrice: Number(editingProduct.costPrice || 0),
         stock: Number(editingProduct.stock),
         isBestSeller: Boolean(editingProduct.isBestSeller),
+        showArButton: editingProduct.showArButton !== false,
         allowEmbroidery: Boolean(editingProduct.allowEmbroidery),
         embroideryPrice: editingProduct.allowEmbroidery
           ? Number(editingProduct.embroideryPrice || 0)
@@ -413,6 +464,20 @@ export default function ProductsList() {
           ? Number(editingProduct.customSizePrice || 0)
           : 0,
         images: editingProduct.images || [],
+        sizes: (editingProduct.sizes || []).map((item) => ({
+          id: item.id,
+          label: item.label?.trim() || sizeOptions.find((size) => size.id === item.id)?.label || 'Size',
+          width: Array.isArray(item.measurements) || item.width === '' || item.width == null ? undefined : Number(item.width),
+          length: Array.isArray(item.measurements) || item.length === '' || item.length == null ? undefined : Number(item.length),
+          height: Array.isArray(item.measurements) || item.height === '' || item.height == null ? undefined : Number(item.height),
+          unit: item.unit || 'cm',
+          measurements: getSizeMeasurements(item).filter((measurement) => measurement.label?.trim()).map((measurement) => ({
+            id: measurement.id || `measurement-${Date.now()}`,
+            label: measurement.label.trim(),
+            value: measurement.value === '' || measurement.value == null ? undefined : Number(measurement.value),
+            unit: measurement.unit?.trim() || 'cm',
+          })),
+        })),
         colors: (editingProduct.colors || []).map((color) => ({
           id: color.id,
           label: color.label.trim(),
@@ -420,9 +485,8 @@ export default function ProductsList() {
           images: color.images || [],
         })),
       };
-      const updated = editingProduct._id
-        ? await adminApi.updateProduct(editingProduct._id, payload)
-        : await adminApi.createProduct(payload);
+      if (editingProduct._id) await adminApi.updateProduct(editingProduct._id, payload);
+      else await adminApi.createProduct(payload);
       fetchProducts(page);
       setEditingProduct(null);
     } catch (err) {
@@ -460,6 +524,11 @@ export default function ProductsList() {
 
   const toggleBestSeller = async (product) => {
     await adminApi.updateProduct(product._id, { isBestSeller: !product.isBestSeller });
+    fetchProducts(page);
+  };
+
+  const toggleArButton = async (product) => {
+    await adminApi.updateProduct(product._id, { showArButton: product.showArButton === false });
     fetchProducts(page);
   };
 
@@ -585,8 +654,10 @@ export default function ProductsList() {
                 price: "",
                 stock: 0,
                 isBestSeller: false,
+                showArButton: true,
                 images: [],
                 colors: [],
+                sizes: [],
                 allowEmbroidery: false,
                 embroideryPrice: 0,
                 embroideryMaxLength: 12,
@@ -607,6 +678,7 @@ export default function ProductsList() {
               <th>DANH MỤC</th>
               <th>GIÁ BÁN</th>
               <th>BÁN CHẠY</th>
+              <th>NÚT AR</th>
               <th>THAO TÁC</th>
             </tr>
           </thead>
@@ -619,12 +691,14 @@ export default function ProductsList() {
                 </td>
                 <td>{currency(product.price)}</td>
                 <td><label className="compact-toggle" title="Đánh dấu sản phẩm bán chạy"><input type="checkbox" checked={Boolean(product.isBestSeller)} onChange={() => toggleBestSeller(product)} /><span className="toggle-ui" /></label></td>
+                <td><label className="compact-toggle" title="Hiển thị nút Thử trong phòng"><input type="checkbox" checked={product.showArButton !== false} onChange={() => toggleArButton(product)} /><span className="toggle-ui" /></label></td>
                 <td>
                   <button
                     className="action-button"
                     onClick={() =>
                       setEditingProduct({
                         ...product,
+                        showArButton: product.showArButton !== false,
                         allowEmbroidery:
                           product.allowEmbroidery ??
                           product.category === "Đồ Ngủ",
@@ -657,7 +731,7 @@ export default function ProductsList() {
             event.target === event.currentTarget && setEditingProduct(null)
           }
         >
-          <form className="product-modal" onSubmit={handleEditSubmit}>
+          <form ref={productModalRef} className="product-modal" onSubmit={handleEditSubmit}>
             <div className="modal-header">
               <div>
                 <span className="login-eyebrow">SẢN PHẨM</span>
@@ -735,6 +809,33 @@ export default function ProductsList() {
                   required
                 />
               </label>
+              <div className="modal-field full">
+                <span>Danh mục size áp dụng</span>
+                <div className="compact-size-selector">
+                  <select value={inferredSizeCategory} onChange={(event) => setEditingProduct((current) => ({ ...current, sizeCategoryId: event.target.value }))}><option value="">Chọn danh mục size</option>{sizeCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+                  {inferredSizeCategory && <button type="button" className="secondary-button" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []).filter((item) => item.id.startsWith('custom-')), ...activeSizeOptions.map(copySizeOption)] }))}>Áp dụng tất cả</button>}
+                  {!!(editingProduct.sizes || []).length && <button type="button" className="compact-clear-sizes" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [] }))}>Bỏ chọn</button>}
+                </div>
+                {inferredSizeCategory ? <><span>Chọn size trong danh mục</span><div className="product-size-picker compact-product-size-picker">
+                  {activeSizeOptions.map((size) => {
+                    const checked = (editingProduct.sizes || []).some((item) => item.id === size.id);
+                    return <label key={size.id} className={checked ? 'selected' : ''}><input type="checkbox" checked={checked} onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: event.target.checked ? [...(current.sizes || []).filter((item) => item.id !== size.id), copySizeOption(size)] : (current.sizes || []).filter((item) => item.id !== size.id) }))} /><span>{size.label}</span><small>{formatSizeMeasurements(size)}</small></label>;
+                  })}
+                </div></> : <p className="compact-size-hint">Chọn một danh mục để hiển thị các size bên trong.</p>}
+                <details className="product-size-detail-editor" defaultOpen={!inferredSizeCategory}>
+                  <summary><strong>Kích thước đang chọn ({(editingProduct.sizes || []).length})</strong><small>Chỉnh số đo riêng hoặc thêm size mới</small><span className="material-symbols-outlined">expand_more</span></summary>
+                  <div className="product-size-detail-body">
+                  {(editingProduct.sizes || []).map((size, index) => <div className="product-size-detail-row" key={size.id}>
+                    <div className="product-size-card-header">
+                      <label><span>Tên size</span><input value={size.label || ''} placeholder="Queen" onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: current.sizes.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} /></label>
+                      <button type="button" title="Xóa size khỏi sản phẩm" onClick={() => setEditingProduct((current) => ({ ...current, sizes: current.sizes.filter((_, itemIndex) => itemIndex !== index) }))}><span className="material-symbols-outlined">delete</span></button>
+                    </div>
+                    <EditableSizeMeasurements size={size} onChange={(measurements) => setEditingProduct((current) => ({ ...current, sizes: current.sizes.map((item, itemIndex) => itemIndex === index ? { ...item, width: '', length: '', height: '', measurements } : item) }))} />
+                  </div>)}
+                  <button type="button" className="secondary-button product-add-own-size" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []), { id: `custom-${Date.now()}`, label: '', measurements: [], unit: 'cm' }] }))}><span className="material-symbols-outlined">add</span>Thêm size riêng cho sản phẩm</button>
+                  </div>
+                </details>
+              </div>
               <label className="modal-field">
                 <span>Giá bán (VNĐ)</span>
                 <input
@@ -943,6 +1044,13 @@ export default function ProductsList() {
               </div>
               <div className="option-card full">
                 <label className="option-toggle">
+                  <input type="checkbox" checked={editingProduct.showArButton !== false} onChange={(e) => setEditingProduct({ ...editingProduct, showArButton: e.target.checked })} />
+                  <span className="toggle-ui" />
+                  <span><strong>Hiển thị nút “Thử trong phòng”</strong><small>Chỉ bật nút trải nghiệm AR cho riêng sản phẩm này.</small></span>
+                </label>
+              </div>
+              <div className="option-card full">
+                <label className="option-toggle">
                   <input
                     type="checkbox"
                     checked={Boolean(editingProduct.allowEmbroidery)}
@@ -1000,12 +1108,16 @@ export default function ProductsList() {
                   <input
                     type="checkbox"
                     checked={Boolean(editingProduct.allowCustomSize)}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const scrollTop = productModalRef.current?.scrollTop || 0;
                       setEditingProduct({
                         ...editingProduct,
                         allowCustomSize: e.target.checked,
-                      })
-                    }
+                      });
+                      requestAnimationFrame(() => {
+                        if (productModalRef.current) productModalRef.current.scrollTop = scrollTop;
+                      });
+                    }}
                   />
                   <span className="toggle-ui" />
                   <span>

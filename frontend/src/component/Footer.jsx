@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { settingsApi } from '../services/api';
+import { newsletterApi, settingsApi } from '../services/api';
 
 const socialIcons = {
   facebook: <path d="M13.5 8H16l.5-3h-3V3.5c0-.87.29-1.5 1.53-1.5H16.6V.14C16.33.1 15.4 0 14.5 0 12.62 0 11 1.15 11 3.27V5H8v3h3v8h2.5V8Z" />,
@@ -11,6 +11,10 @@ const socialIcons = {
 
 function SocialLink({ href, label, icon, iconUrl }) {
   return <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-slate-deep hover:opacity-80 transition-opacity overflow-hidden">{iconUrl ? <img src={iconUrl} alt="" className="w-full h-full object-contain p-1.5" /> : <svg viewBox="0 0 20 16" aria-hidden="true" className="w-4 h-4 fill-current">{socialIcons[icon]}</svg>}</a>;
+}
+
+function SocialLinks({ content }) {
+  return <div className="flex flex-wrap items-center gap-3">{content.facebookUrl && <SocialLink href={content.facebookUrl} label="Facebook" icon="facebook" iconUrl={content.facebookIconUrl} />}{content.instagramUrl && <SocialLink href={content.instagramUrl} label="Instagram" icon="instagram" iconUrl={content.instagramIconUrl} />}{content.tiktokUrl && <SocialLink href={content.tiktokUrl} label="TikTok" icon="tiktok" iconUrl={content.tiktokIconUrl} />}{content.shopeeUrl && <SocialLink href={content.shopeeUrl} label="Shopee" icon="shopee" iconUrl={content.shopeeIconUrl} />}</div>;
 }
 
 function parseFooterLinks(value) {
@@ -38,6 +42,8 @@ function FooterLinkGroup({ title, items, open, onToggle }) {
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
   const [content, setContent] = useState(null);
   const [openSections, setOpenSections] = useState({ products: false, policies: false, about: false });
   useEffect(() => {
@@ -59,20 +65,29 @@ export default function Footer() {
   const hasNewsletter = Boolean(content.newsletterTitle);
   const toggleSection = (key) => setOpenSections((current) => ({ ...current, [key]: !current[key] }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email.trim()) {
+    if (!email.trim()) return;
+    setIsSubmitting(true);
+    setSubmitMessage('');
+    try {
+      const result = await newsletterApi.subscribe(email.trim());
       setIsSubmitted(true);
+      setSubmitMessage(result.message || 'Đăng ký nhận ưu đãi thành công.');
       setEmail('');
+    } catch (error) {
+      setSubmitMessage(error.message || 'Không thể đăng ký lúc này. Anh/chị vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <footer className="bg-slate-deep py-7 text-linen-white md:py-9">
       <div className="px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
-        {(hasBrand || hasNewsletter) && <div className={`grid grid-cols-1 gap-8 ${hasBrand && hasNewsletter ? 'lg:grid-cols-[minmax(240px,1fr)_minmax(480px,1.5fr)]' : ''} lg:items-center`}><div>{content.logoUrl && <Link to="/" className="inline-block hover:opacity-90"><img src={content.logoUrl} alt="SILKMOON Logo" className="h-16 w-auto object-contain brightness-0 invert md:h-20"/></Link>}{content.description && <p className="mt-3 max-w-sm text-sm text-white/65">{content.description}</p>}</div>{hasNewsletter && <div><h2 className="text-lg font-semibold uppercase tracking-wide">{content.newsletterTitle}</h2><p className="mt-2 text-sm text-white/65">Nhận câu chuyện giấc ngủ và ưu đãi mới nhất từ Silkmoon.</p>{isSubmitted ? <div className="mt-4 rounded bg-white/10 px-5 py-3 text-sm">Cảm ơn anh/chị đã đăng ký!</div> : <form onSubmit={handleSubmit} className="mt-4 flex w-full overflow-hidden rounded-md bg-white"><input type="text" placeholder="Nhập email hoặc số điện thoại" className="min-w-0 flex-1 px-4 py-3 text-slate-deep outline-none" value={email} onChange={(e)=>setEmail(e.target.value)} required/><button className="shrink-0 bg-[#BCE2FF] px-6 py-3 text-sm font-bold text-slate-deep">Gửi thông tin</button></form>}</div>}</div>}
+        {(hasBrand || hasNewsletter) && <div className={`grid grid-cols-1 gap-8 ${hasBrand && hasNewsletter ? 'lg:grid-cols-[minmax(240px,1fr)_minmax(480px,1.5fr)]' : ''} lg:items-center`}><div>{content.logoUrl && <Link to="/" className="inline-block hover:opacity-90"><img src={content.logoUrl} alt="SILKMOON Logo" className="h-16 w-auto object-contain brightness-0 invert md:h-20"/></Link>}{content.description && <p className="mt-3 max-w-sm text-sm text-white/65">{content.description}</p>}</div>{hasNewsletter && <div><h2 className="text-lg font-semibold uppercase tracking-wide">{content.newsletterTitle}</h2><p className="mt-2 text-sm text-white/65">Nhận câu chuyện giấc ngủ và ưu đãi mới nhất từ Silkmoon.</p>{isSubmitted ? <div className="mt-4 rounded bg-white/10 px-5 py-3 text-sm">{submitMessage}</div> : <><form onSubmit={handleSubmit} className="mt-4 flex w-full overflow-hidden rounded-md bg-white"><input type="text" placeholder="Nhập email hoặc số điện thoại" className="min-w-0 flex-1 px-4 py-3 text-slate-deep outline-none" value={email} onChange={(e)=>setEmail(e.target.value)} required/><button disabled={isSubmitting} className="shrink-0 bg-[#BCE2FF] px-6 py-3 text-sm font-bold text-slate-deep disabled:opacity-60">{isSubmitting ? 'Đang gửi…' : 'Gửi thông tin'}</button></form>{submitMessage && <p className="mt-2 text-sm text-red-200">{submitMessage}</p>}</>}</div>}</div>}
         
-        {(hasCompanyInfo || productLinks.length || policyLinks.length || aboutLinks.length) && <div className={`footer-dynamic-grid grid items-start gap-x-12 gap-y-4 ${hasBrand || hasNewsletter ? 'mt-7' : ''}`}>
+        {(hasCompanyInfo || productLinks.length || policyLinks.length || aboutLinks.length || hasSocials) && <div className={`footer-dynamic-grid grid items-start gap-x-12 gap-y-4 ${hasBrand || hasNewsletter ? 'mt-7' : ''}`}>
           
           {/* Cột 1: Thông tin công ty & Liên hệ */}
           {hasCompanyInfo && <div className="space-y-8 pb-4">
@@ -100,10 +115,13 @@ export default function Footer() {
           {/* Cột 3: Chính sách */}
           <FooterLinkGroup title="Chính sách" items={policyLinks} open={openSections.policies} onToggle={() => toggleSection('policies')} />
 
-          {/* Cột 4: Về chúng tôi & Đăng ký */}
-          <FooterLinkGroup title="Về chúng tôi" items={aboutLinks} open={openSections.about} onToggle={() => toggleSection('about')} />
+          {/* Cột 4: Về chúng tôi & mạng xã hội */}
+          {(aboutLinks.length > 0 || hasSocials) && <div>
+            <FooterLinkGroup title="Về chúng tôi" items={aboutLinks} open={openSections.about} onToggle={() => toggleSection('about')} />
+            {hasSocials && <div className="mt-6 md:mt-8"><SocialLinks content={content} /></div>}
+          </div>}
         </div>}
-        {(content.copyright || hasSocials) && <div className="mt-8 flex items-center justify-between gap-6"><span className="text-xs text-white/50">{content.copyright}</span>{hasSocials && <div className="ml-auto flex shrink-0 items-center gap-3">{content.facebookUrl && <SocialLink href={content.facebookUrl} label="Facebook" icon="facebook" iconUrl={content.facebookIconUrl} />}{content.instagramUrl && <SocialLink href={content.instagramUrl} label="Instagram" icon="instagram" iconUrl={content.instagramIconUrl} />}{content.tiktokUrl && <SocialLink href={content.tiktokUrl} label="TikTok" icon="tiktok" iconUrl={content.tiktokIconUrl} />}{content.shopeeUrl && <SocialLink href={content.shopeeUrl} label="Shopee" icon="shopee" iconUrl={content.shopeeIconUrl} />}</div>}</div>}
+        {content.copyright && <div className="mt-8"><span className="text-xs text-white/50">{content.copyright}</span></div>}
       </div>
     </footer>
   );

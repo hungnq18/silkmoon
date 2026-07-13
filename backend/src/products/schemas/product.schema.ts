@@ -9,6 +9,26 @@ class SizeOption {
 
   @Prop({ required: true })
   label: string;
+
+  @Prop({ min: 0 })
+  width?: number;
+
+  @Prop({ min: 0 })
+  length?: number;
+
+  @Prop({ min: 0 })
+  height?: number;
+
+  @Prop({ default: 'cm' })
+  unit?: string;
+
+  @Prop({ type: [Object], default: [] })
+  measurements?: Array<{
+    id?: string;
+    label: string;
+    value?: number;
+    unit?: string;
+  }>;
 }
 
 class ColorOption {
@@ -77,6 +97,9 @@ export class Product {
 
   @Prop({ default: false })
   allowCustomSize: boolean;
+
+  @Prop({ default: true })
+  showArButton: boolean;
 
   @Prop({ default: 0, min: 0 })
   customSizePrice: number;

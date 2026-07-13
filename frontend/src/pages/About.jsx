@@ -22,10 +22,10 @@ export default function About() {
         
         {/* Content */}
         <div className="relative z-10 text-center px-margin-mobile md:px-margin-desktop max-w-3xl mx-auto mt-20 md:mt-0">
-          <h1 className="font-display-lg text-display-lg-mobile md:text-[56px] leading-tight text-linen-white mb-6">
+          <h1 className="type-page-title font-display-lg text-display-lg-mobile md:text-[56px] leading-tight text-linen-white mb-6">
             {content.heroTitle}
           </h1>
-          <p className="font-body-lg text-body-lg-mobile md:text-body-lg text-linen-white/90">
+          <p className="type-intro font-body-lg text-body-lg-mobile md:text-body-lg text-linen-white/90">
             {content.heroSubtitle}
           </p>
         </div>
@@ -45,7 +45,7 @@ export default function About() {
           
           {/* Content Right */}
           <div className="order-2 md:order-2">
-            <span className="text-secondary font-bold text-sm tracking-widest uppercase mb-4 block">{content.missionEyebrow}</span>
+            <span className="type-eyebrow text-secondary font-bold text-sm tracking-widest uppercase mb-4 block">{content.missionEyebrow}</span>
             <h2 className="mb-5 font-display-lg text-display-lg-mobile font-light leading-tight text-slate-deep md:text-display-lg">
               {content.missionTitle}
             </h2>
@@ -74,7 +74,7 @@ export default function About() {
                 <span className="material-symbols-outlined text-[32px]">shield</span>
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Trách nhiệm</h3>
-              <p className="font-body-sm text-slate-deep/70">
+              <p className="type-card-body font-body-sm text-slate-deep/70">
                 {content.responsibilityText}
               </p>
             </div>
@@ -84,7 +84,7 @@ export default function About() {
                 <span className="material-symbols-outlined text-[32px]">lightbulb</span>
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Đổi mới</h3>
-              <p className="font-body-sm text-slate-deep/70">
+              <p className="type-card-body font-body-sm text-slate-deep/70">
                 {content.innovationText}
               </p>
             </div>
@@ -94,7 +94,7 @@ export default function About() {
                 <span className="material-symbols-outlined text-[32px]">handshake</span>
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Hợp tác</h3>
-              <p className="font-body-sm text-slate-deep/70">
+              <p className="type-card-body font-body-sm text-slate-deep/70">
                 {content.collaborationText}
               </p>
             </div>
@@ -104,7 +104,7 @@ export default function About() {
                 <span className="material-symbols-outlined text-[32px]">visibility</span>
               </div>
               <h3 className="font-display-sm text-display-sm mb-3">Minh bạch</h3>
-              <p className="font-body-sm text-slate-deep/70">
+              <p className="type-card-body font-body-sm text-slate-deep/70">
                 {content.transparencyText}
               </p>
             </div>

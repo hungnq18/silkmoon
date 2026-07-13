@@ -27,6 +27,24 @@ class OrderItem {
 
   @Prop({ type: String, default: null })
   embroidery: string | null;
+
+  @Prop({ default: '' })
+  sizeId: string;
+
+  @Prop({ default: '' })
+  sizeLabel: string;
+
+  @Prop({ type: [Object], default: [] })
+  sizeMeasurements: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+
+  @Prop({ type: Object, default: null })
+  customSize: { width?: number; length?: number; height?: number } | null;
+
+  @Prop({ type: [Object], default: [] })
+  customMeasurements: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+
+  @Prop({ default: false })
+  isCustomSize: boolean;
 }
 
 @Schema({ timestamps: true })
@@ -51,6 +69,21 @@ export class Order {
 
   @Prop({ required: true })
   city: string;
+
+  @Prop({ default: '' })
+  addressDetail: string;
+
+  @Prop({ type: Number, default: null })
+  provinceCode?: number | null;
+
+  @Prop({ default: '' })
+  provinceName: string;
+
+  @Prop({ type: Number, default: null })
+  wardCode?: number | null;
+
+  @Prop({ default: '' })
+  wardName: string;
 
   @Prop({ default: '' })
   note: string;
@@ -93,9 +126,17 @@ export class Order {
 
   @Prop({ type: [Object], required: true })
   items: OrderItem[];
+
+  @Prop({ default: false })
+  hasEmbroidery: boolean;
+
+  @Prop({ default: false })
+  hasCustomSize: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ orderNumber: 'text', fullName: 'text', email: 'text', phone: 'text' });
 OrderSchema.index({ orderStatus: 1, createdAt: -1 });
 OrderSchema.index({ paymentStatus: 1, createdAt: -1 });
+OrderSchema.index({ hasEmbroidery: 1, createdAt: -1 });
+OrderSchema.index({ hasCustomSize: 1, createdAt: -1 });

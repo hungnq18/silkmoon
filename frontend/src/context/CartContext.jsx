@@ -54,32 +54,33 @@ export function CartProvider({ children }) {
     }
   };
 
-  const addToCart = (productId, quantity = 1) => {
+  const addToCart = (productId, quantity = 1, options = {}) => {
     const newCart = [...cart];
-    const existingIndex = newCart.findIndex(item => item.productId === productId);
+    const signature = JSON.stringify({ sizeId: options.sizeId || '', customSize: options.customSize || null, embroidery: options.embroidery || '' });
+    const existingIndex = newCart.findIndex(item => item.productId === productId && JSON.stringify({ sizeId: item.sizeId || '', customSize: item.customSize || null, embroidery: item.embroidery || '' }) === signature);
     
     if (existingIndex >= 0) {
-      newCart[existingIndex].quantity += quantity;
+      newCart[existingIndex] = { ...newCart[existingIndex], ...options, quantity: newCart[existingIndex].quantity + quantity };
     } else {
-      newCart.push({ productId, quantity });
+      newCart.push({ cartItemId: `${productId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, productId, quantity, ...options });
     }
     
     saveCart(newCart);
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (identifier, quantity) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(identifier);
       return;
     }
     const newCart = cart.map(item => 
-      item.productId === productId ? { ...item, quantity } : item
+      (item.cartItemId || item.productId) === identifier ? { ...item, quantity } : item
     );
     saveCart(newCart);
   };
 
-  const removeFromCart = (productId) => {
-    const newCart = cart.filter(item => item.productId !== productId);
+  const removeFromCart = (identifier) => {
+    const newCart = cart.filter(item => (item.cartItemId || item.productId) !== identifier);
     saveCart(newCart);
   };
 

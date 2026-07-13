@@ -9,6 +9,7 @@ import {
   ValidateNested,
   Min,
   IsPositive,
+  IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -20,6 +21,29 @@ class OrderItemDto {
   @IsNumber()
   @Min(1)
   quantity: number;
+
+  @IsOptional()
+  @IsString()
+  sizeId?: string;
+
+  @IsOptional()
+  @IsString()
+  sizeLabel?: string;
+
+  @IsOptional()
+  @IsArray()
+  sizeMeasurements?: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+
+  @IsOptional()
+  customSize?: { width?: number; length?: number; height?: number };
+
+  @IsOptional()
+  @IsArray()
+  customMeasurements?: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+
+  @IsOptional()
+  @IsString()
+  embroidery?: string;
 }
 
 export class CreateOrderDto {
@@ -42,6 +66,26 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   city: string;
+
+  @IsOptional()
+  @IsString()
+  addressDetail?: string;
+
+  @IsOptional()
+  @IsInt()
+  provinceCode?: number;
+
+  @IsOptional()
+  @IsString()
+  provinceName?: string;
+
+  @IsOptional()
+  @IsInt()
+  wardCode?: number;
+
+  @IsOptional()
+  @IsString()
+  wardName?: string;
 
   @IsOptional()
   @IsString()

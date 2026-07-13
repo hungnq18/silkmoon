@@ -1,27 +1,76 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { locationApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import SearchableLocationSelect from './SearchableLocationSelect';
 
 export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
+  const { user } = useAuth();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('Hà Nội');
+  const [addressDetail, setAddressDetail] = useState('');
+  const [provinceCode, setProvinceCode] = useState('');
+  const [provinceName, setProvinceName] = useState('');
+  const [wardCode, setWardCode] = useState('');
+  const [wardName, setWardName] = useState('');
+  const [provinces, setProvinces] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(true);
+  const [loadingWards, setLoadingWards] = useState(false);
+  const [locationError, setLocationError] = useState('');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('payos');
 
+  useEffect(() => {
+    locationApi.getProvinces()
+      .then((items) => setProvinces(Array.isArray(items) ? items : []))
+      .catch(() => setLocationError('Không thể tải danh sách tỉnh/thành phố. Vui lòng tải lại trang.'))
+      .finally(() => setLoadingProvinces(false));
+  }, []);
+
+  useEffect(() => {
+    if (!provinceCode) { setWards([]); return; }
+    let active = true;
+    setLoadingWards(true);
+    setLocationError('');
+    locationApi.getWards(provinceCode)
+      .then((items) => { if (active) setWards(Array.isArray(items) ? items : []); })
+      .catch(() => { if (active) setLocationError('Không thể tải danh sách phường/xã. Vui lòng thử lại.'); })
+      .finally(() => { if (active) setLoadingWards(false); });
+    return () => { active = false; };
+  }, [provinceCode]);
+
+  useEffect(() => {
+    if (!user) return;
+    setFullName((value) => value || user.fullName || '');
+    setPhone((value) => value || user.phone || '');
+    setEmail((value) => value || user.email || '');
+    setAddressDetail((value) => value || user.addressDetail || (!user.provinceCode ? user.address || '' : ''));
+    setProvinceCode((value) => value || user.provinceCode || '');
+    setProvinceName((value) => value || user.provinceName || '');
+    setWardCode((value) => value || user.wardCode || '');
+    setWardName((value) => value || user.wardName || '');
+  }, [user]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!fullName || !phone || !address) {
+    if (!fullName.trim() || !phone.trim() || !addressDetail.trim() || !provinceCode || !wardCode) {
       alert('Vui lòng điền đầy đủ các thông tin giao hàng bắt buộc.');
       return;
     }
+    const address = `${addressDetail.trim()}, ${wardName}`;
     onSubmitForm({
-      fullName,
-      phone,
-      email,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
       address,
-      city,
-      note,
+      city: provinceName,
+      addressDetail: addressDetail.trim(),
+      provinceCode: Number(provinceCode),
+      provinceName,
+      wardCode: Number(wardCode),
+      wardName,
+      note: note.trim(),
       paymentMethod,
     });
   };
@@ -78,15 +127,15 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
 
           <div className="md:col-span-2">
             <label className="font-label-caps text-label-caps text-on-surface-variant mb-1 block">
-              Địa chỉ nhận hàng <span className="text-error">*</span>
+              Địa chỉ chi tiết <span className="text-error">*</span>
             </label>
             <input
               type="text"
               required
               className="input-underline font-body-md text-body-md text-slate-deep"
-              placeholder="Số nhà, Tên đường, Phường/Xã..."
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Số nhà, tên đường, tòa nhà…"
+              value={addressDetail}
+              onChange={(e) => setAddressDetail(e.target.value)}
             />
           </div>
 
@@ -94,28 +143,33 @@ export default function CheckoutForm({ onSubmitForm, isSubmitting = false }) {
             <label className="font-label-caps text-label-caps text-on-surface-variant mb-1 block">
               Tỉnh/Thành phố <span className="text-error">*</span>
             </label>
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="input-underline font-body-md text-body-md appearance-none text-slate-deep cursor-pointer"
-            >
-              <option value="Hà Nội">Hà Nội</option>
-              <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
-              <option value="Đà Nẵng">Đà Nẵng</option>
-            </select>
+            <SearchableLocationSelect
+              value={provinceCode}
+              options={provinces}
+              loading={loadingProvinces}
+              placeholder="Chọn tỉnh/thành phố"
+              searchPlaceholder="Tìm tỉnh/thành phố…"
+              onChange={(selected) => {
+                setProvinceCode(selected?.code || '');
+                setProvinceName(selected?.name || '');
+                setWardCode('');
+                setWardName('');
+              }}
+            />
           </div>
 
           <div>
             <label className="font-label-caps text-label-caps text-on-surface-variant mb-1 block">
-              Ghi chú (Tùy chọn)
+              Phường/Xã <span className="text-error">*</span>
             </label>
-            <input
-              type="text"
-              className="input-underline font-body-md text-body-md text-slate-deep"
-              placeholder="Lời nhắn cho shipper..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
+            <SearchableLocationSelect value={wardCode} options={wards} disabled={!provinceCode} loading={loadingWards} placeholder={provinceCode ? 'Chọn phường/xã' : 'Chọn tỉnh/thành phố trước'} searchPlaceholder="Tìm phường/xã…" onChange={(selected) => { setWardCode(selected?.code || ''); setWardName(selected?.name || ''); }} />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="font-label-caps text-label-caps text-on-surface-variant mb-1 block">Ghi chú (Tùy chọn)</label>
+            <input type="text" className="input-underline font-body-md text-body-md text-slate-deep" placeholder="Lời nhắn cho shipper..." value={note} onChange={(e) => setNote(e.target.value)}/>
+            {(addressDetail || wardName || provinceName) && <p className="mt-2 text-xs text-on-surface-variant">Địa chỉ giao hàng: {[addressDetail, wardName, provinceName].filter(Boolean).join(', ')}</p>}
+            {locationError && <p className="mt-2 text-sm text-red-600">{locationError}</p>}
           </div>
         </div>
       </div>

@@ -26,17 +26,52 @@ export class User {
   @Prop()
   address?: string;
 
+  @Prop()
+  addressDetail?: string;
+
+  @Prop()
+  provinceCode?: number;
+
+  @Prop()
+  provinceName?: string;
+
+  @Prop()
+  wardCode?: number;
+
+  @Prop()
+  wardName?: string;
+
+  @Prop()
+  avatarUrl?: string;
+
   @Prop({ type: String, enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @Prop({ default: true })
   isActive: boolean;
 
+  // Existing accounts do not have this field and remain valid. New website
+  // registrations explicitly set it to false until the OTP is confirmed.
+  @Prop()
+  emailVerified?: boolean;
+
+  @Prop({ select: false })
+  emailVerificationOtpHash?: string;
+
+  @Prop({ select: false })
+  emailVerificationExpiresAt?: Date;
+
+  @Prop({ select: false })
+  emailVerificationLastSentAt?: Date;
+
+  @Prop({ select: false, default: 0 })
+  emailVerificationAttempts?: number;
+
   @Prop({
-    type: [{ productId: { type: String }, quantity: { type: Number } }],
+    type: [{ productId: { type: String }, cartItemId: { type: String }, quantity: { type: Number }, sizeId: { type: String }, sizeLabel: { type: String }, sizeMeasurements: { type: [Object], default: [] }, customSize: { type: Object }, customMeasurements: { type: [Object], default: [] }, embroidery: { type: String } }],
     default: [],
   })
-  cart: { productId: string; quantity: number }[];
+  cart: { productId: string; cartItemId?: string; quantity: number; sizeId?: string; sizeLabel?: string; sizeMeasurements?: any[]; customSize?: any; customMeasurements?: any[]; embroidery?: string }[];
 
   @Prop({ select: false })
   resetPasswordTokenHash?: string;

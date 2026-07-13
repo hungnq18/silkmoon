@@ -126,10 +126,10 @@ export default function BlogPosts() {
                 
                 {/* Content */}
                 <div className="flex-grow flex flex-col p-4 bg-[#F8F9FB] rounded-2xl group-hover:bg-bone transition-colors duration-300">
-                  <h3 className="text-body-lg text-slate-deep font-bold leading-tight mb-3 line-clamp-3">
+                  <h3 className="type-card-title text-body-lg text-slate-deep font-bold leading-tight mb-3 line-clamp-3">
                     {blog.title}
                   </h3>
-                  <p className="text-body-md text-slate-deep/70 line-clamp-3 mt-auto">
+                  <p className="type-card-body text-body-md text-slate-deep/70 line-clamp-3 mt-auto">
                     {blog.desc}
                   </p>
                 </div>

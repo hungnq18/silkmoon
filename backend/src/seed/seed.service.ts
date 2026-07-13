@@ -8,6 +8,7 @@ import {
 } from '../promotions/schemas/promotion.schema';
 import { Review, ReviewDocument } from '../reviews/schemas/review.schema';
 import { Category, CategoryDocument } from '../categories/schemas/category.schema';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -19,13 +20,83 @@ export class SeedService implements OnApplicationBootstrap {
     private promotionModel: Model<PromotionDocument>,
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    private settingsService: SettingsService,
   ) {}
 
   async onApplicationBootstrap() {
     await this.seedCategories();
     await this.seedProducts();
+    await this.seedProductSizes();
     await this.seedPromotions();
     await this.seedReviews();
+  }
+
+  private parseSizeLabel(label = '') {
+    const match = label.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)(?:\s*[x×]\s*(\d+(?:[.,]\d+)?))?/i);
+    const numberValue = (value?: string) => value ? Number(value.replace(',', '.')) : undefined;
+    const cleanLabel = label
+      .replace(/\(\s*\d+(?:[.,]\d+)?\s*[x×]\s*\d+(?:[.,]\d+)?(?:\s*[x×]\s*\d+(?:[.,]\d+)?)?\s*\)/i, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^\s*-\s*|\s*-\s*$/g, '')
+      .trim() || label.trim() || 'Size';
+    return { label: cleanLabel, width: numberValue(match?.[1]), length: numberValue(match?.[2]), height: numberValue(match?.[3]) };
+  }
+
+  private sizeSlug(value: string) {
+    return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }
+
+  private async seedProductSizes() {
+    const [products, currentSetting] = await Promise.all([
+      this.productModel.find({ 'sizes.0': { $exists: true } }).select('_id name category sizes').lean(),
+      this.settingsService.findByKey('product_sizes'),
+    ]);
+    const existing = Array.isArray(currentSetting?.value) ? currentSetting.value : [];
+    const categories = new Map<string, any>();
+    const ensureCategory = (name: string, source: any = {}) => {
+      const key = name.trim().toLowerCase();
+      if (!categories.has(key)) categories.set(key, {
+        id: source.id || this.sizeSlug(name) || `size-category-${Date.now()}`,
+        name: name.trim() || 'Danh mục size',
+        productId: source.productId,
+        productName: source.productName,
+        productCategory: source.productCategory,
+        isActive: source.isActive !== false,
+        sizes: [],
+      });
+      return categories.get(key);
+    };
+    const addSize = (category: any, item: any) => {
+      const parsed = this.parseSizeLabel(item.label);
+      const normalized = { ...item, label: parsed.label, width: item.width ?? parsed.width, length: item.length ?? parsed.length, height: item.height ?? parsed.height, unit: item.unit || 'cm', isActive: item.isActive !== false };
+      const key = [normalized.label, normalized.width || '', normalized.length || '', normalized.height || ''].join('|').toLowerCase();
+      if (!category.sizes.some((size: any) => [size.label, size.width || '', size.length || '', size.height || ''].join('|').toLowerCase() === key)) category.sizes.push(normalized);
+    };
+
+    for (const entry of existing) {
+      if (Array.isArray(entry.sizes)) {
+        const category = ensureCategory(entry.name || entry.group || 'Danh mục size', entry);
+        entry.sizes.forEach((size: any) => addSize(category, size));
+      } else {
+        const category = ensureCategory(entry.group || 'Khác', entry);
+        addSize(category, entry);
+      }
+    }
+
+    for (const product of products) {
+      const category = ensureCategory(product.name, { id: `product-${product._id}`, productId: product._id.toString(), productName: product.name, productCategory: product.category });
+      for (const size of product.sizes || []) {
+        const parsed = this.parseSizeLabel(size.label);
+        addSize(category, { ...size, id: this.sizeSlug(`${product.name}-${parsed.label}-${size.width ?? parsed.width ?? ''}-${size.length ?? parsed.length ?? ''}-${size.height ?? parsed.height ?? ''}`) });
+      }
+    }
+
+    const result = [...categories.values()]
+      .map((category) => ({ ...category, sizes: category.sizes.sort((a: any, b: any) => a.label.localeCompare(b.label, 'vi')) }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    const sizeCount = result.reduce((total, category) => total + category.sizes.length, 0);
+    await this.settingsService.upsert('product_sizes', { value: result, description: 'Danh mục kích thước; mỗi danh mục chứa các size riêng' });
+    this.logger.log(`Seeded ${result.length} size categories with ${sizeCount} sizes from ${products.length} products`);
   }
 
   private async seedCategories() {

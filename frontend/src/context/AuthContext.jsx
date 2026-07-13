@@ -22,18 +22,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const refreshProfile = async () => {
+    const profile = await authApi.getProfile();
+    setUser(profile);
+    return profile;
+  };
+
   const login = async (credentials) => {
     const data = await authApi.login(credentials);
     localStorage.setItem('token', data.access_token);
-    const profile = await authApi.getProfile();
-    setUser(profile);
+    await refreshProfile();
   };
 
   const register = async (information) => {
-    const data = await authApi.register(information);
+    return authApi.register(information);
+  };
+
+  const verifyRegistration = async (email, otp) => {
+    const data = await authApi.verifyRegistration(email, otp);
     localStorage.setItem('token', data.access_token);
-    const profile = await authApi.getProfile();
-    setUser(profile);
+    await refreshProfile();
   };
 
   const logout = () => {
@@ -42,7 +50,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyRegistration, refreshProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

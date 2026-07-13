@@ -16,6 +16,21 @@ const PRODUCT_IMAGES = {
   slate:     'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
 };
 
+const applyLatestSizeCatalog = (product, setting) => {
+  const categories = Array.isArray(setting?.value) ? setting.value : [];
+  const catalogSizes = categories.some((item) => Array.isArray(item.sizes))
+    ? categories.filter((item) => item.isActive !== false).flatMap((item) => (item.sizes || []).filter((size) => size.isActive !== false))
+    : categories.filter((item) => item.isActive !== false);
+  const catalogById = new Map(catalogSizes.map((size) => [size.id, size]));
+  return {
+    ...product,
+    sizes: (product.sizes || []).map((size) => {
+      const latest = catalogById.get(size.id);
+      return latest ? { ...size, ...latest } : size;
+    }),
+  };
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -24,15 +39,24 @@ export default function ProductDetail() {
   const [activeColorLabel, setActiveColorLabel] = useState('');
   const [activeColorId, setActiveColorId] = useState('champagne'); // default for AR fallback
   const [arEnabled, setArEnabled] = useState(true);
+  const [arButtonVisible, setArButtonVisible] = useState(true);
 
   useEffect(() => {
-    settingsApi.get('assistant_config').then((row) => setArEnabled(row?.value?.ar?.enabled !== false)).catch(() => null);
+    settingsApi.get('assistant_config').then((row) => {
+      const arConfig = row?.value?.ar || {};
+      setArEnabled(arConfig.enabled !== false);
+      setArButtonVisible(arConfig.showProductButton !== false);
+    }).catch(() => null);
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    productsApi.getById(id || 'mulberry-silk-bedding')
-      .then((data) => {
+    Promise.all([
+      productsApi.getById(id || 'mulberry-silk-bedding'),
+      settingsApi.get('product_sizes').catch(() => null),
+    ])
+      .then(([rawProduct, sizeSetting]) => {
+        const data = applyLatestSizeCatalog(rawProduct, sizeSetting);
         setProduct(data);
         analyticsApi.track({ type: 'product_view', path: window.location.pathname, entityId: data._id, label: data.name });
         if (data.colors?.length > 0) {
@@ -61,7 +85,7 @@ export default function ProductDetail() {
   const galleryImages = activeColor?.images?.length ? activeColor.images : (product.images || []);
 
   return (
-    <div className="bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
+    <div className="product-detail-root bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Detail Section */}
       <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-24 md:pt-32">
         <nav aria-label="Đường dẫn sản phẩm" className="no-scrollbar col-span-full -mb-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm text-slate-deep/70 lg:hidden">
@@ -79,10 +103,11 @@ export default function ProductDetail() {
         {/* Right Column: Selections and Details */}
         <div className="lg:col-span-5">
           <ProductInfoPanel
+            key={product._id || product.id}
             product={product}
             onOpenAR={() => { setIsAROpen(true); analyticsApi.track({ type: 'ar_open', path: window.location.pathname, entityId: product._id, label: product.name }); }}
             onColorChange={handleColorChange}
-            arEnabled={arEnabled}
+            arEnabled={arEnabled && arButtonVisible && product.showArButton !== false}
           />
         </div>
       </section>

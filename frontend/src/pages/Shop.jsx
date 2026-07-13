@@ -103,7 +103,7 @@ export default function Shop() {
         <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-stack-sm text-slate-deep">
           {saleOnly ? 'Sản phẩm Sale' : categoryFromMenu || 'Tất cả sản phẩm'}
         </h1>
-        <p className="text-on-surface-variant max-w-2xl font-body-lg text-body-md md:text-body-lg">
+        <p className="type-intro text-on-surface-variant max-w-2xl font-body-lg text-body-md md:text-body-lg">
           Khám phá bộ sưu tập chăn ga gối đệm được thiết kế cho sự nghỉ ngơi tuyệt đối, sử dụng những chất liệu tự nhiên bền vững nhất.
         </p>
       </section>

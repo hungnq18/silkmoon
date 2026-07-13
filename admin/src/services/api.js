@@ -34,6 +34,16 @@ export const adminApi = {
   deletePromotion: (id) => apiRequest(`/promotions/${id}`, { method: "DELETE" }),
   getSettings: () => apiRequest(`/settings?_=${Date.now()}`, { cache: "no-store" }),
   saveSetting: (key,data) => apiRequest(`/settings/${key}`, { method: "POST", body: JSON.stringify(data) }),
+  getNewsletterSubscriptions: ({ page = 1, limit = 20, search = '', status = 'all', type = 'all' } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    if (status !== 'all') params.set('status', status);
+    if (type !== 'all') params.set('type', type);
+    return apiRequest(`/newsletter/subscriptions?${params}`);
+  },
+  updateNewsletterStatus: (id, status) => apiRequest(`/newsletter/subscriptions/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  deleteNewsletterSubscription: (id) => apiRequest(`/newsletter/subscriptions/${id}`, { method: 'DELETE' }),
+  sendNewsletterCampaign: (data) => apiRequest('/newsletter/campaigns', { method: 'POST', body: JSON.stringify(data) }),
   getAnalytics: () => apiRequest("/admin/analytics"),
   getAnalyticsReport: () => apiRequest("/admin/analytics/report"),
   getAiUsage: () => apiRequest("/admin/ai-usage"),
@@ -91,8 +101,10 @@ export const adminApi = {
     if (!res.ok) throw new Error("Failed to fetch stats");
     return res.json();
   },
-  getOrders: async ({ page = 1, limit = 15 } = {}) => {
-    const res = await fetch(`${API_URL}/orders?page=${page}&limit=${limit}`, { headers: getHeaders() });
+  getOrders: async ({ page = 1, limit = 15, customization = 'all' } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (customization !== 'all') params.set('customization', customization);
+    const res = await fetch(`${API_URL}/orders?${params}`, { headers: getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch orders");
     return res.json();
   },
@@ -213,4 +225,6 @@ export const adminApi = {
   },
   createUser: (data) =>
     apiRequest("/users", { method: "POST", body: JSON.stringify(data) }),
+  updateUser: (id, data) =>
+    apiRequest(`/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
 };

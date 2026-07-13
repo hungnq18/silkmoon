@@ -5,6 +5,7 @@ import { FABRICS, HANDLE_R, colorizeTexture, perspectiveWarp, drawHandle, getCan
 
 
 import velvetTextureUrl from '../../assets/velvet.png';
+import arLoadingUrl from '../../assets/ar-loading.svg';
 
 // ── Validate & fix points so the surfaces make geometric sense ──
 // Auto-sorts the 8 points into top/bottom and left/right based on their actual coordinates.
@@ -273,7 +274,7 @@ export default function ARCanvasView({
 
         {isDetecting && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-linen-white/80 backdrop-blur-sm">
-            <div className="w-10 h-10 border-2 border-slate-deep border-t-transparent rounded-full animate-spin mb-4" />
+            <img src={arLoadingUrl} alt="" aria-hidden="true" className="mb-5 w-48 max-w-[55%] opacity-80 motion-safe:animate-pulse" />
             <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest">Gemini AI đang phân tích</p>
             <p className="text-sm text-on-surface-variant mt-1">Bỏ qua gối chăn · xác định mặt phẳng ga...</p>
           </div>

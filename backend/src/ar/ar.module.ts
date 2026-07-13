@@ -10,5 +10,6 @@ import { AssistantController } from './assistant.controller';
   imports: [MongooseModule.forFeature([{ name: AiUsage.name, schema: AiUsageSchema }]), SettingsModule],
   controllers: [ARController, AssistantController],
   providers: [ARService],
+  exports: [ARService],
 })
 export class ARModule {}

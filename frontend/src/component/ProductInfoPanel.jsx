@@ -16,10 +16,18 @@ const colors = [
   { id: 'slate', hex: '#334641', label: 'Slate Silk' },
 ];
 
+const sizeMeasurements = (size) => {
+  if (Array.isArray(size?.measurements)) return size.measurements.filter((item) => item.label && item.value !== undefined && item.value !== null && item.value !== '');
+  return [['width', 'Rộng'], ['length', 'Dài'], ['height', 'Dày/Cao']]
+    .filter(([key]) => size?.[key] !== undefined && size?.[key] !== null && size?.[key] !== '')
+    .map(([key, label]) => ({ id: key, label, value: size[key], unit: size.unit || 'cm' }));
+};
+const sizeDisplayName = (size) => (size?.label || '').replace(/\s*\([^)]*\d[^)]*\)\s*$/, '').trim() || size?.label || 'Size';
+
 export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [selectedSize, setSelectedSize] = useState('queen');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0]?.id || 'queen');
   
   // Use product colors or fallback
   const productColors = product.colors?.length > 0 ? product.colors : colors;
@@ -31,6 +39,15 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   const allowCustomSize = product.allowCustomSize ?? true;
   const allowEmbroidery = product.allowEmbroidery ?? product?.category === 'Đồ Ngủ';
   const embroideryMaxLength = product.embroideryMaxLength || 12;
+  const productSizeOptions = product.sizes?.length > 0 ? product.sizes : sizes;
+  const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
+  const selectedSizeMeasurements = sizeMeasurements(selectedSizeInfo);
+  const referenceSize = (product.sizes || []).find((size) => sizeMeasurements(size).length > 0);
+  const customSizeFields = (referenceSize ? sizeMeasurements(referenceSize) : [
+    { id: 'width', label: 'Rộng', unit: 'cm' },
+    { id: 'length', label: 'Dài', unit: 'cm' },
+    { id: 'height', label: 'Dày/Cao', unit: 'cm' },
+  ]).map((field, index) => ({ id: field.id || `custom-field-${index}`, label: field.label, unit: field.unit || 'cm' }));
 
   const activeColorInfo = productColors.find((c) => c.id === selectedColor) || productColors[0];
 
@@ -49,10 +66,31 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
     }
   };
 
+  const handleCustomSizeChange = (field, value) => {
+    if (value === '' || Number(value) >= 0) {
+      setCustomSize((current) => ({ ...current, [field]: value }));
+    }
+  };
+
+  const preventNegativeInput = (e) => {
+    if (e.key === '-') e.preventDefault();
+  };
+
   const handleAddToCart = () => {
     try {
-      // Add product ID and exact quantity (1 for panel add)
-      addToCart(product._id || product.id, 1);
+      const missingCustomFields = selectedSize === 'custom' ? customSizeFields.filter((field) => !Number(customSize[field.id])) : [];
+      if (missingCustomFields.length) {
+        alert(`Vui lòng nhập đủ thông số size riêng: ${missingCustomFields.map((field) => field.label).join(', ')}.`);
+        return;
+      }
+      addToCart(product._id || product.id, 1, {
+        sizeId: selectedSize,
+        sizeLabel: selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo),
+        sizeMeasurements: selectedSize === 'custom' ? [] : sizeMeasurements(selectedSizeInfo),
+        customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, Number(customSize[field.id]) || 0])) : null,
+        customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: Number(customSize[field.id]) || 0 })) : [],
+        embroidery: embroideryText.trim() || null,
+      });
       
       // We can also trigger a custom event or toast here if we want
       navigate('/cart');
@@ -66,10 +104,10 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
     <div className="flex flex-col gap-stack-lg lg:sticky lg:top-[120px] h-fit select-none">
       {/* Brand & Title */}
       <div>
-        <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
+        <span className="type-eyebrow font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
           {product.category || 'Premium Collection'}
         </span>
-        <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-slate-deep mt-stack-sm leading-tight">
+        <h1 className="product-detail-title font-display-lg text-display-lg-mobile md:text-display-lg text-slate-deep mt-stack-sm leading-tight">
           {product.name}
         </h1>
 
@@ -82,11 +120,11 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star_half</span>
           </div>
-          <span className="font-body-md text-on-surface-variant">(124 đánh giá)</span>
+          <span className="type-meta font-body-md text-on-surface-variant">(124 đánh giá)</span>
         </div>
 
         {/* Price */}
-        <p className="font-headline-sm text-headline-sm text-slate-deep mt-stack-md">
+        <p className="product-detail-price font-headline-sm text-headline-sm text-slate-deep mt-stack-md">
           {product.price?.toLocaleString('vi-VN')} VNĐ
         </p>
       </div>
@@ -97,7 +135,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         className="group flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-stack-sm border border-slate-deep/10 py-4 px-4 md:px-6 rounded-full hover:bg-slate-deep hover:text-linen-white transition-all duration-300 bg-primary text-white shadow-sm active:scale-98 w-full"
       >
         <span className="material-symbols-outlined text-[20px]">view_in_ar</span>
-        <span className="font-button text-[11px] md:text-button uppercase tracking-wide text-center">
+        <span className="type-button font-button text-[11px] md:text-button uppercase tracking-wide text-center">
           Thử trong phòng của bạn
         </span>
       </button>}
@@ -107,10 +145,10 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         {/* Size Selection */}
         <div className="space-y-stack-sm">
           <div className="flex justify-between items-center">
-            <span className="font-label-caps text-label-caps text-slate-deep">CHỌN KÍCH THƯỚC</span>
+            <span className="product-detail-option-label font-label-caps text-label-caps text-slate-deep">CHỌN KÍCH THƯỚC</span>
           </div>
           <div className="flex flex-wrap gap-stack-sm">
-            {[...(product.sizes?.length > 0 ? product.sizes : sizes), ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
+            {[...productSizeOptions, ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
               const isSelected = selectedSize === size.id;
               return (
                 <button
@@ -122,54 +160,34 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
                       : 'border-slate-deep/20 text-slate-deep hover:border-slate-deep'
                   }`}
                 >
-                  {size.label}
+                  <span className="type-option-value">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</span>
                 </button>
               );
             })}
           </div>
+
+          {selectedSize !== 'custom' && selectedSizeInfo && selectedSizeMeasurements.length > 0 && (
+            <div className="mt-4 rounded-lg border border-slate-deep/10 bg-bone/35 p-4 animate-fade-in">
+              <div className="mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-[19px] text-slate-deep/70">straighten</span><div><strong className="block text-sm text-slate-deep">Thông số size {sizeDisplayName(selectedSizeInfo)}</strong><span className="text-[11px] text-slate-deep/55">Thông số chi tiết của kích thước đang chọn</span></div></div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {selectedSizeMeasurements.map((measurement, index) => <div className="rounded-md border border-slate-deep/10 bg-white px-3 py-2.5" key={measurement.id || `${measurement.label}-${index}`}><span className="block text-[9px] font-semibold uppercase tracking-wide text-slate-deep/50">{measurement.label}</span><strong className="mt-1 block text-sm font-medium text-slate-deep">{measurement.value} <small className="font-normal text-slate-deep/55">{measurement.unit || ''}</small></strong></div>)}
+              </div>
+            </div>
+          )}
           
           {selectedSize === 'custom' && (
-            <div className="mt-4 grid grid-cols-3 gap-3 animate-fade-in">
-              {product.customSizePrice > 0 && <p className="col-span-3 text-xs text-slate-deep/70">Phụ thu may size riêng: +{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</p>}
-              <div>
-                <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Chiều dài (cm)</label>
-                <input 
-                  type="number" 
-                  placeholder="VD: 200"
-                  className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
-                  value={customSize.length}
-                  onChange={(e) => setCustomSize({...customSize, length: e.target.value})}
-                />
+            <div className="mt-4 rounded-lg border border-slate-deep/10 bg-bone/35 p-4 animate-fade-in">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><strong className="text-sm text-slate-deep">Thông số may size riêng</strong><p className="mt-0.5 text-[11px] text-slate-deep/60">Nhập đầy đủ số đo theo yêu cầu của sản phẩm.</p></div>{product.customSizePrice > 0 && <span className="rounded-full bg-sand-silk/15 px-3 py-1 text-[11px] font-medium text-slate-deep">+{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</span>}</div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {customSizeFields.map((field) => <label className="block" key={field.id}><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-deep/70">{field.label} ({field.unit})</span><div className="relative"><input type="number" min="0" placeholder={`Nhập ${field.label.toLowerCase()}`} className="w-full rounded-md border border-slate-deep/20 bg-white px-3 py-3 pr-12 text-sm text-slate-deep focus:border-slate-deep focus:outline-none" value={customSize[field.id] ?? ''} onKeyDown={preventNegativeInput} onChange={(event) => handleCustomSizeChange(field.id, event.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-deep/45">{field.unit}</span></div></label>)}
               </div>
-              <div>
-                <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Chiều rộng (cm)</label>
-                <input 
-                  type="number" 
-                  placeholder="VD: 180"
-                  className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
-                  value={customSize.width}
-                  onChange={(e) => setCustomSize({...customSize, width: e.target.value})}
-                />
-              </div>
-              {product?.category?.toLowerCase().includes('gối') ? null : (
-                <div>
-                  <label className="block text-xs text-slate-deep/70 mb-1 font-medium">Độ dày nệm (cm)</label>
-                  <input 
-                    type="number" 
-                    placeholder="VD: 20"
-                    className="w-full border border-slate-deep/20 rounded p-2 text-sm focus:outline-none focus:border-slate-deep"
-                    value={customSize.height}
-                    onChange={(e) => setCustomSize({...customSize, height: e.target.value})}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>
 
         {/* Color Selection */}
         <div className="space-y-stack-sm">
-          <span className="font-label-caps text-label-caps text-slate-deep uppercase">
+          <span className="product-detail-option-label font-label-caps text-label-caps text-slate-deep uppercase">
             MÀU SẮC: <span className="opacity-60 font-body-md normal-case pl-1">{activeColorInfo?.label}</span>
           </span>
           <div className="flex gap-stack-md">

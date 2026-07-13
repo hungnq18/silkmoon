@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { reviewsApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductReviews({ productId }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [sort, setSort] = useState('newest');
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,6 +15,8 @@ export default function ProductReviews({ productId }) {
   const [newReviewText, setNewReviewText] = useState('');
   const [newRating, setNewRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     if (!productId) return;
@@ -19,6 +26,12 @@ export default function ProductReviews({ productId }) {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [productId]);
+
+  useEffect(() => {
+    if (location.hash === '#reviews') {
+      window.setTimeout(() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [location.hash, productId]);
 
   const filteredReviews = reviews.filter(review => {
     if (filter === 'all') return true;
@@ -44,6 +57,10 @@ export default function ProductReviews({ productId }) {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!newReviewText.trim() || !productId) return;
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -58,15 +75,16 @@ export default function ProductReviews({ productId }) {
       setNewReviewText('');
       setNewRating(5);
       setIsWriting(false);
-    } catch (err) {
-      alert('Vui lòng đăng nhập để gửi đánh giá.');
+    } catch {
+      setSubmitError('Không thể gửi đánh giá. Phiên đăng nhập có thể đã hết hạn, anh/chị vui lòng đăng nhập lại.');
+      setShowLoginModal(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section className="mx-auto max-w-container-max px-margin-mobile py-8 md:px-margin-desktop md:py-10">
+    <section id="reviews" className="mx-auto max-w-container-max px-margin-mobile py-8 md:px-margin-desktop md:py-10">
       <h2 className="mb-6 text-center font-display-md text-3xl font-bold text-slate-deep">
         Đánh giá của Khách hàng
       </h2>
@@ -115,7 +133,7 @@ export default function ProductReviews({ productId }) {
         {/* Write Review Button */}
         <div className="shrink-0">
           <button 
-            onClick={() => setIsWriting(!isWriting)}
+            onClick={() => user ? setIsWriting(!isWriting) : setShowLoginModal(true)}
             className="bg-slate-deep text-white font-medium px-8 py-3 rounded hover:bg-sage-haze transition-colors shadow-sm whitespace-nowrap"
           >
             {isWriting ? 'Hủy đánh giá' : 'Viết đánh giá'}
@@ -248,6 +266,13 @@ export default function ProductReviews({ productId }) {
           )))}
         </div>
       </div>
+      {showLoginModal && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-deep/55 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="review-login-title" onMouseDown={(event) => event.target === event.currentTarget && setShowLoginModal(false)}>
+        <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl md:p-9">
+          <div className="flex items-start justify-between gap-5"><div><span className="material-symbols-outlined text-4xl text-secondary">account_circle</span><h3 id="review-login-title" className="mt-3 text-2xl font-semibold text-slate-deep">Đăng nhập để đánh giá</h3></div><button type="button" onClick={() => setShowLoginModal(false)} className="rounded-full p-2 text-slate-deep/60 hover:bg-bone" aria-label="Đóng"><span className="material-symbols-outlined">close</span></button></div>
+          <p className="mt-4 text-sm leading-relaxed text-on-surface-variant">{submitError || 'Anh/chị cần đăng nhập để gửi đánh giá sản phẩm. Sau khi đăng nhập, hệ thống sẽ đưa anh/chị quay lại đúng sản phẩm này.'}</p>
+          <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setShowLoginModal(false)} className="rounded-md border border-slate-deep/20 px-5 py-3 text-sm font-semibold text-slate-deep">Để sau</button><button type="button" onClick={() => navigate(`/account?redirect=${encodeURIComponent(`${location.pathname}${location.search}#reviews`)}`)} className="rounded-md bg-slate-deep px-5 py-3 text-sm font-semibold text-white">Đi đến đăng nhập</button></div>
+        </div>
+      </div>}
     </section>
   );
 }

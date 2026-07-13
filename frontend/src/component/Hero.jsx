@@ -39,11 +39,34 @@ const SLIDES = [
   }
 ];
 
+const typographyDefaults = {
+  desktop: { fontFamily: 'Manrope', labelSize: 12, titleSize: 64, descSize: 18 },
+  tablet: { fontFamily: 'Manrope', labelSize: 11, titleSize: 52, descSize: 17 },
+  mobile: { fontFamily: 'Manrope', labelSize: 10, titleSize: 38, descSize: 15 },
+};
+
+function typographyStyle(slide) {
+  const desktop = { ...typographyDefaults.desktop, ...(slide.typography?.desktop || {}) };
+  const tablet = { ...typographyDefaults.tablet, ...(slide.typography?.tablet || {}) };
+  const mobile = { ...typographyDefaults.mobile, ...(slide.typography?.mobile || {}) };
+  return {
+    '--hero-font-desktop': `'${desktop.fontFamily}', sans-serif`, '--hero-label-desktop': `${desktop.labelSize}px`, '--hero-title-desktop': `${desktop.titleSize}px`, '--hero-desc-desktop': `${desktop.descSize}px`,
+    '--hero-font-tablet': `'${tablet.fontFamily}', sans-serif`, '--hero-label-tablet': `${tablet.labelSize}px`, '--hero-title-tablet': `${tablet.titleSize}px`, '--hero-desc-tablet': `${tablet.descSize}px`,
+    '--hero-font-mobile': `'${mobile.fontFamily}', sans-serif`, '--hero-label-mobile': `${mobile.labelSize}px`, '--hero-title-mobile': `${mobile.titleSize}px`, '--hero-desc-mobile': `${mobile.descSize}px`,
+  };
+}
+
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState(SLIDES);
 
-  useEffect(() => { settingsApi.get('website_content').then(setting => { if (setting?.value?.hero?.slides?.length) setSlides(setting.value.hero.slides); }).catch(() => {}); }, []);
+  useEffect(() => {
+    const loadSlides = () => settingsApi.get('website_content').then(setting => { if (setting?.value?.hero?.slides?.length) setSlides(setting.value.hero.slides); }).catch(() => {});
+    loadSlides();
+    window.addEventListener('focus', loadSlides);
+    const timer = window.setInterval(loadSlides, 5000);
+    return () => { window.removeEventListener('focus', loadSlides); window.clearInterval(timer); };
+  }, []);
 
   // Auto-slide effect
   useEffect(() => {
@@ -60,6 +83,7 @@ export default function Hero() {
       {slides.map((slide, index) => (
         <div
           key={slide.id}
+          style={typographyStyle(slide)}
           className={`absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
         >
@@ -73,15 +97,15 @@ export default function Hero() {
 
           {/* Content */}
           <div className="absolute inset-0 z-10 px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto flex items-center">
-            <div className={`max-w-2xl space-y-stack-lg transition-all duration-1000 delay-300 ${index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-              <span className="font-label-caps text-label-caps text-white uppercase tracking-widest block opacity-90">
+            <div className={`hero-slide-copy max-w-2xl space-y-stack-lg transition-all duration-1000 delay-300 ${index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+              <span className="hero-slide-label text-white uppercase tracking-widest block opacity-90">
                 {slide.label}
               </span>
               <h1
-                className="font-display-lg text-display-lg-mobile md:text-[64px] text-white leading-tight"
+                className="hero-slide-title text-white leading-tight"
                 dangerouslySetInnerHTML={{ __html: slide.title }}
               />
-              <p className="font-body-lg text-body-md md:text-body-lg text-white/90 max-w-lg">
+              <p className="hero-slide-description text-white/90 max-w-lg">
                 {slide.desc}
               </p>
               <div className="flex flex-col sm:flex-row gap-stack-md pt-stack-md w-full sm:w-auto">

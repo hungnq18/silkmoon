@@ -367,11 +367,11 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
   /**
    * Upload a base64 image to Cloudinary and return the public URL.
    */
-  async uploadImageToCloudinary(base64Image: string): Promise<string> {
+  async uploadImageToCloudinary(base64Image: string, folder = 'silkmoon_ar'): Promise<string> {
     this.logger.log('[Cloudinary] Uploading image...');
     try {
       const result = await cloudinary.uploader.upload(base64Image, {
-        folder: 'silkmoon_ar',
+        folder,
       });
       this.logger.log(`[Cloudinary] Upload success: ${result.secure_url}`);
       return result.secure_url;

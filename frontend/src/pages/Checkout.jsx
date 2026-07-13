@@ -43,6 +43,12 @@ export default function Checkout() {
         items: cart.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          sizeId: item.sizeId || undefined,
+          sizeLabel: item.sizeLabel || undefined,
+          sizeMeasurements: item.sizeMeasurements || undefined,
+          customSize: item.customSize || undefined,
+          customMeasurements: item.customMeasurements || undefined,
+          embroidery: item.embroidery || undefined,
         })),
       });
 
@@ -75,7 +81,7 @@ export default function Checkout() {
   return (
     <main className="pt-24 md:pt-32 pb-section-gap px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
       {/* Progress Indicator */}
-      <div className="flex items-center gap-2 md:gap-4 mb-stack-lg text-label-caps font-label-caps opacity-50 uppercase tracking-widest text-[10px] md:text-[12px] select-none">
+      <div className="type-step-label flex items-center gap-2 md:gap-4 mb-stack-lg text-label-caps font-label-caps opacity-50 uppercase tracking-widest text-[10px] md:text-[12px] select-none">
         <Link to="/shop" className="hover:opacity-80 transition-opacity">
           Giỏ hàng
         </Link>

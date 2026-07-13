@@ -91,10 +91,10 @@ export default function BestSellers() {
             THÊM VÀO GIỎ
           </button>
         </div>
-        <h4 className="font-body-md text-slate-deep font-medium transition-colors group-hover:text-secondary">
+        <h4 className="type-card-title font-body-md text-slate-deep font-medium transition-colors group-hover:text-secondary">
           {product.name}
         </h4>
-        <p className="text-on-surface-variant font-body-md mt-1">
+        <p className="type-price text-on-surface-variant font-body-md mt-1">
           {product.price?.toLocaleString('vi-VN')}đ
         </p>
       </Link>
