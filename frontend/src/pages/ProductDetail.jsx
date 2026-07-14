@@ -10,19 +10,12 @@ import ARRoomPreview from '../component/ar/ARRoomPreview';
 import { applyLatestSizeCatalog } from '../utils/productSizes';
 
 // Product images per color — must match ProductInfoPanel colors
-const PRODUCT_IMAGES = {
-  champagne: 'https://images.unsplash.com/photo-1522771731478-44fb896da52d?auto=format&fit=crop&q=80&w=800',
-  white:     'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
-  sage:      'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800',
-  slate:     'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
-};
-
 export default function ProductDetail() {
   const { id } = useParams();
+  const productId = id || 'mulberry-silk-bedding';
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedProductId, setLoadedProductId] = useState('');
   const [isAROpen, setIsAROpen] = useState(false);
-  const [activeColorLabel, setActiveColorLabel] = useState('');
   const [activeColorId, setActiveColorId] = useState('champagne'); // default for AR fallback
   const [arEnabled, setArEnabled] = useState(true);
   const [arButtonVisible, setArButtonVisible] = useState(true);
@@ -36,30 +29,35 @@ export default function ProductDetail() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     Promise.all([
-      productsApi.getById(id || 'mulberry-silk-bedding'),
+      productsApi.getById(productId),
       settingsApi.get('product_sizes').catch(() => null),
     ])
       .then(([rawProduct, sizeSetting]) => {
+        if (!active) return;
         const data = applyLatestSizeCatalog(rawProduct, sizeSetting);
         setProduct(data);
         analyticsApi.track({ type: 'product_view', path: window.location.pathname, entityId: data._id, label: data.name });
         if (data.colors?.length > 0) {
-          setActiveColorLabel(data.colors[0].label);
           setActiveColorId(data.colors[0].id);
         }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [id]);
+      .catch((error) => {
+        if (active) {
+          console.error(error);
+          setProduct(null);
+        }
+      })
+      .finally(() => { if (active) setLoadedProductId(productId); });
+    return () => { active = false; };
+  }, [productId]);
 
   const handleColorChange = (color) => {
-    setActiveColorLabel(color.label);
     setActiveColorId(color.id);
   };
 
-  if (loading) {
+  if (loadedProductId !== productId) {
     return <div className="min-h-screen flex items-center justify-center bg-linen-white text-slate-deep animate-pulse">Đang tải sản phẩm...</div>;
   }
 
@@ -111,10 +109,11 @@ export default function ProductDetail() {
 
       {/* AR Room Preview */}
       {arEnabled && <ARRoomPreview
+        key={`${product._id || product.id}-${activeColorId}`}
         isOpen={isAROpen}
         onClose={() => setIsAROpen(false)}
-        productColor={activeColorId}
-        productImage={activeColor?.images?.[0] || PRODUCT_IMAGES[activeColorId] || product.images?.[0] || PRODUCT_IMAGES.champagne}
+        productColor={activeColor || activeColorId}
+        productColors={product.colors}
       />}
     </div>
   );

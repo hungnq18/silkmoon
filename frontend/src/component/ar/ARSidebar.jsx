@@ -2,16 +2,16 @@ import PropTypes from 'prop-types';
 import { FABRICS } from './arUtils';
 
 export default function ARSidebar({
+  fabrics = FABRICS,
   activeFabricId,
   setActiveFabricId,
   opacity,
   setOpacity,
   hasImage,
-  onReanalyze,
   onNewImage,
   mode,
 }) {
-  const activeFabric = FABRICS.find(f => f.id === activeFabricId) || FABRICS[0];
+  const activeFabric = fabrics.find(f => f.id === activeFabricId) || fabrics[0] || FABRICS[0];
   const isAIMode = mode === 'ai';
 
   return (
@@ -37,7 +37,7 @@ export default function ARSidebar({
           Thay đổi màu
         </span>
         <div className="grid grid-cols-6 gap-2.5 mt-4">
-          {FABRICS.map(f => (
+          {fabrics.map(f => (
             <button
               key={f.id}
               onClick={() => setActiveFabricId(f.id)}
@@ -116,12 +116,16 @@ export default function ARSidebar({
 }
 
 ARSidebar.propTypes = {
+  fabrics: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    hex: PropTypes.string.isRequired,
+  })),
   activeFabricId:    PropTypes.string.isRequired,
   setActiveFabricId: PropTypes.func.isRequired,
   opacity:           PropTypes.number.isRequired,
   setOpacity:        PropTypes.func.isRequired,
   hasImage:          PropTypes.bool.isRequired,
-  onReanalyze:       PropTypes.func.isRequired,
   onNewImage:        PropTypes.func.isRequired,
   mode:              PropTypes.string,
 };

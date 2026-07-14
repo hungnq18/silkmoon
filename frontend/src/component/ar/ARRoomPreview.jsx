@@ -1,9 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { arApi } from '../../services/api';
 import { FABRICS } from './arUtils';
 import ARSidebar from './ARSidebar';
-import QRCode from 'react-qr-code';
 import arLoadingUrl from '../../assets/ar-loading.svg';
 
 // ── Mode: 'ai' = AI-generated image (AR Try on), 'ar' = Realtime WebXR
@@ -23,10 +22,17 @@ const safeArErrorMessage = (error) => {
   return 'Không thể tạo ảnh lúc này. Anh/chị vui lòng thử lại sau.';
 };
 
-export default function ARRoomPreview({ isOpen, onClose, productColor, productImage }) {
+export default function ARRoomPreview({ isOpen, onClose, productColor, productColors }) {
+  const availableFabrics = useMemo(() => {
+    const configuredColors = (productColors || [])
+      .filter((color) => color?.id && color?.hex)
+      .map((color) => ({ id: color.id, hex: color.hex, label: color.label || color.id, shimmer: color.shimmer ?? 0.2 }));
+    return configuredColors.length ? configuredColors : FABRICS;
+  }, [productColors]);
+  const selectedProductColorId = typeof productColor === 'string' ? productColor : productColor?.id;
   const [roomImg, setRoomImg]               = useState(null);
   const [roomImgSrc, setRoomImgSrc]         = useState(null); // original base64 for AI
-  const [activeFabricId, setActiveFabricId] = useState(productColor || 'champagne');
+  const [activeFabricId, setActiveFabricId] = useState(selectedProductColorId || availableFabrics[0]?.id || 'champagne');
   const [opacity, setOpacity]               = useState(1.0); // Changed to 1.0 to fully hide the bed
   const [mode, setMode]                     = useState(MODES.AI);
   const [isComparing, setIsComparing]       = useState(false);
@@ -63,7 +69,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
     setAiError(null);
     setAiImage(null);
     try {
-      const fabric = FABRICS.find(f => f.id === targetFabricId) || FABRICS[0];
+      const fabric = availableFabrics.find(f => f.id === targetFabricId) || availableFabrics[0] || FABRICS[0];
 
       // 1. Upload base image to Cloudinary via backend
       const uploadRes = await arApi.uploadImage({ image: srcToUse });
@@ -142,7 +148,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
 
   if (!isOpen) return null;
 
-  const fabric = FABRICS.find(f => f.id === activeFabricId) || FABRICS[0];
+  const fabric = availableFabrics.find(f => f.id === activeFabricId) || availableFabrics[0] || FABRICS[0];
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col animate-fade-in bg-linen-white">
@@ -334,6 +340,7 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
         ) : null}
 
         <ARSidebar
+          fabrics={availableFabrics}
           activeFabricId={activeFabricId}
           setActiveFabricId={(id) => {
             setActiveFabricId(id);
@@ -345,9 +352,6 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
           opacity={opacity}
           setOpacity={setOpacity}
           hasImage={!!roomImg}
-          onReanalyze={() => {
-            runGenerate();
-          }}
           onNewImage={() => { 
             document.getElementById('roomUploadInput')?.click();
           }}
@@ -373,6 +377,13 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
 ARRoomPreview.propTypes = {
   isOpen:       PropTypes.bool.isRequired,
   onClose:      PropTypes.func.isRequired,
-  productColor: PropTypes.string,
-  productImage: PropTypes.string,
+  productColor: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.shape({ id: PropTypes.string, label: PropTypes.string, hex: PropTypes.string }),
+  ]),
+  productColors: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string,
+    hex: PropTypes.string.isRequired,
+  })),
 };

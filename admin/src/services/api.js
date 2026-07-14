@@ -2,7 +2,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const uploadQueue = [];
 let activeUploads = 0;
-const MAX_CONCURRENT_UPLOADS = 2;
+// Keep every admin image upload in one FIFO lane. This prevents Cloudinary and
+// the backend upload endpoint from being hit by bursts from different screens.
+const MAX_CONCURRENT_UPLOADS = 1;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const withUploadSlot = async (task) => {
