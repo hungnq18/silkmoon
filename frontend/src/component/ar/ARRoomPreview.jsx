@@ -262,10 +262,12 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productIm
               
               {/* Generating spinner */}
               {isGenerating && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-linen-white/85 backdrop-blur-sm">
-                  <img src={arLoadingUrl} alt="" aria-hidden="true" className="mb-5 w-48 max-w-[55%] opacity-80 motion-safe:animate-pulse" />
-                  <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest text-center px-4">Đang trải chăn ga lụa {fabric.label} lên giường của bạn</p>
-                  <p className="text-sm text-on-surface-variant mt-1 text-center px-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-linen-white/85 backdrop-blur-sm px-6">
+                  <img src={arLoadingUrl} alt="" aria-hidden="true" className="mb-6 w-48 max-w-[55%] opacity-80 motion-safe:animate-pulse" />
+                  <p className="font-label-caps text-label-caps text-slate-deep uppercase tracking-widest text-center px-4 leading-relaxed">
+                    Đang trải chăn ga lụa màu {fabric.label} lên giường của bạn
+                  </p>
+                  <p className="text-sm text-on-surface-variant mt-3 text-center px-4 leading-relaxed">
                     Thử trước không gian mơ ước
                   </p>
                 </div>
