@@ -1,5 +1,23 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
+const uploadQueue = [];
+let activeUploads = 0;
+const MAX_CONCURRENT_UPLOADS = 2;
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const withUploadSlot = async (task) => {
+  if (activeUploads >= MAX_CONCURRENT_UPLOADS) {
+    await new Promise((resolve) => uploadQueue.push(resolve));
+  }
+  activeUploads += 1;
+  try {
+    return await task();
+  } finally {
+    activeUploads -= 1;
+    uploadQueue.shift()?.();
+  }
+};
+
 const getHeaders = () => {
   const token = localStorage.getItem("admin_token");
   return {
@@ -195,17 +213,40 @@ export const adminApi = {
     return res.json();
   },
   uploadProductImage: async (image) => {
-    const res = await fetch(`${API_URL}/ar/upload`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ image }),
+    return withUploadSlot(async () => {
+      let lastError;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        try {
+          const res = await fetch(`${API_URL}/ar/upload`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ image }),
+            signal: controller.signal,
+          });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.url) return data.url;
+
+          const message = res.status === 413
+            ? "Ảnh quá lớn sau khi mã hóa. Vui lòng chọn ảnh nhỏ hơn 8 MB."
+            : data?.message || `Không thể tải ảnh lên (${res.status})`;
+          const error = new Error(Array.isArray(message) ? message.join("; ") : message);
+          error.retryable = res.status === 408 || res.status === 429 || res.status >= 500;
+          error.retryAfter = Number(res.headers.get("retry-after")) || 0;
+          throw error;
+        } catch (error) {
+          lastError = error;
+          const retryable = error.name === "AbortError" || error instanceof TypeError || error.retryable;
+          if (!retryable || attempt === 2) break;
+          await wait(error.retryAfter > 0 ? error.retryAfter * 1000 : 700 * (2 ** attempt));
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+      if (lastError?.name === "AbortError") throw new Error("Upload ảnh quá thời gian chờ. Vui lòng thử lại.");
+      throw lastError || new Error("Không thể tải ảnh lên.");
     });
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      throw new Error(data?.message || "Không thể tải ảnh lên");
-    }
-    const data = await res.json();
-    return data.url;
   },
   deleteProduct: async (id) => {
     const res = await fetch(`${API_URL}/products/${id}`, {

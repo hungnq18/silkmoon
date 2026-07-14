@@ -112,7 +112,7 @@ export class ARController {
   }
 
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('upload')
   async uploadImage(@Body() body: { image: string }) {
     if (!body.image) throw new HttpException('Missing image data', HttpStatus.BAD_REQUEST);

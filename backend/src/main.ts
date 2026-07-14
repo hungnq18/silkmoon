@@ -22,8 +22,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // Increase payload size limit
-  app.use(json({ limit: '10mb' }));
-  app.use(urlencoded({ extended: true, limit: '10mb' }));
+  // An 8 MB image becomes roughly 10.7 MB after base64 encoding, plus JSON overhead.
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ extended: true, limit: '15mb' }));
 
   // CORS
   const allowedOrigins = [

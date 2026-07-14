@@ -553,17 +553,22 @@ export default function ProductsList() {
     }
     setUploadingImages(true);
     try {
-      const urls = await Promise.all(
+      const results = await Promise.allSettled(
         imageFiles.map(async (file) =>
           adminApi.uploadProductImage(await fileToDataUrl(file)),
         ),
       );
-      setEditingProduct((current) => {
-        const images = [...(current.images || [])];
-        if (replaceIndex !== null) images.splice(replaceIndex, 1, urls[0]);
-        else images.push(...urls);
-        return { ...current, images };
-      });
+      const urls = results.filter((result) => result.status === "fulfilled").map((result) => result.value);
+      if (urls.length) {
+        setEditingProduct((current) => {
+          const images = [...(current.images || [])];
+          if (replaceIndex !== null) images.splice(replaceIndex, 1, urls[0]);
+          else images.push(...urls);
+          return { ...current, images };
+        });
+      }
+      const failedUploads = results.filter((result) => result.status === "rejected");
+      if (failedUploads.length) alert(`${failedUploads.length}/${results.length} ảnh chưa tải được. ${failedUploads[0].reason?.message || "Vui lòng thử lại."}`);
     } catch (err) {
       alert(err.message || "Không thể tải ảnh lên.");
     } finally {
@@ -613,11 +618,16 @@ export default function ProductsList() {
     }
     setUploadingImages(true);
     try {
-      const urls = await Promise.all(imageFiles.map(async (file) => adminApi.uploadProductImage(await fileToDataUrl(file))));
-      setEditingProduct((current) => ({
-        ...current,
-        colors: (current.colors || []).map((color, index) => index === colorIndex ? { ...color, images: [...(color.images || []), ...urls] } : color),
-      }));
+      const results = await Promise.allSettled(imageFiles.map(async (file) => adminApi.uploadProductImage(await fileToDataUrl(file))));
+      const urls = results.filter((result) => result.status === "fulfilled").map((result) => result.value);
+      if (urls.length) {
+        setEditingProduct((current) => ({
+          ...current,
+          colors: (current.colors || []).map((color, index) => index === colorIndex ? { ...color, images: [...(color.images || []), ...urls] } : color),
+        }));
+      }
+      const failedUploads = results.filter((result) => result.status === "rejected");
+      if (failedUploads.length) alert(`${failedUploads.length}/${results.length} ảnh màu chưa tải được. ${failedUploads[0].reason?.message || "Vui lòng thử lại."}`);
     } catch (err) {
       alert(err.message || "Không thể tải ảnh màu sản phẩm lên.");
     } finally {
