@@ -7,6 +7,7 @@ import ProductTabs from '../component/ProductTabs';
 import RelatedProducts from '../component/RelatedProducts';
 import ProductReviews from '../component/ProductReviews';
 import ARRoomPreview from '../component/ar/ARRoomPreview';
+import { applyLatestSizeCatalog } from '../utils/productSizes';
 
 // Product images per color — must match ProductInfoPanel colors
 const PRODUCT_IMAGES = {
@@ -14,21 +15,6 @@ const PRODUCT_IMAGES = {
   white:     'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
   sage:      'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800',
   slate:     'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&q=80&w=800',
-};
-
-const applyLatestSizeCatalog = (product, setting) => {
-  const categories = Array.isArray(setting?.value) ? setting.value : [];
-  const catalogSizes = categories.some((item) => Array.isArray(item.sizes))
-    ? categories.filter((item) => item.isActive !== false).flatMap((item) => (item.sizes || []).filter((size) => size.isActive !== false))
-    : categories.filter((item) => item.isActive !== false);
-  const catalogById = new Map(catalogSizes.map((size) => [size.id, size]));
-  return {
-    ...product,
-    sizes: (product.sizes || []).map((size) => {
-      const latest = catalogById.get(size.id);
-      return latest ? { ...size, ...latest } : size;
-    }),
-  };
 };
 
 export default function ProductDetail() {

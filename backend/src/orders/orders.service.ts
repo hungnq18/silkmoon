@@ -6,6 +6,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ProductsService } from '../products/products.service';
 import { PayosService } from './payos.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class OrdersService {
@@ -14,6 +15,7 @@ export class OrdersService {
     private readonly promotionsService: PromotionsService,
     private readonly productsService: ProductsService,
     private readonly payosService: PayosService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   private generateOrderNumber(): string {
@@ -26,6 +28,12 @@ export class OrdersService {
     const orderNumber = this.generateOrderNumber();
     let subtotal = 0;
     const items: any[] = [];
+    const sizeSetting = await this.settingsService.findByKey('product_sizes');
+    const sizeCatalog = Array.isArray(sizeSetting?.value) ? sizeSetting.value : [];
+    const catalogSizes = sizeCatalog.some((entry) => Array.isArray(entry?.sizes))
+      ? sizeCatalog.flatMap((entry) => Array.isArray(entry?.sizes) ? entry.sizes : [])
+      : sizeCatalog;
+    const catalogSizesById = new Map(catalogSizes.map((size) => [size.id, size]));
 
     for (const item of dto.items) {
       const product = await this.productsService.findById(item.productId);
@@ -65,7 +73,17 @@ export class OrdersService {
         })) : [];
       const sizeDetails = sizeMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
       const customSizeDetails = customMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
-      const unitPrice = product.price + (embroidery ? Number(product.embroideryPrice || 0) : 0) + (isCustomSize ? Number(product.customSizePrice || 0) : 0);
+      const selectedSize = !isCustomSize && item.sizeId
+        ? product.sizes?.find((size) => size.id === item.sizeId)
+        : null;
+      const catalogSize = !isCustomSize && item.sizeId ? catalogSizesById.get(item.sizeId) : null;
+      const productSizePrice = selectedSize?.price as number | '' | undefined;
+      const rawSizePrice = productSizePrice === '' || productSizePrice == null ? catalogSize?.price : productSizePrice;
+      const configuredSizePrice = Number(rawSizePrice);
+      const sizePrice = rawSizePrice !== '' && rawSizePrice != null && Number.isFinite(configuredSizePrice) && configuredSizePrice >= 0
+        ? configuredSizePrice
+        : Number(product.price || 0);
+      const unitPrice = sizePrice + (embroidery ? Number(product.embroideryPrice || 0) : 0) + (isCustomSize ? Number(product.customSizePrice || 0) : 0);
       const itemTotal = unitPrice * item.quantity;
       subtotal += itemTotal;
       

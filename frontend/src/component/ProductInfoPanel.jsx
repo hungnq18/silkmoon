@@ -2,6 +2,8 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { getProductSizePrice } from '../utils/productPrice';
+import { getSizeMeasurements } from '../utils/productSizes';
 
 const sizes = [
   { id: 'queen', label: 'Queen (160x200)' },
@@ -16,12 +18,6 @@ const colors = [
   { id: 'slate', hex: '#334641', label: 'Slate Silk' },
 ];
 
-const sizeMeasurements = (size) => {
-  if (Array.isArray(size?.measurements)) return size.measurements.filter((item) => item.label && item.value !== undefined && item.value !== null && item.value !== '');
-  return [['width', 'Rộng'], ['length', 'Dài'], ['height', 'Dày/Cao']]
-    .filter(([key]) => size?.[key] !== undefined && size?.[key] !== null && size?.[key] !== '')
-    .map(([key, label]) => ({ id: key, label, value: size[key], unit: size.unit || 'cm' }));
-};
 const sizeDisplayName = (size) => (size?.label || '').replace(/\s*\([^)]*\d[^)]*\)\s*$/, '').trim() || size?.label || 'Size';
 
 export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
@@ -41,9 +37,10 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   const embroideryMaxLength = product.embroideryMaxLength || 12;
   const productSizeOptions = product.sizes?.length > 0 ? product.sizes : sizes;
   const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
-  const selectedSizeMeasurements = sizeMeasurements(selectedSizeInfo);
-  const referenceSize = (product.sizes || []).find((size) => sizeMeasurements(size).length > 0);
-  const customSizeFields = (referenceSize ? sizeMeasurements(referenceSize) : [
+  const selectedPrice = getProductSizePrice(product, selectedSize);
+  const selectedSizeMeasurements = getSizeMeasurements(selectedSizeInfo);
+  const referenceSize = (product.sizes || []).find((size) => getSizeMeasurements(size).length > 0);
+  const customSizeFields = (referenceSize ? getSizeMeasurements(referenceSize) : [
     { id: 'width', label: 'Rộng', unit: 'cm' },
     { id: 'length', label: 'Dài', unit: 'cm' },
     { id: 'height', label: 'Dày/Cao', unit: 'cm' },
@@ -86,7 +83,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
       addToCart(product._id || product.id, 1, {
         sizeId: selectedSize,
         sizeLabel: selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo),
-        sizeMeasurements: selectedSize === 'custom' ? [] : sizeMeasurements(selectedSizeInfo),
+        sizeMeasurements: selectedSize === 'custom' ? [] : getSizeMeasurements(selectedSizeInfo),
         customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, Number(customSize[field.id]) || 0])) : null,
         customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: Number(customSize[field.id]) || 0 })) : [],
         embroidery: embroideryText.trim() || null,
@@ -125,7 +122,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
 
         {/* Price */}
         <p className="product-detail-price font-headline-sm text-headline-sm text-slate-deep mt-stack-md">
-          {product.price?.toLocaleString('vi-VN')} VNĐ
+          {selectedPrice.toLocaleString('vi-VN')} VNĐ
         </p>
       </div>
 
@@ -160,7 +157,8 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
                       : 'border-slate-deep/20 text-slate-deep hover:border-slate-deep'
                   }`}
                 >
-                  <span className="type-option-value">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</span>
+                  <span className="type-option-value block">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</span>
+                  {size.id !== 'custom' && <small className={`mt-0.5 block text-[10px] ${isSelected ? 'text-linen-white/75' : 'text-slate-deep/55'}`}>{getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ</small>}
                 </button>
               );
             })}

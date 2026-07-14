@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import { productsApi } from '../services/api';
+import { productsApi, settingsApi } from '../services/api';
+import { getProductSizePrice } from '../utils/productPrice';
+import { applyLatestSizeCatalog, getSizeMeasurements } from '../utils/productSizes';
 
 const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
   .filter((measurement) => measurement.label && measurement.value !== undefined && measurement.value !== null && measurement.value !== '')
@@ -23,13 +25,14 @@ export default function OrderSummary() {
 
   useEffect(() => {
     let active = true;
-    Promise.all((cart || []).map(async (item) => {
-      const product = await productsApi.getById(item.productId);
+    settingsApi.get('product_sizes').catch(() => null).then((sizeSetting) => Promise.all((cart || []).map(async (item) => {
+      const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
+      const selectedSize = item.sizeId && item.sizeId !== 'custom' ? product.sizes?.find((size) => size.id === item.sizeId) : null;
       const customizationPrice =
         (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
         (item.customSize ? Number(product.customSizePrice || 0) : 0);
-      return { ...item, id: item.productId, name: product.name, price: Number(product.price || 0) + customizationPrice, image: product.images?.[0] || '', spec: product.category || '' };
-    })).then((nextItems) => { if (active) setItems(nextItems); }).catch(() => { if (active) setItems([]); });
+      return { ...item, id: item.productId, name: product.name, price: getProductSizePrice(product, item.sizeId) + customizationPrice, sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements, image: product.images?.[0] || '', spec: product.category || '' };
+    }))).then((nextItems) => { if (active) setItems(nextItems); }).catch(() => { if (active) setItems([]); });
 
     // Read calculated totals from cart page
     const rawTotals = localStorage.getItem('silkmoon_checkout_totals');

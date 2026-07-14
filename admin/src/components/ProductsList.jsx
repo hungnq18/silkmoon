@@ -17,9 +17,10 @@ const getSizeMeasurements = (size = {}) => {
     .filter(([key]) => size[key] !== undefined && size[key] !== null && size[key] !== '')
     .map(([key, label]) => ({ id: key, label, value: size[key], unit: size.unit || 'cm' }));
 };
-const copySizeOption = (size) => ({
+const copySizeOption = (size, existing = {}) => ({
   id: size.id,
   label: size.label,
+  price: existing.price ?? size.price ?? '',
   width: Array.isArray(size.measurements) ? '' : size.width ?? '',
   length: Array.isArray(size.measurements) ? '' : size.length ?? '',
   height: Array.isArray(size.measurements) ? '' : size.height ?? '',
@@ -467,6 +468,7 @@ export default function ProductsList() {
         sizes: (editingProduct.sizes || []).map((item) => ({
           id: item.id,
           label: item.label?.trim() || sizeOptions.find((size) => size.id === item.id)?.label || 'Size',
+          price: item.price === '' || item.price == null ? undefined : Number(item.price),
           width: Array.isArray(item.measurements) || item.width === '' || item.width == null ? undefined : Number(item.width),
           length: Array.isArray(item.measurements) || item.length === '' || item.length == null ? undefined : Number(item.length),
           height: Array.isArray(item.measurements) || item.height === '' || item.height == null ? undefined : Number(item.height),
@@ -813,13 +815,13 @@ export default function ProductsList() {
                 <span>Danh mục size áp dụng</span>
                 <div className="compact-size-selector">
                   <select value={inferredSizeCategory} onChange={(event) => setEditingProduct((current) => ({ ...current, sizeCategoryId: event.target.value }))}><option value="">Chọn danh mục size</option>{sizeCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-                  {inferredSizeCategory && <button type="button" className="secondary-button" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []).filter((item) => item.id.startsWith('custom-')), ...activeSizeOptions.map(copySizeOption)] }))}>Áp dụng tất cả</button>}
+                  {inferredSizeCategory && <button type="button" className="secondary-button" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []).filter((item) => item.id.startsWith('custom-')), ...activeSizeOptions.map((size) => copySizeOption(size, (current.sizes || []).find((item) => item.id === size.id)))] }))}>Áp dụng tất cả</button>}
                   {!!(editingProduct.sizes || []).length && <button type="button" className="compact-clear-sizes" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [] }))}>Bỏ chọn</button>}
                 </div>
                 {inferredSizeCategory ? <><span>Chọn size trong danh mục</span><div className="product-size-picker compact-product-size-picker">
                   {activeSizeOptions.map((size) => {
                     const checked = (editingProduct.sizes || []).some((item) => item.id === size.id);
-                    return <label key={size.id} className={checked ? 'selected' : ''}><input type="checkbox" checked={checked} onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: event.target.checked ? [...(current.sizes || []).filter((item) => item.id !== size.id), copySizeOption(size)] : (current.sizes || []).filter((item) => item.id !== size.id) }))} /><span>{size.label}</span><small>{formatSizeMeasurements(size)}</small></label>;
+                    return <label key={size.id} className={checked ? 'selected' : ''}><input type="checkbox" checked={checked} onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: event.target.checked ? [...(current.sizes || []).filter((item) => item.id !== size.id), copySizeOption(size)] : (current.sizes || []).filter((item) => item.id !== size.id) }))} /><span>{size.label}</span><small>{[formatSizeMeasurements(size), size.price !== '' && size.price != null ? currency(size.price) : ''].filter(Boolean).join(' · ')}</small></label>;
                   })}
                 </div></> : <p className="compact-size-hint">Chọn một danh mục để hiển thị các size bên trong.</p>}
                 <details className="product-size-detail-editor" defaultOpen={!inferredSizeCategory}>
@@ -828,16 +830,17 @@ export default function ProductsList() {
                   {(editingProduct.sizes || []).map((size, index) => <div className="product-size-detail-row" key={size.id}>
                     <div className="product-size-card-header">
                       <label><span>Tên size</span><input value={size.label || ''} placeholder="Queen" onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: current.sizes.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} /></label>
+                      <label><span>Giá riêng (VNĐ)</span><input type="number" min="0" value={size.price ?? ''} placeholder={`Mặc định: ${currency(editingProduct.price)}`} onChange={(event) => setEditingProduct((current) => ({ ...current, sizes: current.sizes.map((item, itemIndex) => itemIndex === index ? { ...item, price: event.target.value } : item) }))} /></label>
                       <button type="button" title="Xóa size khỏi sản phẩm" onClick={() => setEditingProduct((current) => ({ ...current, sizes: current.sizes.filter((_, itemIndex) => itemIndex !== index) }))}><span className="material-symbols-outlined">delete</span></button>
                     </div>
                     <EditableSizeMeasurements size={size} onChange={(measurements) => setEditingProduct((current) => ({ ...current, sizes: current.sizes.map((item, itemIndex) => itemIndex === index ? { ...item, width: '', length: '', height: '', measurements } : item) }))} />
                   </div>)}
-                  <button type="button" className="secondary-button product-add-own-size" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []), { id: `custom-${Date.now()}`, label: '', measurements: [], unit: 'cm' }] }))}><span className="material-symbols-outlined">add</span>Thêm size riêng cho sản phẩm</button>
+                  <button type="button" className="secondary-button product-add-own-size" onClick={() => setEditingProduct((current) => ({ ...current, sizes: [...(current.sizes || []), { id: `custom-${Date.now()}`, label: '', price: '', measurements: [], unit: 'cm' }] }))}><span className="material-symbols-outlined">add</span>Thêm size riêng cho sản phẩm</button>
                   </div>
                 </details>
               </div>
               <label className="modal-field">
-                <span>Giá bán (VNĐ)</span>
+                <span>Giá bán mặc định (VNĐ)</span>
                 <input
                   type="number"
                   min="0"

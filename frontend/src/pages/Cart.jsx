@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { promotionsApi, productsApi } from '../services/api';
+import { promotionsApi, productsApi, settingsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { getProductSizePrice } from '../utils/productPrice';
+import { applyLatestSizeCatalog, getSizeMeasurements } from '../utils/productSizes';
 
 const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
   .filter((measurement) => measurement.label && measurement.value !== undefined && measurement.value !== null && measurement.value !== '')
@@ -32,9 +34,11 @@ export default function Cart() {
       }
       setLoadingDetails(true);
       try {
+        const sizeSetting = await settingsApi.get('product_sizes').catch(() => null);
         const detailsPromises = cart.map(async (item) => {
           // If the backend has getById, fetch it
-          const product = await productsApi.getById(item.productId);
+          const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
+          const selectedSize = item.sizeId && item.sizeId !== 'custom' ? product.sizes?.find((size) => size.id === item.sizeId) : null;
           const customizationPrice =
             (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
             (item.customSize ? Number(product.customSizePrice || 0) : 0);
@@ -42,7 +46,8 @@ export default function Cart() {
             ...item,
             id: item.productId, // use productId as id for UI
             name: product.name,
-            price: Number(product.price || 0) + customizationPrice,
+            price: getProductSizePrice(product, item.sizeId) + customizationPrice,
+            sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements,
             image: product.images?.[0] || '',
             spec: product.category || 'N/A'
           };
