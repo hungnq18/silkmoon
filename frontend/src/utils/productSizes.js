@@ -20,8 +20,9 @@ export const applyLatestSizeCatalog = (product, setting) => {
     sizes: (product?.sizes || []).map((size) => {
       const latest = catalogById.get(size.id);
       if (!latest) return size;
-      const merged = { ...size, ...latest };
-      return size.price === '' || size.price == null ? merged : { ...merged, price: size.price };
+      const latestDetails = { ...latest };
+      delete latestDetails.price;
+      return { ...size, ...latestDetails, price: size.price };
     }),
   };
 };

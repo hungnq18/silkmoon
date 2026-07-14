@@ -4,11 +4,10 @@ import {
   IsEmail,
   IsOptional,
   IsIn,
-  IsNumber,
   IsArray,
+  ArrayNotEmpty,
   ValidateNested,
   Min,
-  IsPositive,
   IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -18,7 +17,7 @@ class OrderItemDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   quantity: number;
 
@@ -99,6 +98,7 @@ export class CreateOrderDto {
   promoCode?: string | null;
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];

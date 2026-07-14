@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productsApi } from '../services/api';
+import { getProductListPrice } from '../utils/productPrice';
 
 export default function RelatedProducts({ productId }) {
   const [relatedItems, setRelatedItems] = useState([]);
@@ -43,7 +44,7 @@ export default function RelatedProducts({ productId }) {
               {item.name}
             </h3>
             <p className="font-body-md text-on-surface-variant mt-0.5">
-              {item.price?.toLocaleString('vi-VN')} VNĐ
+              {getProductListPrice(item).toLocaleString('vi-VN')} VNĐ
             </p>
           </Link>
         ))}

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
 import { productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { getLowestPriceSize, getProductListPrice } from '../utils/productPrice';
+import { getSizeMeasurements } from '../utils/productSizes';
 
 export default function BestSellers() {
   const [products, setProducts] = useState([]);
@@ -37,12 +39,18 @@ export default function BestSellers() {
 
     const activeColorId = selectedColors[product._id];
     const activeColorObj = product.colors?.find((c) => c.id === activeColorId) || product.colors?.[0];
-    const specLabel = `${(activeColorObj?.label || '').toUpperCase()} / STANDARD`;
+    const lowestPriceSize = getLowestPriceSize(product);
+    const listPrice = getProductListPrice(product);
+    const specLabel = [activeColorObj?.label?.toUpperCase(), lowestPriceSize?.label].filter(Boolean).join(' / ') || 'STANDARD';
 
     try {
-      addToCart(product._id, 1);
+      addToCart(product._id, 1, lowestPriceSize ? {
+        sizeId: lowestPriceSize.id,
+        sizeLabel: lowestPriceSize.label,
+        sizeMeasurements: getSizeMeasurements(lowestPriceSize),
+      } : {});
       
-      setModalProduct({ name: product.name, price: product.price, image: product.images?.[0], spec: specLabel });
+      setModalProduct({ name: product.name, price: listPrice, image: product.images?.[0], spec: specLabel });
       setModalOpen(true);
     } catch (err) {
       console.error('Error adding to cart:', err);
@@ -95,7 +103,7 @@ export default function BestSellers() {
           {product.name}
         </h4>
         <p className="type-price text-on-surface-variant font-body-md mt-1">
-          {product.price?.toLocaleString('vi-VN')}đ
+          {getProductListPrice(product).toLocaleString('vi-VN')}đ
         </p>
       </Link>
 

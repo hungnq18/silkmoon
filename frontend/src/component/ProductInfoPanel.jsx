@@ -2,14 +2,8 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { getProductSizePrice } from '../utils/productPrice';
+import { getLowestPriceSize, getProductSizePrice } from '../utils/productPrice';
 import { getSizeMeasurements } from '../utils/productSizes';
-
-const sizes = [
-  { id: 'queen', label: 'Queen (160x200)' },
-  { id: 'king', label: 'King (180x200)' },
-  { id: 'super-king', label: 'Super King (220x200)' },
-];
 
 const colors = [
   { id: 'champagne', hex: '#E5D5C5', label: 'Champagne Silk' },
@@ -23,7 +17,7 @@ const sizeDisplayName = (size) => (size?.label || '').replace(/\s*\([^)]*\d[^)]*
 export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0]?.id || 'queen');
+  const [selectedSize, setSelectedSize] = useState(getLowestPriceSize(product)?.id || '');
   
   // Use product colors or fallback
   const productColors = product.colors?.length > 0 ? product.colors : colors;
@@ -32,10 +26,10 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   const [embroideryText, setEmbroideryText] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [customSize, setCustomSize] = useState({ length: '', width: '', height: '' });
-  const allowCustomSize = product.allowCustomSize ?? true;
-  const allowEmbroidery = product.allowEmbroidery ?? product?.category === 'Đồ Ngủ';
+  const allowCustomSize = Boolean(product.allowCustomSize);
+  const allowEmbroidery = Boolean(product.allowEmbroidery);
   const embroideryMaxLength = product.embroideryMaxLength || 12;
-  const productSizeOptions = product.sizes?.length > 0 ? product.sizes : sizes;
+  const productSizeOptions = product.sizes || [];
   const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
   const selectedPrice = getProductSizePrice(product, selectedSize);
   const selectedSizeMeasurements = getSizeMeasurements(selectedSizeInfo);

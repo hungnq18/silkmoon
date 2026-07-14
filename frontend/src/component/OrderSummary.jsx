@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { productsApi, settingsApi } from '../services/api';
-import { getProductSizePrice } from '../utils/productPrice';
+import { getProductCustomizationPrice, getProductSizePrice } from '../utils/productPrice';
 import { applyLatestSizeCatalog, getSizeMeasurements } from '../utils/productSizes';
 
 const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
@@ -16,29 +16,36 @@ const formatCustomMeasurements = (item) => (item.customMeasurements || [])
 export default function OrderSummary() {
   const { cart } = useCart();
   const [items, setItems] = useState([]);
-  const [totals, setTotals] = useState({
-    subtotal: 0,
-    discountAmount: 0,
-    discountPercent: 0,
-    total: 0
+  const [totals] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('silkmoon_checkout_totals'));
+      return saved && typeof saved === 'object' ? saved : { subtotal: 0, discountAmount: 0, discountPercent: 0, total: 0 };
+    } catch {
+      return { subtotal: 0, discountAmount: 0, discountPercent: 0, total: 0 };
+    }
   });
 
   useEffect(() => {
     let active = true;
     settingsApi.get('product_sizes').catch(() => null).then((sizeSetting) => Promise.all((cart || []).map(async (item) => {
-      const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
-      const selectedSize = item.sizeId && item.sizeId !== 'custom' ? product.sizes?.find((size) => size.id === item.sizeId) : null;
-      const customizationPrice =
-        (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
-        (item.customSize ? Number(product.customSizePrice || 0) : 0);
-      return { ...item, id: item.productId, name: product.name, price: getProductSizePrice(product, item.sizeId) + customizationPrice, sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements, image: product.images?.[0] || '', spec: product.category || '' };
+      try {
+        const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
+        const isCustomSize = item.sizeId === 'custom' || Boolean(item.customSize);
+        const selectedSize = item.sizeId && !isCustomSize ? product.sizes?.find((size) => size.id === item.sizeId) : null;
+        const configurationError = !isCustomSize && ((product.sizes?.length && !item.sizeId) || (item.sizeId && !selectedSize))
+          ? 'Size đã chọn không còn khả dụng.'
+          : isCustomSize && !product.allowCustomSize
+            ? 'Sản phẩm không còn hỗ trợ may size riêng.'
+            : item.embroidery && !product.allowEmbroidery
+              ? 'Sản phẩm không còn hỗ trợ may tên riêng.'
+              : '';
+        const customizationPrice = getProductCustomizationPrice(product, item);
+        return { ...item, id: item.productId, name: product.name, price: getProductSizePrice(product, item.sizeId) + customizationPrice, sizeLabel: selectedSize?.label || item.sizeLabel, sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements, image: product.images?.[0] || '', spec: product.category || '', configurationError };
+      } catch {
+        return { ...item, id: item.productId, name: 'Sản phẩm không còn tồn tại', price: 0, image: '', spec: '', configurationError: 'Sản phẩm đã bị xóa hoặc không còn khả dụng.' };
+      }
     }))).then((nextItems) => { if (active) setItems(nextItems); }).catch(() => { if (active) setItems([]); });
 
-    // Read calculated totals from cart page
-    const rawTotals = localStorage.getItem('silkmoon_checkout_totals');
-    if (rawTotals) {
-      setTotals(JSON.parse(rawTotals));
-    }
     return () => { active = false; };
   }, [cart]);
 
@@ -82,6 +89,7 @@ export default function OrderSummary() {
                       Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomMeasurements(item) ? ` · ${formatCustomMeasurements(item)}` : (item.customSize ? ` · ${[item.customSize.width, item.customSize.length, item.customSize.height].filter(Boolean).join(' × ')} cm` : '')}
                     </div>
                   )}
+                  {item.configurationError && <div className="mt-1 text-[11px] font-semibold text-error">{item.configurationError}</div>}
                   <div className="flex justify-between items-end mt-2">
                     <span className="text-label-caps text-slate-deep opacity-60">SL: {item.quantity}</span>
                     <span className="font-body-md text-slate-deep">
@@ -125,7 +133,7 @@ export default function OrderSummary() {
         <button
           type="submit"
           form="checkout-form"
-          disabled={items.length === 0}
+          disabled={items.length === 0 || items.some((item) => item.configurationError)}
           className="type-button w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 group hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ĐẶT HÀNG NGAY

@@ -152,6 +152,26 @@ export class ProductsService {
     return updatedProduct;
   }
 
+  async reserveStock(id: string, quantity: number) {
+    return this.productModel
+      .findOneAndUpdate(
+        { _id: id, stock: { $gte: quantity } },
+        { $inc: { stock: -quantity } },
+        { returnDocument: 'after' },
+      )
+      .lean();
+  }
+
+  async releaseStock(id: string, quantity: number) {
+    return this.productModel
+      .findByIdAndUpdate(
+        id,
+        { $inc: { stock: quantity } },
+        { returnDocument: 'after' },
+      )
+      .lean();
+  }
+
   async remove(id: string) {
     const deletedProduct = await this.productModel.findByIdAndDelete(id).lean();
     if (!deletedProduct) {

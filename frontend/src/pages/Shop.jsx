@@ -4,6 +4,7 @@ import ProductListGrid from '../component/ProductListGrid';
 import Pagination from '../component/Pagination';
 import { productsApi } from '../services/api';
 import { useLocation } from 'react-router-dom';
+import { getProductListPrice } from '../utils/productPrice';
 
 export default function Shop() {
   const location = useLocation();
@@ -62,9 +63,9 @@ export default function Shop() {
     if (sortOption === 'newest') {
       result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (sortOption === 'price-asc') {
-      result.sort((a, b) => a.price - b.price);
+      result.sort((a, b) => getProductListPrice(a) - getProductListPrice(b));
     } else if (sortOption === 'price-desc') {
-      result.sort((a, b) => b.price - a.price);
+      result.sort((a, b) => getProductListPrice(b) - getProductListPrice(a));
     }
 
     return result;

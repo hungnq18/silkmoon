@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
@@ -6,16 +6,34 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ProductsService } from '../products/products.service';
 import { PayosService } from './payos.service';
-import { SettingsService } from '../settings/settings.service';
+import { parseNonNegativeMoney, resolveProductSizePrice } from './order-pricing';
+
+const normalizeSizeMeasurements = (size: any) => {
+  const measurements = Array.isArray(size?.measurements)
+    ? size.measurements
+    : [['width', 'Rộng'], ['length', 'Dài'], ['height', 'Dày/Cao']]
+        .filter(([key]) => size?.[key] !== '' && size?.[key] != null)
+        .map(([key, label]) => ({ id: key, label, value: size[key], unit: size.unit || 'cm' }));
+
+  return measurements
+    .filter((measurement) => measurement?.label?.trim() && measurement.value !== '' && measurement.value != null && Number.isFinite(Number(measurement.value)) && Number(measurement.value) >= 0)
+    .map((measurement) => ({
+      id: measurement.id || '',
+      label: measurement.label.trim(),
+      value: Number(measurement.value),
+      unit: measurement.unit?.trim() || 'cm',
+    }));
+};
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private readonly promotionsService: PromotionsService,
     private readonly productsService: ProductsService,
     private readonly payosService: PayosService,
-    private readonly settingsService: SettingsService,
   ) {}
 
   private generateOrderNumber(): string {
@@ -28,12 +46,10 @@ export class OrdersService {
     const orderNumber = this.generateOrderNumber();
     let subtotal = 0;
     const items: any[] = [];
-    const sizeSetting = await this.settingsService.findByKey('product_sizes');
-    const sizeCatalog = Array.isArray(sizeSetting?.value) ? sizeSetting.value : [];
-    const catalogSizes = sizeCatalog.some((entry) => Array.isArray(entry?.sizes))
-      ? sizeCatalog.flatMap((entry) => Array.isArray(entry?.sizes) ? entry.sizes : [])
-      : sizeCatalog;
-    const catalogSizesById = new Map(catalogSizes.map((size) => [size.id, size]));
+    const requestedQuantityByProduct = dto.items.reduce((quantities, item) => {
+      quantities.set(item.productId, (quantities.get(item.productId) || 0) + item.quantity);
+      return quantities;
+    }, new Map<string, number>());
 
     for (const item of dto.items) {
       const product = await this.productsService.findById(item.productId);
@@ -41,12 +57,21 @@ export class OrdersService {
         throw new NotFoundException(`Sản phẩm với ID ${item.productId} không tồn tại`);
       }
       
-      if (product.stock < item.quantity) {
+      const totalRequestedQuantity = requestedQuantityByProduct.get(item.productId) || item.quantity;
+      if (product.stock < totalRequestedQuantity) {
         throw new BadRequestException(`Sản phẩm "${product.name}" không đủ hàng (hiện còn ${product.stock}).`);
       }
       
       const embroidery = item.embroidery?.trim() || null;
       const isCustomSize = item.sizeId === 'custom' || Boolean(item.customSize);
+      if (embroidery && !product.allowEmbroidery) throw new BadRequestException(`Sản phẩm "${product.name}" không hỗ trợ may tên riêng.`);
+      if (isCustomSize && !product.allowCustomSize) throw new BadRequestException(`Sản phẩm "${product.name}" không hỗ trợ may size riêng.`);
+      const matchingSizes = !isCustomSize && item.sizeId ? (product.sizes || []).filter((size) => size.id === item.sizeId) : [];
+      if (matchingSizes.length > 1) throw new BadRequestException(`Sản phẩm "${product.name}" đang bị trùng mã size. Vui lòng liên hệ quản trị viên.`);
+      const selectedSize = matchingSizes[0] || null;
+      if (!isCustomSize && (product.sizes?.length || item.sizeId) && !selectedSize) {
+        throw new BadRequestException(`Vui lòng chọn size hợp lệ cho "${product.name}".`);
+      }
       const customSize = isCustomSize ? {
         width: Math.max(0, Number(item.customSize?.width) || 0),
         length: Math.max(0, Number(item.customSize?.length) || 0),
@@ -63,41 +88,28 @@ export class OrdersService {
       if (isCustomSize && customMeasurements.length && customMeasurements.some((measurement) => !measurement.value)) throw new BadRequestException(`Vui lòng nhập đầy đủ thông số size riêng cho "${product.name}".`);
       if (isCustomSize && !customMeasurements.length && (!customSize?.width || !customSize?.length)) throw new BadRequestException(`Vui lòng nhập đầy đủ thông số size riêng cho "${product.name}".`);
       if (embroidery && embroidery.length > (product.embroideryMaxLength || 12)) throw new BadRequestException(`Nội dung may tên của "${product.name}" vượt quá số ký tự cho phép.`);
-      const sizeMeasurements = Array.isArray(item.sizeMeasurements) ? item.sizeMeasurements
-        .filter((measurement) => measurement?.label?.trim() && measurement.value !== undefined && measurement.value !== null)
-        .map((measurement) => ({
-          id: measurement.id || '',
-          label: measurement.label.trim(),
-          value: Number(measurement.value),
-          unit: measurement.unit?.trim() || 'cm',
-        })) : [];
+      const sizeMeasurements = selectedSize ? normalizeSizeMeasurements(selectedSize) : [];
       const sizeDetails = sizeMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
       const customSizeDetails = customMeasurements.map((measurement) => `${measurement.label}: ${measurement.value}${measurement.unit}`).join(' · ');
-      const selectedSize = !isCustomSize && item.sizeId
-        ? product.sizes?.find((size) => size.id === item.sizeId)
-        : null;
-      const catalogSize = !isCustomSize && item.sizeId ? catalogSizesById.get(item.sizeId) : null;
-      const productSizePrice = selectedSize?.price as number | '' | undefined;
-      const rawSizePrice = productSizePrice === '' || productSizePrice == null ? catalogSize?.price : productSizePrice;
-      const configuredSizePrice = Number(rawSizePrice);
-      const sizePrice = rawSizePrice !== '' && rawSizePrice != null && Number.isFinite(configuredSizePrice) && configuredSizePrice >= 0
-        ? configuredSizePrice
-        : Number(product.price || 0);
-      const unitPrice = sizePrice + (embroidery ? Number(product.embroideryPrice || 0) : 0) + (isCustomSize ? Number(product.customSizePrice || 0) : 0);
+      const sizePrice = resolveProductSizePrice(product.price, selectedSize?.price);
+      if (sizePrice == null) throw new BadRequestException(`Giá bán của sản phẩm "${product.name}" không hợp lệ.`);
+      const embroideryPrice = embroidery ? parseNonNegativeMoney(product.embroideryPrice) ?? 0 : 0;
+      const customSizePrice = isCustomSize ? parseNonNegativeMoney(product.customSizePrice) ?? 0 : 0;
+      const unitPrice = sizePrice + embroideryPrice + customSizePrice;
       const itemTotal = unitPrice * item.quantity;
       subtotal += itemTotal;
       
       items.push({
         productId: product._id.toString(),
         name: product.name,
-        spec: [product.category || 'N/A', item.sizeLabel, sizeDetails || customSizeDetails].filter(Boolean).join(' · '),
+        spec: [product.category || 'N/A', isCustomSize ? 'May size riêng' : selectedSize?.label, sizeDetails || customSizeDetails].filter(Boolean).join(' · '),
         quantity: item.quantity,
         price: unitPrice,
         costPriceSnapshot: product.costPrice || 0,
         image: product.images?.[0] || '',
         embroidery,
-        sizeId: item.sizeId || '',
-        sizeLabel: item.sizeLabel || '',
+        sizeId: isCustomSize ? 'custom' : selectedSize?.id || '',
+        sizeLabel: isCustomSize ? 'May size riêng' : selectedSize?.label || '',
         sizeMeasurements,
         customSize,
         customMeasurements,
@@ -116,45 +128,55 @@ export class OrdersService {
       ? Date.now() * 100 + Math.floor(Math.random() * 100)
       : undefined;
 
-    const order = await this.orderModel.create({
-      ...dto,
-      items,
-      hasEmbroidery: items.some((item) => Boolean(item.embroidery)),
-      hasCustomSize: items.some((item) => item.isCustomSize),
-      subtotal,
-      discountAmount,
-      total,
-      orderNumber,
-      paymentStatus: 'pending',
-      orderStatus: 'pending',
-      payosOrderCode,
-    });
-
+    const reservedStock: Array<{ productId: string; quantity: number }> = [];
+    let order: OrderDocument | null = null;
     let paymentLink: any = null;
-    if (dto.paymentMethod === 'payos') {
-      try {
+    try {
+      for (const [productId, quantity] of requestedQuantityByProduct) {
+        const reservedProduct = await this.productsService.reserveStock(productId, quantity);
+        if (!reservedProduct) {
+          const productName = items.find((item) => item.productId === productId)?.name || productId;
+          throw new BadRequestException(`Sản phẩm "${productName}" vừa hết hàng hoặc không còn đủ số lượng.`);
+        }
+        reservedStock.push({ productId, quantity });
+      }
+
+      order = await this.orderModel.create({
+        ...dto,
+        items,
+        hasEmbroidery: items.some((item) => Boolean(item.embroidery)),
+        hasCustomSize: items.some((item) => item.isCustomSize),
+        subtotal,
+        discountAmount,
+        total,
+        orderNumber,
+        paymentStatus: 'pending',
+        orderStatus: 'pending',
+        payosOrderCode,
+      });
+
+      if (dto.paymentMethod === 'payos') {
         paymentLink = await this.payosService.createPaymentLink(order.toObject(), payosOrderCode!);
         order.payosPaymentLinkId = paymentLink.paymentLinkId;
         await order.save();
-      } catch (error) {
-        await this.orderModel.findByIdAndDelete(order._id);
-        throw error;
       }
+    } catch (error) {
+      if (order) await this.orderModel.findByIdAndDelete(order._id).catch(() => null);
+      const releaseResults = await Promise.allSettled(
+        reservedStock.map(({ productId, quantity }) => this.productsService.releaseStock(productId, quantity)),
+      );
+      releaseResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const reservation = reservedStock[index];
+          this.logger.error(`Không thể hoàn kho ${reservation.quantity} sản phẩm ${reservation.productId}`, result.reason);
+        }
+      });
+      throw error;
     }
 
     // Increment promo usage if a code was used
     if (dto.promoCode) {
       await this.promotionsService.markUsed(dto.promoCode);
-    }
-
-    // Deduct stock
-    for (const item of dto.items) {
-      const product = await this.productsService.findById(item.productId);
-      if (product) {
-        await this.productsService.update(product._id.toString(), { 
-          stock: Math.max(0, product.stock - item.quantity) 
-        });
-      }
     }
 
     return {

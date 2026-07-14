@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { promotionsApi, productsApi, settingsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
-import { getProductSizePrice } from '../utils/productPrice';
+import { getProductCustomizationPrice, getProductSizePrice } from '../utils/productPrice';
 import { applyLatestSizeCatalog, getSizeMeasurements } from '../utils/productSizes';
 
 const formatSizeMeasurements = (item) => (item.sizeMeasurements || [])
@@ -21,9 +21,11 @@ export default function Cart() {
   const [cartDetails, setCartDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [promoCode, setPromoCode] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const savedDiscount = localStorage.getItem('silkmoon_discount');
+  const initialDiscount = Number(savedDiscount);
+  const [discountPercent, setDiscountPercent] = useState(Number.isFinite(initialDiscount) && initialDiscount >= 0 ? initialDiscount : 0);
   const [promoError, setPromoError] = useState('');
-  const [promoSuccess, setPromoSuccess] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState(Number.isFinite(initialDiscount) && initialDiscount > 0 ? `Đã áp dụng mã giảm giá ${initialDiscount}%` : '');
 
   // Fetch product details whenever cart changes
   useEffect(() => {
@@ -36,21 +38,32 @@ export default function Cart() {
       try {
         const sizeSetting = await settingsApi.get('product_sizes').catch(() => null);
         const detailsPromises = cart.map(async (item) => {
-          // If the backend has getById, fetch it
-          const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
-          const selectedSize = item.sizeId && item.sizeId !== 'custom' ? product.sizes?.find((size) => size.id === item.sizeId) : null;
-          const customizationPrice =
-            (item.embroidery ? Number(product.embroideryPrice || 0) : 0) +
-            (item.customSize ? Number(product.customSizePrice || 0) : 0);
-          return {
-            ...item,
-            id: item.productId, // use productId as id for UI
-            name: product.name,
-            price: getProductSizePrice(product, item.sizeId) + customizationPrice,
-            sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements,
-            image: product.images?.[0] || '',
-            spec: product.category || 'N/A'
-          };
+          try {
+            const product = applyLatestSizeCatalog(await productsApi.getById(item.productId), sizeSetting);
+            const isCustomSize = item.sizeId === 'custom' || Boolean(item.customSize);
+            const selectedSize = item.sizeId && !isCustomSize ? product.sizes?.find((size) => size.id === item.sizeId) : null;
+            const configurationError = !isCustomSize && ((product.sizes?.length && !item.sizeId) || (item.sizeId && !selectedSize))
+              ? 'Size đã chọn không còn khả dụng. Vui lòng chọn lại sản phẩm.'
+              : isCustomSize && !product.allowCustomSize
+                ? 'Sản phẩm không còn hỗ trợ may size riêng.'
+                : item.embroidery && !product.allowEmbroidery
+                  ? 'Sản phẩm không còn hỗ trợ may tên riêng.'
+                  : '';
+            const customizationPrice = getProductCustomizationPrice(product, item);
+            return {
+              ...item,
+              id: item.productId,
+              name: product.name,
+              price: getProductSizePrice(product, item.sizeId) + customizationPrice,
+              sizeLabel: selectedSize?.label || item.sizeLabel,
+              sizeMeasurements: selectedSize ? getSizeMeasurements(selectedSize) : item.sizeMeasurements,
+              image: product.images?.[0] || '',
+              spec: product.category || 'N/A',
+              configurationError,
+            };
+          } catch {
+            return { ...item, id: item.productId, name: 'Sản phẩm không còn tồn tại', price: 0, image: '', spec: '', configurationError: 'Sản phẩm đã bị xóa hoặc không còn khả dụng.' };
+          }
         });
         const details = await Promise.all(detailsPromises);
         setCartDetails(details);
@@ -65,15 +78,6 @@ export default function Cart() {
       fetchDetails();
     }
   }, [cart, cartLoading]);
-
-  // Load discount if already applied
-  useEffect(() => {
-    const savedDiscount = localStorage.getItem('silkmoon_discount');
-    if (savedDiscount) {
-      setDiscountPercent(Number(savedDiscount));
-      setPromoSuccess(`Đã áp dụng mã giảm giá ${savedDiscount}%`);
-    }
-  }, []);
 
   const handleApplyPromo = async (e) => {
     e.preventDefault();
@@ -107,8 +111,13 @@ export default function Cart() {
   const discountAmount = Math.round(subtotal * (discountPercent / 100));
   const shippingFee = 0; // free shipping
   const total = subtotal - discountAmount + shippingFee;
+  const invalidCartItems = cartDetails.filter((item) => item.configurationError);
 
   const handleProceedToCheckout = () => {
+    if (invalidCartItems.length) {
+      alert(invalidCartItems[0].configurationError);
+      return;
+    }
     // Save current totals to localStorage for checkout display consistency
     localStorage.setItem('silkmoon_checkout_totals', JSON.stringify({
       subtotal,
@@ -179,6 +188,7 @@ export default function Cart() {
                               <h4 className="font-body-md font-medium text-slate-deep truncate">{item.name}</h4>
                               <p className="text-xs text-on-surface-variant opacity-75 mt-1 font-mono uppercase tracking-wide">{item.spec}</p>
                               {item.sizeLabel && <p className="mt-1 text-xs text-slate-deep">Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomSize(item) ? ` · ${formatCustomSize(item)}` : ''}</p>}
+                              {item.configurationError && <p className="mt-2 text-xs font-semibold text-error">{item.configurationError}</p>}
                               {item.embroidery && (
                                 <div className="inline-flex items-center gap-1 bg-sand-silk/15 border border-sand-silk/30 px-2 py-0.5 rounded text-[11px] text-slate-deep font-medium mt-2">
                                   <span className="material-symbols-outlined text-[13px]">edit</span>
@@ -241,6 +251,7 @@ export default function Cart() {
                           {item.spec}
                         </p>
                         {item.sizeLabel && <p className="mt-1 text-xs text-slate-deep">Size: {item.sizeLabel}{formatSizeMeasurements(item) ? ` · ${formatSizeMeasurements(item)}` : ''}{formatCustomSize(item) ? ` · ${formatCustomSize(item)}` : ''}</p>}
+                        {item.configurationError && <p className="mt-2 text-xs font-semibold text-error">{item.configurationError}</p>}
                         {item.embroidery && (
                           <div className="inline-flex items-center gap-1 bg-sand-silk/15 border border-sand-silk/30 px-2 py-0.5 rounded text-[11px] text-slate-deep font-medium mt-2">
                             <span className="material-symbols-outlined text-[13px]">edit</span>
@@ -365,7 +376,8 @@ export default function Cart() {
               {/* Proceed CTA */}
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 group hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide pt-2"
+                disabled={invalidCartItems.length > 0}
+                className="w-full bg-slate-deep text-linen-white py-4 font-button text-button rounded-full flex items-center justify-center gap-2 group hover:opacity-90 active:scale-[0.98] transition-all uppercase tracking-wide pt-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 TIẾN HÀNH THANH TOÁN
                 <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform text-[20px]">

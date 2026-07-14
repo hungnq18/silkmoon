@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
 import { useCart } from '../context/CartContext';
+import { getLowestPriceSize, getProductListPrice } from '../utils/productPrice';
+import { getSizeMeasurements } from '../utils/productSizes';
 
 export default function ProductListGrid({ products }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -12,14 +14,20 @@ export default function ProductListGrid({ products }) {
     e.preventDefault();
     e.stopPropagation();
 
-    const specLabel = product.tag === 'NEW' ? 'CHAMPAGNE SILK / QUEEN' : 'WHITE CLOUD / STANDARD';
+    const lowestPriceSize = getLowestPriceSize(product);
+    const listPrice = getProductListPrice(product);
+    const specLabel = lowestPriceSize?.label || product.category || 'STANDARD';
 
     try {
-      addToCart(product.id, 1);
+      addToCart(product.id, 1, lowestPriceSize ? {
+        sizeId: lowestPriceSize.id,
+        sizeLabel: lowestPriceSize.label,
+        sizeMeasurements: getSizeMeasurements(lowestPriceSize),
+      } : {});
 
       setModalProduct({
         name: product.name,
-        price: product.price,
+        price: listPrice,
         image: product.image,
         spec: specLabel
       });
@@ -89,9 +97,9 @@ export default function ProductListGrid({ products }) {
           </p>
           <div className="flex items-center gap-3 mt-auto">
             <span className="type-price font-semibold text-slate-deep">
-              {product.price.toLocaleString('vi-VN')}₫
+              {getProductListPrice(product).toLocaleString('vi-VN')}₫
             </span>
-            {product.originalPrice && (
+            {Number(product.originalPrice) > getProductListPrice(product) && (
               <span className="text-on-surface-variant/50 line-through text-sm">
                 {product.originalPrice.toLocaleString('vi-VN')}₫
               </span>
