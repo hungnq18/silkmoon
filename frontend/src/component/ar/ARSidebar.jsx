@@ -27,7 +27,7 @@ export default function ARSidebar({
             className="w-10 h-10 rounded-full ring-2 ring-offset-2 ring-slate-deep flex-shrink-0"
             style={{ backgroundColor: activeFabric.hex }}
           />
-          <p className="font-semibold text-slate-deep text-sm">{activeFabric.label}</p>
+          <p className="font-semibold text-slate-deep text-sm">Màu {activeFabric.label}</p>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export default function ARSidebar({
             <button
               key={f.id}
               onClick={() => setActiveFabricId(f.id)}
-              title={f.label}
+              title={`Màu ${f.label}`}
               className={`w-full aspect-square rounded-full ring-2 ring-offset-2 transition-all duration-150 ${
                 activeFabricId === f.id
                   ? 'ring-slate-deep scale-110'

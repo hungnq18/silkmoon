@@ -727,11 +727,19 @@ export default function ProductsList() {
         <div
           className="modal-backdrop"
           role="presentation"
-          onMouseDown={(event) =>
-            event.target === event.currentTarget && setEditingProduct(null)
-          }
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setEditingProduct(null);
+            }
+          }}
         >
-          <form ref={productModalRef} className="product-modal" onSubmit={handleEditSubmit}>
+          <form
+            ref={productModalRef}
+            className="product-modal"
+            onSubmit={handleEditSubmit}
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="modal-header">
               <div>
                 <span className="login-eyebrow">SẢN PHẨM</span>
