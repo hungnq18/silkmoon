@@ -138,7 +138,7 @@ export const adminApi = {
     return res.json();
   },
   getProducts: async ({ page = 1, limit = 20 } = {}) => {
-    const res = await fetch(`${API_URL}/products?page=${page}&limit=${limit}`, { headers: getHeaders() });
+    const res = await fetch(`${API_URL}/products?page=${page}&limit=${limit}&_=${Date.now()}`, { headers: getHeaders(), cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch products");
     return res.json();
   },

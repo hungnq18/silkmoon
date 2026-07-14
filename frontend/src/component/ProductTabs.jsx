@@ -31,6 +31,12 @@ const tabs = [
   { id: 'returns', label: 'CHÍNH SÁCH ĐỔI TRẢ' },
 ];
 
+const EmptyTab = () => (
+  <div className="rounded-lg border border-dashed border-slate-deep/15 bg-bone/35 px-6 py-10 text-center text-sm text-slate-deep/55">
+    Nội dung đang được cập nhật từ trang quản trị.
+  </div>
+);
+
 export default function ProductTabs({ product }) {
   const [activeTab, setActiveTab] = useState('description');
   const technicalSpecs = (product?.technicalSpecs || '').split('\n').map((item) => item.trim()).filter(Boolean);
@@ -62,67 +68,35 @@ export default function ProductTabs({ product }) {
       <div className="text-slate-deep/80 leading-relaxed font-body-lg text-body-md md:text-body-lg min-h-[150px]">
         {activeTab === 'description' && (
           <article className="space-y-stack-md animate-fade-in">
-            {product?.description ? <RichDescription html={product.description} /> : <>
-            <p>
-              Khám phá đỉnh cao của sự nghỉ ngơi với bộ sưu tập ga giường lụa Mulberry cao cấp nhất của SILKMOON. Được dệt từ những sợi lụa tơ tằm thượng hạng loại 6A với độ dày 22 momme, sản phẩm mang lại cảm giác mềm mại tuyệt đối và độ bóng sang trọng không thể nhầm lẫn.
-            </p>
-            <p>
-              Lụa Mulberry không chỉ là biểu tượng của sự xa xỉ mà còn sở hữu những đặc tính sinh học tuyệt vời: khả năng điều hòa nhiệt độ tự nhiên giúp bạn mát mẻ vào mùa hè và ấm áp vào mùa đông, cùng khả năng kháng khuẩn tự nhiên và giảm tối đa ma sát có lợi cho tóc và làn da nhạy cảm.
-            </p>
-            </>}
+            {product?.description ? <RichDescription html={product.description} /> : <EmptyTab />}
             
             {/* Tech Specs Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter pt-stack-md text-slate-deep">
-              <div className="bg-bone p-stack-lg rounded-lg">
+            {(technicalSpecs.length > 0 || packageIncludes.length > 0) && <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter pt-stack-md text-slate-deep">
+              {technicalSpecs.length > 0 && <div className="bg-bone p-stack-lg rounded-lg">
                 <h4 className="font-label-caps text-label-caps mb-stack-sm text-slate-deep">Thông số kỹ thuật</h4>
                 <ul className="text-sm space-y-2 list-disc pl-4 opacity-95">
-                  {(technicalSpecs.length ? technicalSpecs : ['Chất liệu: ' + (product?.material || 'Đang cập nhật')]).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+                  {technicalSpecs.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
-              </div>
-              <div className="bg-bone p-stack-lg rounded-lg">
+              </div>}
+              {packageIncludes.length > 0 && <div className="bg-bone p-stack-lg rounded-lg">
                 <h4 className="font-label-caps text-label-caps mb-stack-sm text-slate-deep">Bộ sản phẩm bao gồm</h4>
                 <ul className="text-sm space-y-2 list-disc pl-4 opacity-95">
-                  {(packageIncludes.length ? packageIncludes : ['Thông tin bộ sản phẩm đang được cập nhật']).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+                  {packageIncludes.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
-              </div>
-            </div>
+              </div>}
+            </div>}
           </article>
         )}
 
         {activeTab === 'materials' && (
           <article className="space-y-stack-md animate-fade-in">
-            {product?.materialCare ? <RichDescription html={product.materialCare} /> : <>
-            <p>
-              Sợi lụa tự nhiên 100% có tính chất vật lý mềm mại và rất nhạy cảm với các hóa chất tẩy rửa mạnh hoặc ma sát cơ học cao. Việc chăm sóc đúng cách sẽ giúp sản phẩm giữ được vẻ bóng mượt và độ bền lên đến hàng chục năm.
-            </p>
-            <div className="bg-bone p-stack-lg rounded-lg text-slate-deep text-sm space-y-3">
-              <h4 className="font-label-caps text-label-caps">Hướng dẫn giặt là &amp; bảo quản</h4>
-              <ul className="list-decimal pl-4 space-y-2">
-                <li>Khuyến khích giặt bằng tay nhẹ nhàng bằng nước lạnh hoặc giặt máy ở chế độ giặt nhẹ chuyên dụng cho Lụa (Silk/Delicates) trong túi giặt.</li>
-                <li>Chỉ sử dụng chất tẩy trung tính, dịu nhẹ như dầu gội đầu hoặc sữa tắm em bé. Tuyệt đối không dùng bột giặt có chất tẩy mạnh hoặc thuốc tẩy.</li>
-                <li>Không vắt mạnh hay vặn xoắn sản phẩm. Phơi khô tự nhiên trong bóng râm, tránh ánh nắng mặt trời chiếu trực tiếp.</li>
-                <li>Là/ủi ở mặt trái sản phẩm bằng bàn là hơi nước ở chế độ nhiệt dành riêng cho Lụa (nhiệt độ thấp nhất).</li>
-              </ul>
-            </div>
-            </>}
+            {product?.materialCare ? <RichDescription html={product.materialCare} /> : <EmptyTab />}
           </article>
         )}
 
         {activeTab === 'returns' && (
           <article className="space-y-stack-md animate-fade-in">
-            {product?.returnPolicy ? <RichDescription html={product.returnPolicy} /> : <>
-            <p>
-              Với tôn chỉ mang lại sự hài lòng tuyệt đối, SILKMOON áp dụng chính sách đổi trả hàng linh hoạt và nhanh chóng đối với dòng sản phẩm cao cấp này.
-            </p>
-            <div className="bg-bone p-stack-lg rounded-lg text-slate-deep text-sm space-y-3">
-              <h4 className="font-label-caps text-label-caps">Điều khoản đổi trả</h4>
-              <ul className="list-disc pl-4 space-y-2">
-                <li>Hỗ trợ đổi mới miễn phí trong vòng 7 ngày kể từ ngày nhận hàng nếu phát hiện lỗi từ nhà sản xuất (lỗi đường chỉ thêu thêu tay, xước vải trước khi dùng, sai quy cách sản phẩm).</li>
-                <li>Đối với sản phẩm in/thêu tên cá nhân theo yêu cầu, chúng tôi chỉ hỗ trợ sửa đổi hoặc đổi trả trong trường hợp thêu sai nội dung hoặc sai chính tả so với đơn hàng đã duyệt.</li>
-                <li>Sản phẩm đổi trả phải còn nguyên tem mác, hộp quà đi kèm, chưa qua giặt ủi và chưa được đưa vào sử dụng thực tế.</li>
-              </ul>
-            </div>
-            </>}
+            {product?.returnPolicy ? <RichDescription html={product.returnPolicy} /> : <EmptyTab />}
           </article>
         )}
       </div>

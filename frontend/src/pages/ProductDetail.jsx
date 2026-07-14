@@ -53,6 +53,34 @@ export default function ProductDetail() {
     return () => { active = false; };
   }, [productId]);
 
+  useEffect(() => {
+    let active = true;
+    const refreshProduct = async () => {
+      try {
+        const [rawProduct, sizeSetting] = await Promise.all([
+          productsApi.getById(productId),
+          settingsApi.get('product_sizes').catch(() => null),
+        ]);
+        if (!active) return;
+        const data = applyLatestSizeCatalog(rawProduct, sizeSetting);
+        setProduct(data);
+        setActiveColorId((current) => data.colors?.some((color) => color.id === current) ? current : data.colors?.[0]?.id || 'champagne');
+      } catch (error) {
+        console.error('Không thể làm mới nội dung sản phẩm', error);
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshProduct();
+    };
+    window.addEventListener('focus', refreshProduct);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', refreshProduct);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [productId]);
+
   const handleColorChange = (color) => {
     setActiveColorId(color.id);
   };
