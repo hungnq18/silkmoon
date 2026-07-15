@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productsApi } from '../services/api';
 import { getProductListPrice } from '../utils/productPrice';
+import { getOptimizedProductImage } from '../utils/productImage';
 
 export default function RelatedProducts({ productId }) {
   const [relatedItems, setRelatedItems] = useState([]);
@@ -33,8 +34,10 @@ export default function RelatedProducts({ productId }) {
             <div className="aspect-[3/4] overflow-hidden bg-bone mb-stack-sm rounded-lg">
               <img
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                src={item.images?.[0] || item.image}
+                src={getOptimizedProductImage(item.images?.[0] || item.image, { width: 480, height: 640 })}
                 alt={item.name}
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <p className="font-label-caps text-[10px] tracking-widest uppercase opacity-60 text-slate-deep mt-1">

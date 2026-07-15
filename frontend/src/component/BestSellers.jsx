@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
 import { productsApi } from '../services/api';
 import { useCart } from '../context/CartContext';
-import { getLowestPriceSize, getProductListPrice } from '../utils/productPrice';
+import { getLowestPriceSize, getProductListPrice, getProductOriginalPrice } from '../utils/productPrice';
 import { getSizeMeasurements } from '../utils/productSizes';
+import { getOptimizedProductImage } from '../utils/productImage';
 
 export default function BestSellers() {
   const [products, setProducts] = useState([]);
@@ -83,14 +84,20 @@ export default function BestSellers() {
     );
   }
 
-  const renderProductCard = (product) => (
+  const renderProductCard = (product) => {
+    const listPrice = getProductListPrice(product);
+    const originalPrice = getProductOriginalPrice(product, listPrice);
+
+    return (
     <div key={product._id} className="flex flex-col group">
       <Link to={`/product/${product._id}`} className="flex flex-col group cursor-pointer">
         <div className="aspect-[3/4] overflow-hidden bg-bone mb-stack-md relative rounded-lg">
           <img
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            src={product.images?.[0]}
+            src={getOptimizedProductImage(product.images?.[0], { width: 640, height: 852 })}
+            loading="lazy"
+            decoding="async"
           />
           <button
             onClick={(e) => handleQuickAdd(e, product)}
@@ -102,9 +109,16 @@ export default function BestSellers() {
         <h4 className="type-card-title font-body-md text-slate-deep font-medium transition-colors group-hover:text-secondary">
           {product.name}
         </h4>
-        <p className="type-price text-on-surface-variant font-body-md mt-1">
-          {getProductListPrice(product).toLocaleString('vi-VN')}đ
-        </p>
+        <div className="flex flex-wrap items-baseline gap-2 mt-1">
+          <p className="type-price text-slate-deep font-semibold">
+            {listPrice.toLocaleString('vi-VN')}đ
+          </p>
+          {originalPrice !== null && (
+            <p className="text-on-surface-variant/50 line-through text-sm">
+              {originalPrice.toLocaleString('vi-VN')}đ
+            </p>
+          )}
+        </div>
       </Link>
 
       {/* Color indicators */}
@@ -127,7 +141,8 @@ export default function BestSellers() {
         ))}
       </div>
     </div>
-  );
+    );
+  };
 
   // Group products
   const beddingProducts = products.filter(p => p.category === 'Chăn Ga Gối' || p.category === 'Gối').slice(0, 3);

@@ -224,7 +224,7 @@ export const adminApi = {
           const res = await fetch(`${API_URL}/ar/upload`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ image }),
+            body: JSON.stringify({ image, usage: "product" }),
             signal: controller.signal,
           });
           const data = await res.json().catch(() => null);

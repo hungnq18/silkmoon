@@ -367,11 +367,19 @@ Output: The edited bedroom photo with the entire bedding set color changed to ${
   /**
    * Upload a base64 image to Cloudinary and return the public URL.
    */
-  async uploadImageToCloudinary(base64Image: string, folder = 'silkmoon_ar'): Promise<string> {
+  async uploadImageToCloudinary(base64Image: string, folder = 'silkmoon_ar', prepareProductVariants = false): Promise<string> {
     this.logger.log('[Cloudinary] Uploading image...');
     try {
       const result = await cloudinary.uploader.upload(base64Image, {
         folder,
+        ...(prepareProductVariants ? {
+          // Generate the two storefront cache variants before the admin receives
+          // the URL, so the first customer does not pay the transformation cost.
+          eager: [
+            'f_webp,q_auto:eco,w_320,c_limit',
+            'f_webp,q_auto:eco,w_640,c_limit',
+          ],
+        } : {}),
       });
       this.logger.log(`[Cloudinary] Upload success: ${result.secure_url}`);
       return result.secure_url;

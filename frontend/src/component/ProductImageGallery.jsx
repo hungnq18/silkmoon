@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+const getRequestedImageIndex = (images, activeImage) => {
+  if (!activeImage) return 0;
+  const requestedSrc = typeof activeImage === 'object' ? activeImage.src : activeImage;
+  const requestedIndex = images.indexOf(requestedSrc);
+  return requestedIndex === -1 ? 0 : requestedIndex;
+};
 
 export default function ProductImageGallery({ images = [], activeImage = null }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(() => getRequestedImageIndex(images, activeImage));
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
 
@@ -16,20 +23,6 @@ export default function ProductImageGallery({ images = [], activeImage = null })
           type: 'image'
         }
       ];
-
-  // Reset active index if images change
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [images]);
-
-  // Jump to specific image if provided
-  useEffect(() => {
-    if (activeImage) {
-      const srcToFind = typeof activeImage === 'object' ? activeImage.src : activeImage;
-      const idx = images.indexOf(srcToFind);
-      if (idx !== -1) setActiveIndex(idx);
-    }
-  }, [activeImage, images]);
 
   const handleThumbnailClick = (img) => {
     if (img.type === 'video') {
@@ -51,12 +44,14 @@ export default function ProductImageGallery({ images = [], activeImage = null })
   return (
     <div className="space-y-stack-md select-none">
       {/* Main Image Viewer */}
-      <div className="aspect-[4/5] w-full overflow-hidden bg-bone rounded-lg relative" onTouchStart={(event) => setTouchStart(event.touches[0].clientX)} onTouchEnd={handleTouchEnd}>
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-bone" onTouchStart={(event) => setTouchStart(event.touches[0].clientX)} onTouchEnd={handleTouchEnd}>
         <img
-          key={activeIndex}
+          key={galleryItems[activeIndex]?.src || activeIndex}
           className="product-gallery-image w-full h-full object-cover"
           src={galleryItems[activeIndex]?.src || galleryItems[0].src}
           alt={`Hình ảnh sản phẩm ${activeIndex + 1}`}
+          loading="eager"
+          fetchPriority="high"
         />
         {galleryItems.length > 1 && <>
           <button type="button" onClick={showPrevious} aria-label="Ảnh trước" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-deep shadow-md backdrop-blur transition-all hover:bg-white active:scale-95"><span className="material-symbols-outlined">chevron_left</span></button>
@@ -71,7 +66,7 @@ export default function ProductImageGallery({ images = [], activeImage = null })
           const isActive = img.type === 'image' && activeIndex === img.id;
           return (
             <div
-              key={img.id}
+              key={img.src}
               onClick={() => handleThumbnailClick(img)}
               className={`relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md bg-bone group md:h-auto md:w-auto md:aspect-square ${
                 isActive ? 'ring-1 ring-slate-deep ring-offset-2' : 'hover:opacity-90'

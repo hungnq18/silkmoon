@@ -29,6 +29,15 @@ export const getProductListPrice = (product) => {
   return Math.min(...sizes.map((size) => getProductSizePrice(product, size.id)));
 };
 
+export const getProductOriginalPrice = (product, currentPrice = getProductListPrice(product)) => {
+  const originalPrice = parseNonNegativePrice(product?.originalPrice);
+  if (originalPrice === null) return null;
+
+  const basePrice = parseNonNegativePrice(product?.price) ?? 0;
+  const resolvedCurrentPrice = parseNonNegativePrice(currentPrice) ?? basePrice;
+  return originalPrice + (resolvedCurrentPrice - basePrice);
+};
+
 export const getLowestPriceSize = (product) => {
   const sizes = Array.isArray(product?.sizes) ? product.sizes : [];
   if (!sizes.length) return null;

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getOptimizedProductImage } from '../utils/productImage';
 
 export default function AddToCartModal({ isOpen, onClose, product }) {
   if (!isOpen || !product) return null;
@@ -35,8 +36,10 @@ export default function AddToCartModal({ isOpen, onClose, product }) {
           <div className="w-16 h-20 bg-bone overflow-hidden rounded flex-shrink-0 border border-slate-deep/5">
             <img
               className="w-full h-full object-cover"
-              src={product.image}
+              src={getOptimizedProductImage(product.image, { width: 160, height: 200 })}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
             />
           </div>
           <div className="flex-grow min-w-0 flex flex-col justify-center">

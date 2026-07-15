@@ -2,10 +2,10 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { getLowestPriceSize, getProductSizePrice } from '../utils/productPrice';
+import { getLowestPriceSize, getProductOriginalPrice, getProductSizePrice } from '../utils/productPrice';
 import { getSizeMeasurements } from '../utils/productSizes';
 
-const colors = [
+const fallbackColors = [
   { id: 'champagne', hex: '#E5D5C5', label: 'Champagne Silk' },
   { id: 'white', hex: '#E8E8E5', label: 'White Silk' },
   { id: 'sage', hex: '#567E73', label: 'Sage Silk' },
@@ -14,272 +14,230 @@ const colors = [
 
 const sizeDisplayName = (size) => (size?.label || '').replace(/\s*\([^)]*\d[^)]*\)\s*$/, '').trim() || size?.label || 'Size';
 
+const sizeMeasurementSummary = (size) => getSizeMeasurements(size)
+  .map((measurement) => `${measurement.value}${measurement.unit || ''}`)
+  .join(' × ');
+
 export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const productColors = product.colors?.length > 0 ? product.colors : fallbackColors;
   const [selectedSize, setSelectedSize] = useState(getLowestPriceSize(product)?.id || '');
-  
-  // Use product colors or fallback
-  const productColors = product.colors?.length > 0 ? product.colors : colors;
   const [selectedColor, setSelectedColor] = useState(productColors[0]?.id || 'champagne');
-  
+  const [quantity, setQuantity] = useState(1);
   const [embroideryText, setEmbroideryText] = useState('');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [customSize, setCustomSize] = useState({ length: '', width: '', height: '' });
+
   const allowCustomSize = Boolean(product.allowCustomSize);
   const allowEmbroidery = Boolean(product.allowEmbroidery);
   const embroideryMaxLength = product.embroideryMaxLength || 12;
   const productSizeOptions = product.sizes || [];
   const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
   const selectedPrice = getProductSizePrice(product, selectedSize);
-  const selectedSizeMeasurements = getSizeMeasurements(selectedSizeInfo);
-  const referenceSize = (product.sizes || []).find((size) => getSizeMeasurements(size).length > 0);
+  const selectedOriginalPrice = getProductOriginalPrice(product, selectedPrice);
+  const activeColorInfo = productColors.find((color) => color.id === selectedColor) || productColors[0];
+  const referenceSize = productSizeOptions.find((size) => getSizeMeasurements(size).length > 0);
   const customSizeFields = (referenceSize ? getSizeMeasurements(referenceSize) : [
     { id: 'width', label: 'Rộng', unit: 'cm' },
     { id: 'length', label: 'Dài', unit: 'cm' },
     { id: 'height', label: 'Dày/Cao', unit: 'cm' },
   ]).map((field, index) => ({ id: field.id || `custom-field-${index}`, label: field.label, unit: field.unit || 'cm' }));
-
-  const activeColorInfo = productColors.find((c) => c.id === selectedColor) || productColors[0];
+  const plainDescription = (product.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const productSummary = plainDescription || [product.material, product.category].filter(Boolean).join(' · ');
+  const discountPercent = selectedOriginalPrice > selectedPrice
+    ? Math.round(((selectedOriginalPrice - selectedPrice) / selectedOriginalPrice) * 100)
+    : 0;
 
   const handleColorClick = (colorId) => {
     setSelectedColor(colorId);
-    const colorInfo = productColors.find((c) => c.id === colorId);
-    if (onColorChange && colorInfo) {
-      onColorChange(colorInfo);
+    const colorInfo = productColors.find((color) => color.id === colorId);
+    if (onColorChange && colorInfo) onColorChange(colorInfo);
+  };
+
+  const getCartOptions = () => {
+    const missingCustomFields = selectedSize === 'custom'
+      ? customSizeFields.filter((field) => !customSize[field.id]?.trim())
+      : [];
+    if (missingCustomFields.length) {
+      alert(`Vui lòng nhập đủ thông số size riêng: ${missingCustomFields.map((field) => field.label).join(', ')}.`);
+      return null;
     }
+
+    return {
+      sizeId: selectedSize,
+      sizeLabel: selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo),
+      sizeMeasurements: selectedSize === 'custom' ? [] : getSizeMeasurements(selectedSizeInfo),
+      customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, customSize[field.id]])) : null,
+      customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: customSize[field.id] })) : [],
+      embroidery: embroideryText.trim() || null,
+      colorId: activeColorInfo?.id,
+      colorLabel: activeColorInfo?.label,
+    };
   };
 
-  const handleEmbroideryChange = (e) => {
-    const val = e.target.value;
-    if (val.length <= embroideryMaxLength) {
-      setEmbroideryText(val);
-    }
-  };
-
-  const handleCustomSizeChange = (field, value) => {
-    setCustomSize((current) => ({ ...current, [field]: value }));
-  };
-
-  const preventNegativeInput = (e) => {
-    if (e.key === '-') e.preventDefault();
-  };
-
-  const handleAddToCart = () => {
+  const addConfiguredProduct = (buyNow = false) => {
     try {
-      const missingCustomFields = selectedSize === 'custom' ? customSizeFields.filter((field) => !customSize[field.id]?.trim()) : [];
-      if (missingCustomFields.length) {
-        alert(`Vui lòng nhập đủ thông số size riêng: ${missingCustomFields.map((field) => field.label).join(', ')}.`);
-        return;
-      }
-      addToCart(product._id || product.id, 1, {
-        sizeId: selectedSize,
-        sizeLabel: selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo),
-        sizeMeasurements: selectedSize === 'custom' ? [] : getSizeMeasurements(selectedSizeInfo),
-        customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, customSize[field.id]])) : null,
-        customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: customSize[field.id] })) : [],
-        embroidery: embroideryText.trim() || null,
-      });
-      
-      // We can also trigger a custom event or toast here if we want
-      navigate('/cart');
-    } catch (e) {
-      console.error('Error adding item to cart:', e);
+      const options = getCartOptions();
+      if (!options) return;
+      addToCart(product._id || product.id, quantity, options);
+      if (buyNow) navigate('/cart');
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
       alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
     }
   };
 
   return (
-    <div className="flex flex-col gap-stack-lg lg:sticky lg:top-[120px] h-fit select-none">
-      {/* Brand & Title */}
-      <div>
-        <span className="type-eyebrow font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
+    <div className="flex h-fit select-none flex-col gap-5 lg:sticky lg:top-[104px]">
+      <header>
+        <span className="type-eyebrow text-label-caps font-label-caps uppercase tracking-widest text-on-surface-variant">
           {product.category || 'Premium Collection'}
         </span>
-        <h1 className="product-detail-title font-display-lg text-display-lg-mobile md:text-display-lg text-slate-deep mt-stack-sm leading-tight">
+        <h1 className="product-detail-title mt-2 text-[30px] font-semibold leading-[1.2] tracking-[-0.02em] text-slate-deep md:text-[36px]">
           {product.name}
         </h1>
+        {productSummary && <p className="mt-2 line-clamp-2 text-sm leading-6 text-on-surface-variant md:text-[15px]">{productSummary}</p>}
 
-        {/* Ratings & Reviews */}
-        <div className="flex items-center gap-stack-sm mt-stack-sm text-slate-deep">
-          <div className="flex text-sand-silk">
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star_half</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-deep">
+          <div className="flex text-[#F3BE3E]" aria-label="4.9 trên 5 sao">
+            {[1, 2, 3, 4, 5].map((star) => <span key={star} className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>)}
           </div>
-          <span className="type-meta font-body-md text-on-surface-variant">(124 đánh giá)</span>
+          <strong className="text-xs">4.9</strong>
+          <span className="text-xs text-on-surface-variant underline underline-offset-2">(124 đánh giá)</span>
         </div>
+      </header>
 
-        {/* Price */}
-        <div className="product-detail-price flex items-baseline gap-3 mt-stack-md">
-          <p className="font-headline-sm text-headline-sm text-slate-deep">
-            {selectedPrice.toLocaleString('vi-VN')} VNĐ
-          </p>
-          {product.originalPrice && product.originalPrice > product.price && (
-            <p className="font-body-md text-slate-deep/50 line-through">
-              {(product.originalPrice + (selectedPrice - product.price)).toLocaleString('vi-VN')} VNĐ
-            </p>
-          )}
-        </div>
+      {arEnabled && (
+        <button
+          type="button"
+          onClick={onOpenAR}
+          className="flex w-full items-center gap-3 rounded-md bg-slate-deep px-4 py-3.5 text-left text-white transition-colors hover:bg-primary-container active:scale-[0.99]"
+        >
+          <span className="material-symbols-outlined text-[21px]">view_in_ar</span>
+          <span className="text-xs font-semibold leading-5 md:text-[13px]">Thử sản phẩm trong không gian của bạn bằng công nghệ AR</span>
+          <span className="material-symbols-outlined ml-auto text-[18px]">arrow_forward</span>
+        </button>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-deep/10 pb-5">
+        <strong className="product-detail-price text-[25px] font-bold tracking-[-0.02em] text-slate-deep md:text-[28px]">
+          {selectedPrice.toLocaleString('vi-VN')} VNĐ
+        </strong>
+        {selectedOriginalPrice !== null && (
+          <span className="text-sm text-on-surface-variant/55 line-through md:text-base">
+            {selectedOriginalPrice.toLocaleString('vi-VN')} VNĐ
+          </span>
+        )}
+        {discountPercent > 0 && <span className="rounded bg-[#F9E7A5] px-2 py-1 text-xs font-bold text-slate-deep">-{discountPercent}%</span>}
       </div>
 
-      {/* AR Preview Trigger */}
-      {arEnabled && <button
-        onClick={onOpenAR}
-        className="group flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-stack-sm border border-slate-deep/10 py-4 px-4 md:px-6 rounded-full hover:bg-slate-deep hover:text-linen-white transition-all duration-300 bg-primary text-white shadow-sm active:scale-98 w-full"
-      >
-        <span className="material-symbols-outlined text-[20px]">view_in_ar</span>
-        <span className="type-button font-button text-[11px] md:text-button uppercase tracking-wide text-center">
-          Thử trong phòng của bạn
-        </span>
-      </button>}
-
-      {/* Configuration Options */}
-      <div className="space-y-stack-lg">
-        {/* Size Selection */}
-        <div className="space-y-stack-sm">
-          <div className="flex justify-between items-center">
-            <span className="product-detail-option-label font-label-caps text-label-caps text-slate-deep">CHỌN KÍCH THƯỚC</span>
-          </div>
-          <div className="flex flex-wrap gap-stack-sm">
-            {[...productSizeOptions, ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
-              const isSelected = selectedSize === size.id;
-              return (
-                <button
-                  key={size.id}
-                  onClick={() => setSelectedSize(size.id)}
-                  className={`px-5 py-2 border font-body-md text-body-md transition-all ${
-                    isSelected
-                      ? 'border-slate-deep bg-slate-deep text-linen-white font-semibold'
-                      : 'border-slate-deep/20 text-slate-deep hover:border-slate-deep'
-                  }`}
-                >
-                  <span className="type-option-value block">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</span>
-                  {size.id !== 'custom' && <small className={`mt-0.5 block text-[10px] ${isSelected ? 'text-linen-white/75' : 'text-slate-deep/55'}`}>{getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ</small>}
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedSize !== 'custom' && selectedSizeInfo && selectedSizeMeasurements.length > 0 && (
-            <div className="mt-4 rounded-lg border border-slate-deep/10 bg-bone/35 p-4 animate-fade-in">
-              <div className="mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-[19px] text-slate-deep/70">straighten</span><div><strong className="block text-sm text-slate-deep">Thông số size {sizeDisplayName(selectedSizeInfo)}</strong><span className="text-[11px] text-slate-deep/55">Thông số chi tiết của kích thước đang chọn</span></div></div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {selectedSizeMeasurements.map((measurement, index) => <div className="rounded-md border border-slate-deep/10 bg-white px-3 py-2.5" key={measurement.id || `${measurement.label}-${index}`}><span className="block text-[9px] font-semibold uppercase tracking-wide text-slate-deep/50">{measurement.label}</span><strong className="mt-1 block text-sm font-medium text-slate-deep">{measurement.value} <small className="font-normal text-slate-deep/55">{measurement.unit || ''}</small></strong></div>)}
-              </div>
+      <div className="space-y-5">
+        {(productSizeOptions.length > 0 || allowCustomSize) && (
+          <section>
+            <div className="mb-2.5 flex items-baseline gap-2">
+              <strong className="text-sm text-slate-deep">Kích thước:</strong>
+              <span className="text-xs text-on-surface-variant">{selectedSize === 'custom' ? 'May size riêng' : [sizeDisplayName(selectedSizeInfo), sizeMeasurementSummary(selectedSizeInfo)].filter(Boolean).join(' · ')}</span>
             </div>
-          )}
-          
-          {selectedSize === 'custom' && (
-            <div className="mt-4 rounded-lg border border-slate-deep/10 bg-bone/35 p-4 animate-fade-in">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><strong className="text-sm text-slate-deep">Thông số may size riêng</strong><p className="mt-0.5 text-[11px] text-slate-deep/60">Nhập đầy đủ số đo theo yêu cầu của sản phẩm.</p></div>{product.customSizePrice > 0 && <span className="rounded-full bg-sand-silk/15 px-3 py-1 text-[11px] font-medium text-slate-deep">+{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</span>}</div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {customSizeFields.map((field) => <label className="block" key={field.id}><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-deep/70">{field.label} ({field.unit})</span><div className="relative"><input type="text" placeholder={`Nhập ${field.label.toLowerCase()}`} className="w-full rounded-md border border-slate-deep/20 bg-white px-3 py-3 pr-12 text-sm text-slate-deep focus:border-slate-deep focus:outline-none" value={customSize[field.id] ?? ''} onChange={(event) => handleCustomSizeChange(field.id, event.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-deep/45">{field.unit}</span></div></label>)}
-              </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {[...productSizeOptions, ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
+                const isSelected = selectedSize === size.id;
+                const measurements = size.id === 'custom' ? 'Theo yêu cầu' : sizeMeasurementSummary(size);
+                return (
+                  <button
+                    type="button"
+                    key={size.id}
+                    onClick={() => setSelectedSize(size.id)}
+                    className={`min-h-[58px] rounded-md border px-3 py-2 text-center transition-all ${isSelected ? 'border-secondary bg-secondary-container/45 text-slate-deep shadow-[inset_0_0_0_1px_rgba(74,144,226,0.2)]' : 'border-slate-deep/10 bg-white text-slate-deep hover:border-slate-deep/35'}`}
+                  >
+                    <strong className="type-option-value block text-sm">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</strong>
+                    <small className="mt-0.5 block text-[10px] text-on-surface-variant">{measurements || `${getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ`}</small>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </div>
 
-        {/* Color Selection */}
-        <div className="space-y-stack-sm">
-          <span className="product-detail-option-label font-label-caps text-label-caps text-slate-deep uppercase">
-            MÀU SẮC: <span className="opacity-60 font-body-md normal-case pl-1">{activeColorInfo?.label}</span>
-          </span>
-          <div className="flex gap-stack-md">
+            {selectedSize === 'custom' && (
+              <div className="mt-3 rounded-md border border-slate-deep/10 bg-bone/45 p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-xs text-on-surface-variant">Nhập đầy đủ số đo theo yêu cầu.</p>
+                  {product.customSizePrice > 0 && <span className="text-xs font-semibold text-slate-deep">+{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {customSizeFields.map((field) => (
+                    <label key={field.id} className="text-[11px] font-semibold text-slate-deep">
+                      {field.label} ({field.unit})
+                      <input className="mt-1.5 w-full rounded-md border border-slate-deep/15 bg-white px-3 py-2.5 text-sm font-normal outline-none focus:border-secondary" value={customSize[field.id] ?? ''} onChange={(event) => setCustomSize((current) => ({ ...current, [field.id]: event.target.value }))} />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        <section>
+          <div className="mb-3 flex items-baseline gap-2">
+            <strong className="text-sm text-slate-deep">Màu:</strong>
+            <span className="text-xs text-on-surface-variant">{activeColorInfo?.label}</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
             {productColors.map((color) => {
               const isSelected = selectedColor === color.id;
               return (
                 <button
+                  type="button"
                   key={color.id}
                   onClick={() => handleColorClick(color.id)}
-                  className={`w-10 h-10 rounded-full ring-2 ring-offset-2 transition-all ${
-                    isSelected
-                      ? 'ring-slate-deep scale-105'
-                      : 'ring-transparent hover:ring-slate-deep/20'
-                  }`}
-                  style={{
-                    backgroundColor: color.hex,
-                    border: color.id === 'white' ? '1px solid rgba(51, 70, 65, 0.1)' : 'none',
-                  }}
+                  className={`h-9 w-9 rounded-full border-[3px] border-white shadow-[0_0_0_1px_rgba(28,44,88,0.16)] transition-all ${isSelected ? 'ring-2 ring-slate-deep ring-offset-2' : 'hover:scale-105'}`}
+                  style={{ backgroundColor: color.hex }}
                   title={color.label}
+                  aria-label={`Chọn màu ${color.label}`}
                 />
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Personalized Customization */}
         {allowEmbroidery && (
-          <div className="bg-bone/50 p-stack-md border-l-2 border-sand-silk space-y-stack-sm rounded-r-md">
-            <div className="flex items-center gap-stack-sm text-slate-deep">
-              <span className="material-symbols-outlined text-[20px]">edit</span>
-              <span className="font-label-caps text-label-caps">TÙY CHỌN IN TÊN CÁ NHÂN</span>
+          <section className="rounded-md border-l-2 border-sand-silk bg-bone/50 p-4">
+            <div className="flex items-center gap-2 text-slate-deep">
+              <span className="material-symbols-outlined text-[19px]">edit</span>
+              <strong className="text-xs uppercase tracking-wider">Tùy chọn may tên cá nhân</strong>
             </div>
-            <p className="text-sm text-on-surface-variant opacity-80 leading-snug">
-              May tên hoặc chữ ký của bạn lên sản phẩm{product.embroideryPrice > 0 ? ` (+${product.embroideryPrice.toLocaleString('vi-VN')} VNĐ)` : ''}
-            </p>
-            <div className="relative">
-              <input
-                className="w-full bg-transparent border-0 border-b border-slate-deep/20 py-2 pr-12 focus:outline-none focus:ring-0 focus:border-slate-deep transition-all font-body-md text-slate-deep"
-                placeholder={`Nhập nội dung may (Tối đa ${embroideryMaxLength} ký tự)`}
-                type="text"
-                value={embroideryText}
-                onChange={handleEmbroideryChange}
-              />
-              <span className="absolute right-0 bottom-2 text-xs text-on-surface-variant/40 font-mono">
-                {embroideryText.length}/{embroideryMaxLength}
-              </span>
+            <p className="mt-1.5 text-xs leading-5 text-on-surface-variant">May tên hoặc chữ ký lên sản phẩm{product.embroideryPrice > 0 ? ` (+${product.embroideryPrice.toLocaleString('vi-VN')} VNĐ)` : ''}</p>
+            <div className="relative mt-2">
+              <input className="w-full border-0 border-b border-slate-deep/20 bg-transparent py-2 pr-12 text-sm text-slate-deep outline-none focus:border-slate-deep" placeholder={`Nhập nội dung (tối đa ${embroideryMaxLength} ký tự)`} value={embroideryText} onChange={(event) => setEmbroideryText(event.target.value.slice(0, embroideryMaxLength))} />
+              <span className="absolute bottom-2 right-0 text-[10px] text-on-surface-variant/50">{embroideryText.length}/{embroideryMaxLength}</span>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Add to Cart / Favorites Buttons */}
-        <div className="flex gap-stack-sm pt-2">
-          <button
-            onClick={handleAddToCart}
-            className="flex-[3] bg-slate-deep text-white py-5 px-stack-lg font-button text-button rounded hover:opacity-90 active:scale-95 transition-all text-center select-none uppercase tracking-wider"
-          >
-            THÊM VÀO GIỎ HÀNG
-          </button>
-          <button
-            onClick={() => setIsFavorite(!isFavorite)}
-            className="flex-1 border border-slate-deep rounded flex items-center justify-center hover:bg-slate-deep hover:text-white transition-all active:scale-95 group"
-            aria-label="Add to favorites"
-          >
-            <span
-              className={`material-symbols-outlined transition-all text-[24px] ${
-                isFavorite ? 'text-red-500' : 'group-hover:scale-110'
-              }`}
-              style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              favorite
-            </span>
-          </button>
-        </div>
+        <section className="space-y-2.5 pt-1">
+          <div className="grid grid-cols-[112px_1fr] gap-2.5">
+            <div className="grid grid-cols-[34px_1fr_34px] overflow-hidden rounded-md border border-slate-deep/20 bg-white">
+              <button type="button" className="text-lg text-slate-deep hover:bg-bone" onClick={() => setQuantity((current) => Math.max(1, current - 1))} aria-label="Giảm số lượng">−</button>
+              <input type="number" min="1" max="99" className="w-full border-x border-slate-deep/10 text-center text-sm font-semibold text-slate-deep outline-none" value={quantity} onChange={(event) => setQuantity(Math.min(99, Math.max(1, Number(event.target.value) || 1)))} />
+              <button type="button" className="text-lg text-slate-deep hover:bg-bone" onClick={() => setQuantity((current) => Math.min(99, current + 1))} aria-label="Tăng số lượng">+</button>
+            </div>
+            <button type="button" onClick={() => addConfiguredProduct(false)} className="flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-slate-deep bg-white px-4 text-sm font-semibold text-slate-deep transition-colors hover:bg-bone active:scale-[0.99]">
+              <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+              Thêm vào giỏ hàng
+            </button>
+          </div>
+          <button type="button" onClick={() => addConfiguredProduct(true)} className="min-h-[50px] w-full rounded-md bg-slate-deep px-5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-container active:scale-[0.99]">Mua ngay</button>
+        </section>
       </div>
 
-      {/* Minimalist Benefits list */}
-      <div className="grid grid-cols-2 gap-stack-md border-t border-slate-deep/10 pt-stack-md">
-        <div className="flex items-center gap-2 opacity-70">
-          <span className="material-symbols-outlined text-lg text-slate-deep">local_shipping</span>
-          <span className="text-[10px] font-label-caps text-slate-deep tracking-wider">
-            Giao hàng miễn phí
-          </span>
-        </div>
-        <div className="flex items-center gap-2 opacity-70">
-          <span className="material-symbols-outlined text-lg text-slate-deep">eco</span>
-          <span className="text-[10px] font-label-caps text-slate-deep tracking-wider">
-            100% Lụa Tự Nhiên
-          </span>
-        </div>
+      <div className="grid grid-cols-2 gap-3 border-t border-slate-deep/10 pt-4">
+        <div className="flex items-center gap-2 text-on-surface-variant"><span className="material-symbols-outlined text-[19px] text-slate-deep">local_shipping</span><span className="text-[10px] font-semibold uppercase tracking-wider">Giao hàng miễn phí</span></div>
+        <div className="flex items-center gap-2 text-on-surface-variant"><span className="material-symbols-outlined text-[19px] text-slate-deep">eco</span><span className="text-[10px] font-semibold uppercase tracking-wider">Chất liệu cao cấp</span></div>
       </div>
     </div>
   );
 }
 
 ProductInfoPanel.propTypes = {
+  product: PropTypes.object.isRequired,
   onOpenAR: PropTypes.func.isRequired,
   onColorChange: PropTypes.func,
   arEnabled: PropTypes.bool,

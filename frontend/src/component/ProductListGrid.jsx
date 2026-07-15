@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddToCartModal from './AddToCartModal';
 import { useCart } from '../context/CartContext';
-import { getLowestPriceSize, getProductListPrice } from '../utils/productPrice';
+import { getLowestPriceSize, getProductListPrice, getProductOriginalPrice } from '../utils/productPrice';
 import { getSizeMeasurements } from '../utils/productSizes';
+import { getOptimizedProductImage } from '../utils/productImage';
 
 export default function ProductListGrid({ products }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,19 +53,22 @@ export default function ProductListGrid({ products }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-gutter gap-y-10">
-      {products.map((product) => (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:gap-x-gutter md:gap-y-10 lg:grid-cols-3">
+      {products.map((product, index) => (
         <Link
           key={product.id}
           to={`/product/${product.id}`}
           className="product-card group cursor-pointer flex flex-col"
         >
           {/* Image Container */}
-          <div className="relative aspect-[4/5] bg-bone mb-stack-md overflow-hidden rounded-lg">
+          <div className="relative mb-3 aspect-[4/5] overflow-hidden rounded-lg bg-bone md:mb-stack-md">
             <img
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              src={product.image}
+              src={getOptimizedProductImage(product.image, { width: 480, height: 600 })}
               alt={product.name}
+              loading={index < 4 ? 'eager' : 'lazy'}
+              fetchPriority={index < 2 ? 'high' : 'auto'}
+              decoding="async"
             />
 
             {/* Quick Add Overlay */}
@@ -81,7 +85,7 @@ export default function ProductListGrid({ products }) {
             {product.tag && (
               <div
                 className={`absolute top-4 ${product.tag === 'NEW' ? 'left-4 bg-white/90 text-slate-deep' : 'right-4 bg-error text-white'
-                  } px-3 py-1 text-label-caps font-semibold rounded-sm`}
+                } px-2 py-1 text-[9px] font-semibold rounded-sm md:px-3 md:text-label-caps`}
               >
                 {product.tag}
               </div>
@@ -89,19 +93,16 @@ export default function ProductListGrid({ products }) {
           </div>
 
           {/* Product Details */}
-          <h4 className="type-card-title font-headline-sm text-[20px] mb-1 group-hover:text-secondary transition-colors">
+          <h4 className="type-card-title mb-1 line-clamp-2 text-sm font-semibold leading-5 transition-colors group-hover:text-secondary md:text-[20px] md:leading-7">
             {product.name}
           </h4>
-          <p className="type-card-body text-on-surface-variant font-body-md mb-2">
-            {product.description?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
-          </p>
-          <div className="flex items-center gap-3 mt-auto">
-            <span className="type-price font-semibold text-slate-deep">
+          <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="type-price text-sm font-semibold text-slate-deep md:text-base">
               {getProductListPrice(product).toLocaleString('vi-VN')}₫
             </span>
-            {Number(product.originalPrice) > getProductListPrice(product) && (
-              <span className="text-on-surface-variant/50 line-through text-sm">
-                {product.originalPrice.toLocaleString('vi-VN')}₫
+            {getProductOriginalPrice(product) !== null && (
+              <span className="text-[10px] text-on-surface-variant/50 line-through md:text-sm">
+                {getProductOriginalPrice(product).toLocaleString('vi-VN')}₫
               </span>
             )}
           </div>

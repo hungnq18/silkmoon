@@ -27,7 +27,7 @@ export function CartProvider({ children }) {
         if (localCart) {
           try {
             setCart(JSON.parse(localCart));
-          } catch (e) {
+          } catch {
             setCart([]);
           }
         } else {
@@ -56,8 +56,8 @@ export function CartProvider({ children }) {
 
   const addToCart = (productId, quantity = 1, options = {}) => {
     const newCart = [...cart];
-    const signature = JSON.stringify({ sizeId: options.sizeId || '', customSize: options.customSize || null, embroidery: options.embroidery || '' });
-    const existingIndex = newCart.findIndex(item => item.productId === productId && JSON.stringify({ sizeId: item.sizeId || '', customSize: item.customSize || null, embroidery: item.embroidery || '' }) === signature);
+    const signature = JSON.stringify({ sizeId: options.sizeId || '', colorId: options.colorId || '', customSize: options.customSize || null, embroidery: options.embroidery || '' });
+    const existingIndex = newCart.findIndex(item => item.productId === productId && JSON.stringify({ sizeId: item.sizeId || '', colorId: item.colorId || '', customSize: item.customSize || null, embroidery: item.embroidery || '' }) === signature);
     
     if (existingIndex >= 0) {
       newCart[existingIndex] = { ...newCart[existingIndex], ...options, quantity: newCart[existingIndex].quantity + quantity };
@@ -95,4 +95,6 @@ export function CartProvider({ children }) {
   );
 }
 
+// The provider and its colocated hook intentionally share this module.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCart = () => useContext(CartContext);

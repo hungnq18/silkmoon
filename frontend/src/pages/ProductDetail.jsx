@@ -110,8 +110,8 @@ export default function ProductDetail() {
   return (
     <div className="product-detail-root bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Detail Section */}
-      <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-24 md:pt-32">
-        <nav aria-label="Đường dẫn sản phẩm" className="no-scrollbar col-span-full -mb-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm text-slate-deep/70 lg:hidden">
+      <section className="mx-auto grid max-w-container-max grid-cols-1 gap-6 px-margin-mobile pb-stack-lg pt-24 md:px-margin-desktop md:pt-28 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-5">
+        <nav aria-label="Đường dẫn sản phẩm" className="no-scrollbar col-span-full flex items-center gap-2 overflow-x-auto whitespace-nowrap text-xs text-slate-deep/65 md:text-sm">
           <Link to="/" className="shrink-0 transition-colors hover:text-slate-deep">Trang chủ</Link>
           <span className="material-symbols-outlined shrink-0 text-[18px]">chevron_right</span>
           <Link to={`/shop?category=${encodeURIComponent(product.category || '')}`} className="shrink-0 transition-colors hover:text-slate-deep">{product.category || 'Sản phẩm'}</Link>
@@ -119,12 +119,16 @@ export default function ProductDetail() {
           <span className="truncate font-semibold text-slate-deep">{product.name}</span>
         </nav>
         {/* Left Column: Image Gallery */}
-        <div className="lg:col-span-7">
-          <ProductImageGallery images={galleryImages} activeImage={jumpToImage} />
+        <div className="lg:col-span-6">
+          <ProductImageGallery
+            key={`${galleryImages.join('|')}-${jumpToImage?.time || ''}`}
+            images={galleryImages}
+            activeImage={jumpToImage}
+          />
         </div>
 
         {/* Right Column: Selections and Details */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-6">
           <ProductInfoPanel
             key={product._id || product.id}
             product={product}
