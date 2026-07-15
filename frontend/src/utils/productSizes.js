@@ -23,7 +23,8 @@ export const applyLatestSizeCatalog = (product, setting) => {
       const latestDetails = { ...latest };
       delete latestDetails.price;
       delete latestDetails.originalPrice;
-      return { ...size, ...latestDetails, price: size.price, originalPrice: size.originalPrice };
+      delete latestDetails.costPrice;
+      return { ...size, ...latestDetails, price: size.price, originalPrice: size.originalPrice, costPrice: size.costPrice };
     }),
   };
 };

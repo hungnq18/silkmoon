@@ -105,7 +105,7 @@ export class OrdersService {
         spec: [product.category || 'N/A', isCustomSize ? 'May size riêng' : selectedSize?.label, sizeDetails || customSizeDetails].filter(Boolean).join(' · '),
         quantity: item.quantity,
         price: unitPrice,
-        costPriceSnapshot: product.costPrice || 0,
+        costPriceSnapshot: parseNonNegativeMoney(selectedSize?.costPrice) ?? parseNonNegativeMoney(product.costPrice) ?? 0,
         image: product.images?.[0] || '',
         embroidery,
         sizeId: isCustomSize ? 'custom' : selectedSize?.id || '',

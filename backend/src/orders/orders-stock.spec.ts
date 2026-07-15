@@ -9,7 +9,7 @@ describe('OrdersService stock reservation rollback', () => {
       price: 100000,
       costPrice: 50000,
       stock: 1,
-      sizes: [],
+      sizes: [{ id: 'M', label: 'M', price: 120000, costPrice: 70000 }],
       images: [],
       allowEmbroidery: false,
       allowCustomSize: false,
@@ -37,11 +37,14 @@ describe('OrdersService stock reservation rollback', () => {
         address: 'Address',
         city: 'City',
         paymentMethod: 'cod',
-        items: [{ productId: 'product-1', quantity: 1 }],
+        items: [{ productId: 'product-1', quantity: 1, sizeId: 'M' }],
       }),
     ).rejects.toThrow('database unavailable');
 
     expect(productsService.reserveStock).toHaveBeenCalledWith('product-1', 1);
     expect(productsService.releaseStock).toHaveBeenCalledWith('product-1', 1);
+    expect(orderModel.create).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ sizeId: 'M', price: 120000, costPriceSnapshot: 70000 })],
+    }));
   });
 });
