@@ -14,10 +14,6 @@ const fallbackColors = [
 
 const sizeDisplayName = (size) => (size?.label || '').replace(/\s*\([^)]*\d[^)]*\)\s*$/, '').trim() || size?.label || 'Size';
 
-const sizeMeasurementSummary = (size) => getSizeMeasurements(size)
-  .map((measurement) => `${measurement.value}${measurement.unit || ''}`)
-  .join(' × ');
-
 export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arEnabled = true }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -35,6 +31,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
   const selectedPrice = getProductSizePrice(product, selectedSize);
   const selectedOriginalPrice = getProductOriginalPrice(product, selectedPrice);
+  const selectedSizeMeasurements = getSizeMeasurements(selectedSizeInfo);
   const activeColorInfo = productColors.find((color) => color.id === selectedColor) || productColors[0];
   const referenceSize = productSizeOptions.find((size) => getSizeMeasurements(size).length > 0);
   const customSizeFields = (referenceSize ? getSizeMeasurements(referenceSize) : [
@@ -136,12 +133,11 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
           <section>
             <div className="mb-2.5 flex items-baseline gap-2">
               <strong className="text-sm text-slate-deep">Kích thước:</strong>
-              <span className="text-xs text-on-surface-variant">{selectedSize === 'custom' ? 'May size riêng' : [sizeDisplayName(selectedSizeInfo), sizeMeasurementSummary(selectedSizeInfo)].filter(Boolean).join(' · ')}</span>
+              <span className="text-xs text-on-surface-variant">{selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {[...productSizeOptions, ...(allowCustomSize ? [{ id: 'custom', label: 'May size riêng' }] : [])].map((size) => {
                 const isSelected = selectedSize === size.id;
-                const measurements = size.id === 'custom' ? 'Theo yêu cầu' : sizeMeasurementSummary(size);
                 return (
                   <button
                     type="button"
@@ -150,11 +146,33 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
                     className={`min-h-[58px] rounded-md border px-3 py-2 text-center transition-all ${isSelected ? 'border-secondary bg-secondary-container/45 text-slate-deep shadow-[inset_0_0_0_1px_rgba(74,144,226,0.2)]' : 'border-slate-deep/10 bg-white text-slate-deep hover:border-slate-deep/35'}`}
                   >
                     <strong className="type-option-value block text-sm">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</strong>
-                    <small className="mt-0.5 block text-[10px] text-on-surface-variant">{measurements || `${getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ`}</small>
+                    <small className="mt-0.5 block text-[10px] text-on-surface-variant">{size.id === 'custom' ? 'Theo yêu cầu' : `${getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ`}</small>
                   </button>
                 );
               })}
             </div>
+
+            {selectedSize !== 'custom' && selectedSizeInfo && selectedSizeMeasurements.length > 0 && (
+              <div className="mt-3 rounded-md border border-slate-deep/10 bg-bone/45 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[19px] text-slate-deep/70">straighten</span>
+                  <div>
+                    <strong className="block text-sm text-slate-deep">Thông số size {sizeDisplayName(selectedSizeInfo)}</strong>
+                    <span className="text-[11px] text-on-surface-variant">Kích thước chi tiết của sản phẩm</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {selectedSizeMeasurements.map((measurement, index) => (
+                    <div className="rounded-md border border-slate-deep/10 bg-white px-3 py-2.5" key={measurement.id || `${measurement.label}-${index}`}>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-deep/50">{measurement.label}</span>
+                      <strong className="mt-1 block text-sm font-medium text-slate-deep">
+                        {measurement.value} <small className="font-normal text-on-surface-variant">{measurement.unit || ''}</small>
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedSize === 'custom' && (
               <div className="mt-3 rounded-md border border-slate-deep/10 bg-bone/45 p-4">

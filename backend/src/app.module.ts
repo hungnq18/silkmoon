@@ -9,11 +9,6 @@ import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { ReviewsModule } from './reviews/reviews.module';
-import { SeedService } from './seed/seed.service';
-import { Product, ProductSchema } from './products/schemas/product.schema';
-import { Promotion, PromotionSchema } from './promotions/schemas/promotion.schema';
-import { Review, ReviewSchema } from './reviews/schemas/review.schema';
-import { Category, CategorySchema } from './categories/schemas/category.schema';
 import { ARModule } from './ar/ar.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -70,14 +65,6 @@ import { join } from 'path';
       inject: [ConfigService],
     }),
 
-    // Register schemas for SeedService
-    MongooseModule.forFeature([
-      { name: Product.name, schema: ProductSchema },
-      { name: Promotion.name, schema: PromotionSchema },
-      { name: Review.name, schema: ReviewSchema },
-      { name: Category.name, schema: CategorySchema },
-    ]),
-
     // Feature modules
     ProductsModule,
     OrdersModule,
@@ -93,6 +80,6 @@ import { join } from 'path';
     NewsletterModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SeedService],
+  providers: [AppService],
 })
 export class AppModule { }
