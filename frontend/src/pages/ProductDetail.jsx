@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { analyticsApi, productsApi, settingsApi } from '../services/api';
 import ProductImageGallery from '../component/ProductImageGallery';
@@ -85,9 +85,17 @@ export default function ProductDetail() {
   const handleColorChange = (color) => {
     setActiveColorId(color.id);
     if (color.images?.length > 0) {
-      setJumpToImage(color.images[0]);
+      setJumpToImage({ src: color.images[0], time: Date.now() });
     }
   };
+
+  const galleryImages = useMemo(() => {
+    if (!product) return [];
+    return [...new Set([
+      ...(product.images || []),
+      ...((product.colors || []).flatMap((c) => c.images || []))
+    ])];
+  }, [product]);
 
   if (loadedProductId !== productId) {
     return <div className="min-h-screen flex items-center justify-center bg-linen-white text-slate-deep animate-pulse">Đang tải sản phẩm...</div>;
@@ -98,10 +106,6 @@ export default function ProductDetail() {
   }
 
   const activeColor = product.colors?.find((color) => color.id === activeColorId);
-  const galleryImages = [...new Set([
-    ...(product.images || []),
-    ...((product.colors || []).flatMap((c) => c.images || []))
-  ])];
 
   return (
     <div className="product-detail-root bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">

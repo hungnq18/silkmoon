@@ -25,7 +25,8 @@ export default function ProductImageGallery({ images = [], activeImage = null })
   // Jump to specific image if provided
   useEffect(() => {
     if (activeImage) {
-      const idx = images.indexOf(activeImage);
+      const srcToFind = typeof activeImage === 'object' ? activeImage.src : activeImage;
+      const idx = images.indexOf(srcToFind);
       if (idx !== -1) setActiveIndex(idx);
     }
   }, [activeImage, images]);

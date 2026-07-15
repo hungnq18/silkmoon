@@ -740,8 +740,16 @@ export default function ProductsList() {
           className="modal-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (event.target === event.currentTarget && productModalRef.current) {
+              productModalRef.current.dataset.backdropClick = 'true';
+            }
+          }}
+          onMouseUp={(event) => {
+            if (event.target === event.currentTarget && productModalRef.current?.dataset.backdropClick === 'true') {
               setEditingProduct(null);
+            }
+            if (productModalRef.current) {
+              productModalRef.current.dataset.backdropClick = 'false';
             }
           }}
         >
