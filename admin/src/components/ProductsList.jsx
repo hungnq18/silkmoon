@@ -441,6 +441,29 @@ export default function ProductsList() {
     event.preventDefault();
     setSaving(true);
     try {
+      const normalizedSizes = (editingProduct.sizes || []).map((item) => ({
+        id: item.id,
+        label: item.label?.trim() || sizeOptions.find((size) => size.id === item.id)?.label || 'Size',
+        price: item.price === '' || item.price == null ? undefined : Number(item.price),
+        originalPrice: item.originalPrice === '' || item.originalPrice == null ? undefined : Number(item.originalPrice),
+        costPrice: item.costPrice === '' || item.costPrice == null ? undefined : Number(item.costPrice),
+        width: Array.isArray(item.measurements) || item.width === '' || item.width == null ? undefined : Number(item.width),
+        length: Array.isArray(item.measurements) || item.length === '' || item.length == null ? undefined : Number(item.length),
+        height: Array.isArray(item.measurements) || item.height === '' || item.height == null ? undefined : Number(item.height),
+        unit: item.unit || 'cm',
+        measurements: getSizeMeasurements(item).filter((measurement) => measurement.label?.trim()).map((measurement) => ({
+          id: measurement.id || `measurement-${Date.now()}`,
+          label: measurement.label.trim(),
+          value: measurement.value === '' || measurement.value == null ? undefined : measurement.value,
+          unit: measurement.unit?.trim() || 'cm',
+        })),
+      }));
+      if (normalizedSizes.some((size) => size.price === undefined || size.costPrice === undefined)) {
+        throw new Error('Vui lòng nhập đầy đủ giá sale và giá vốn cho từng size.');
+      }
+      const representativeSize = normalizedSizes.reduce((lowest, size) => (
+        !lowest || size.price < lowest.price ? size : lowest
+      ), null);
       const payload = {
         sku: editingProduct.sku?.trim().toUpperCase() || undefined,
         name: editingProduct.name.trim(),
@@ -451,9 +474,9 @@ export default function ProductsList() {
         returnPolicy: (editingProduct.returnPolicy || "").trim(),
         technicalSpecs: (editingProduct.technicalSpecs || "").trim(),
         packageIncludes: (editingProduct.packageIncludes || "").trim(),
-        price: Number(editingProduct.price),
-        originalPrice: editingProduct.originalPrice ? Number(editingProduct.originalPrice) : undefined,
-        costPrice: Number(editingProduct.costPrice || 0),
+        price: representativeSize?.price ?? Number(editingProduct.price),
+        originalPrice: representativeSize?.originalPrice ?? (editingProduct.originalPrice ? Number(editingProduct.originalPrice) : undefined),
+        costPrice: representativeSize?.costPrice ?? Number(editingProduct.costPrice || 0),
         stock: Number(editingProduct.stock),
         isBestSeller: Boolean(editingProduct.isBestSeller),
         showArButton: editingProduct.showArButton !== false,
@@ -467,23 +490,7 @@ export default function ProductsList() {
           ? Number(editingProduct.customSizePrice || 0)
           : 0,
         images: editingProduct.images || [],
-        sizes: (editingProduct.sizes || []).map((item) => ({
-          id: item.id,
-          label: item.label?.trim() || sizeOptions.find((size) => size.id === item.id)?.label || 'Size',
-          price: item.price === '' || item.price == null ? undefined : Number(item.price),
-          originalPrice: item.originalPrice === '' || item.originalPrice == null ? undefined : Number(item.originalPrice),
-          costPrice: item.costPrice === '' || item.costPrice == null ? undefined : Number(item.costPrice),
-          width: Array.isArray(item.measurements) || item.width === '' || item.width == null ? undefined : Number(item.width),
-          length: Array.isArray(item.measurements) || item.length === '' || item.length == null ? undefined : Number(item.length),
-          height: Array.isArray(item.measurements) || item.height === '' || item.height == null ? undefined : Number(item.height),
-          unit: item.unit || 'cm',
-          measurements: getSizeMeasurements(item).filter((measurement) => measurement.label?.trim()).map((measurement) => ({
-            id: measurement.id || `measurement-${Date.now()}`,
-            label: measurement.label.trim(),
-            value: measurement.value === '' || measurement.value == null ? undefined : measurement.value,
-            unit: measurement.unit?.trim() || 'cm',
-          })),
-        })),
+        sizes: normalizedSizes,
         colors: (editingProduct.colors || []).map((color) => ({
           id: color.id,
           label: color.label.trim(),
@@ -871,6 +878,12 @@ export default function ProductsList() {
                   </div>
                 </details>
               </div>
+              {(editingProduct.sizes || []).length ? (
+                <div className="modal-field full">
+                  <span>Quản lý giá theo size</span>
+                  <p className="compact-size-hint">Giá gốc, giá sale và giá vốn được nhập một lần tại từng size phía trên. Hệ thống tự lấy size có giá sale thấp nhất làm giá đại diện.</p>
+                </div>
+              ) : <>
               <label className="modal-field">
                 <span>Giá bán mặc định (VNĐ)</span>
                 <input
@@ -910,6 +923,7 @@ export default function ProductsList() {
                   }
                 />
               </label>
+              </>}
               <label className="modal-field">
                 <span>Tồn kho</span>
                 <input
