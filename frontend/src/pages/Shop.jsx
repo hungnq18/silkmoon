@@ -4,7 +4,7 @@ import ProductListGrid from '../component/ProductListGrid';
 import Pagination from '../component/Pagination';
 import { productsApi } from '../services/api';
 import { useLocation } from 'react-router-dom';
-import { getProductListPrice } from '../utils/productPrice';
+import { getProductListPrice, hasProductSale } from '../utils/productPrice';
 
 export default function Shop() {
   const location = useLocation();
@@ -37,14 +37,14 @@ export default function Shop() {
     let result = [...allProducts];
 
     if (selectedCollection === 'sale') {
-      result = result.filter((product) => product.originalPrice || String(product.tag || '').toLowerCase() === 'sale');
+      result = result.filter((product) => hasProductSale(product) || String(product.tag || '').toLowerCase() === 'sale');
     } else if (selectedCollection && selectedCollection !== 'all') {
       result = result.filter((p) =>
         p.category?.toLowerCase().includes(selectedCollection.toLowerCase())
       );
     }
 
-    if (saleOnly) result = result.filter((product) => product.originalPrice || String(product.tag || '').toLowerCase() === 'sale');
+    if (saleOnly) result = result.filter((product) => hasProductSale(product) || String(product.tag || '').toLowerCase() === 'sale');
 
     if (selectedMaterials.length > 0) {
       result = result.filter((p) =>

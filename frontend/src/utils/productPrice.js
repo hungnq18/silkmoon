@@ -29,15 +29,6 @@ export const getProductListPrice = (product) => {
   return Math.min(...sizes.map((size) => getProductSizePrice(product, size.id)));
 };
 
-export const getProductOriginalPrice = (product, currentPrice = getProductListPrice(product)) => {
-  const originalPrice = parseNonNegativePrice(product?.originalPrice);
-  if (originalPrice === null) return null;
-
-  const basePrice = parseNonNegativePrice(product?.price) ?? 0;
-  const resolvedCurrentPrice = parseNonNegativePrice(currentPrice) ?? basePrice;
-  return originalPrice + (resolvedCurrentPrice - basePrice);
-};
-
 export const getLowestPriceSize = (product) => {
   const sizes = Array.isArray(product?.sizes) ? product.sizes : [];
   if (!sizes.length) return null;
@@ -45,4 +36,35 @@ export const getLowestPriceSize = (product) => {
   return sizes.reduce((lowest, size) => (
     !lowest || getProductSizePrice(product, size.id) < getProductSizePrice(product, lowest.id) ? size : lowest
   ), null);
+};
+
+export const getProductOriginalPrice = (product, currentPrice = getProductListPrice(product), sizeId) => {
+  const basePrice = parseNonNegativePrice(product?.price) ?? 0;
+  const resolvedCurrentPrice = parseNonNegativePrice(currentPrice) ?? basePrice;
+  const selectedSize = sizeId
+    ? (product?.sizes || []).find((size) => size.id === sizeId)
+    : getLowestPriceSize(product);
+  const sizeOriginalPrice = parseNonNegativePrice(selectedSize?.originalPrice);
+  if (sizeOriginalPrice !== null) return sizeOriginalPrice > resolvedCurrentPrice ? sizeOriginalPrice : null;
+
+  const originalPrice = parseNonNegativePrice(product?.originalPrice);
+  if (originalPrice === null) return null;
+
+  const resolvedOriginalPrice = originalPrice + (resolvedCurrentPrice - basePrice);
+  return resolvedOriginalPrice > resolvedCurrentPrice ? resolvedOriginalPrice : null;
+};
+
+export const hasProductSale = (product) => {
+  const sizes = Array.isArray(product?.sizes) ? product.sizes : [];
+  if (sizes.length) {
+    return sizes.some((size) => {
+      const salePrice = getProductSizePrice(product, size.id);
+      const originalPrice = getProductOriginalPrice(product, salePrice, size.id);
+      return originalPrice !== null && originalPrice > salePrice;
+    });
+  }
+
+  const salePrice = getProductListPrice(product);
+  const originalPrice = getProductOriginalPrice(product, salePrice);
+  return originalPrice !== null && originalPrice > salePrice;
 };

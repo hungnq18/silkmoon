@@ -22,7 +22,7 @@ export default function RelatedProducts({ productId }) {
   return (
     <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap bg-bone/30">
       <h2 className="font-display-lg text-display-lg-mobile md:text-headline-md text-slate-deep mb-stack-lg text-center">
-        Hoàn thiện không gian của bạn
+        Sản phẩm liên quan
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter">
         {relatedItems.map((item) => (

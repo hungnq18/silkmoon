@@ -30,7 +30,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   const productSizeOptions = product.sizes || [];
   const selectedSizeInfo = selectedSize === 'custom' ? null : productSizeOptions.find((size) => size.id === selectedSize);
   const selectedPrice = getProductSizePrice(product, selectedSize);
-  const selectedOriginalPrice = getProductOriginalPrice(product, selectedPrice);
+  const selectedOriginalPrice = getProductOriginalPrice(product, selectedPrice, selectedSize);
   const selectedSizeMeasurements = getSizeMeasurements(selectedSizeInfo);
   const activeColorInfo = productColors.find((color) => color.id === selectedColor) || productColors[0];
   const referenceSize = productSizeOptions.find((size) => getSizeMeasurements(size).length > 0);
@@ -146,7 +146,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
                     className={`min-h-[58px] rounded-md border px-3 py-2 text-center transition-all ${isSelected ? 'border-secondary bg-secondary-container/45 text-slate-deep shadow-[inset_0_0_0_1px_rgba(74,144,226,0.2)]' : 'border-slate-deep/10 bg-white text-slate-deep hover:border-slate-deep/35'}`}
                   >
                     <strong className="type-option-value block text-sm">{size.id === 'custom' ? size.label : sizeDisplayName(size)}</strong>
-                    <small className="mt-0.5 block text-[10px] text-on-surface-variant">{size.id === 'custom' ? 'Theo yêu cầu' : `${getProductSizePrice(product, size.id).toLocaleString('vi-VN')} VNĐ`}</small>
+                    {size.id === 'custom' && <small className="mt-0.5 block text-[10px] text-on-surface-variant">Theo yêu cầu</small>}
                   </button>
                 );
               })}

@@ -14,6 +14,9 @@ class SizeOption {
   price?: number;
 
   @Prop({ min: 0 })
+  originalPrice?: number;
+
+  @Prop({ min: 0 })
   width?: number;
 
   @Prop({ min: 0 })
