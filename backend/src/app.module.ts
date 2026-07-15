@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BullModule } from '@nestjs/bull';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
@@ -43,6 +44,29 @@ import { join } from 'path';
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
       }),
+      inject: [ConfigService],
+    }),
+
+    // Bull Redis Queue
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          // If using Upstash or other Redis Cloud, TLS might be required if URL starts with rediss://
+          const isTls = redisUrl.startsWith('rediss://');
+          return { 
+            redis: redisUrl,
+            // (Optional) config for self-signed or specific cloud services if needed
+          };
+        }
+        return {
+          redis: {
+            host: configService.get<string>('REDIS_HOST', '127.0.0.1'),
+            port: configService.get<number>('REDIS_PORT', 6379),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 

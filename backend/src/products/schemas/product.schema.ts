@@ -29,7 +29,7 @@ class SizeOption {
   measurements?: Array<{
     id?: string;
     label: string;
-    value?: number;
+    value?: number | string;
     unit?: string;
   }>;
 }

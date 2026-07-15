@@ -28,7 +28,7 @@ const DimensionInputs = ({ size, onChange }) => {
   return <div className="size-dimension-editor">
     {measurements.map((measurement, index) => <div className="size-dimension-row" key={measurement.id || index}>
       <label><span>Tên thông số</span><input className="table-inline-input" value={measurement.label || ''} placeholder="VD: Đường kính" onChange={(event) => update(index, 'label', event.target.value)} /></label>
-      <label><span>Giá trị</span><input className="table-inline-input size-number-input" type="number" min="0" value={measurement.value ?? ''} placeholder="0" onChange={(event) => update(index, 'value', event.target.value === '' ? '' : Number(event.target.value))} /></label>
+      <label><span>Giá trị</span><input className="table-inline-input size-number-input" type="text" value={measurement.value ?? ''} placeholder="VD: 40-45" onChange={(event) => update(index, 'value', event.target.value)} /></label>
       <label><span>Đơn vị</span><input className="table-inline-input size-unit-input" value={measurement.unit || 'cm'} placeholder="cm" onChange={(event) => update(index, 'unit', event.target.value)} /></label>
       <button type="button" className="size-measurement-delete" title="Xóa thông số" onClick={() => onChange('measurements', measurements.filter((_, itemIndex) => itemIndex !== index))}><span className="material-symbols-outlined">close</span></button>
     </div>)}

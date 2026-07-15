@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function ProductImageGallery({ images = [] }) {
+export default function ProductImageGallery({ images = [], activeImage = null }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
@@ -21,6 +21,14 @@ export default function ProductImageGallery({ images = [] }) {
   useEffect(() => {
     setActiveIndex(0);
   }, [images]);
+
+  // Jump to specific image if provided
+  useEffect(() => {
+    if (activeImage) {
+      const idx = images.indexOf(activeImage);
+      if (idx !== -1) setActiveIndex(idx);
+    }
+  }, [activeImage, images]);
 
   const handleThumbnailClick = (img) => {
     if (img.type === 'video') {

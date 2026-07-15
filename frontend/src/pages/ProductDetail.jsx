@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const [loadedProductId, setLoadedProductId] = useState('');
   const [isAROpen, setIsAROpen] = useState(false);
   const [activeColorId, setActiveColorId] = useState('champagne'); // default for AR fallback
+  const [jumpToImage, setJumpToImage] = useState(null);
   const [arEnabled, setArEnabled] = useState(true);
   const [arButtonVisible, setArButtonVisible] = useState(true);
 
@@ -83,6 +84,9 @@ export default function ProductDetail() {
 
   const handleColorChange = (color) => {
     setActiveColorId(color.id);
+    if (color.images?.length > 0) {
+      setJumpToImage(color.images[0]);
+    }
   };
 
   if (loadedProductId !== productId) {
@@ -94,7 +98,10 @@ export default function ProductDetail() {
   }
 
   const activeColor = product.colors?.find((color) => color.id === activeColorId);
-  const galleryImages = activeColor?.images?.length ? activeColor.images : (product.images || []);
+  const galleryImages = [...new Set([
+    ...(product.images || []),
+    ...((product.colors || []).flatMap((c) => c.images || []))
+  ])];
 
   return (
     <div className="product-detail-root bg-linen-white flex flex-col min-h-screen relative overflow-x-hidden w-full max-w-[100vw]">
@@ -109,7 +116,7 @@ export default function ProductDetail() {
         </nav>
         {/* Left Column: Image Gallery */}
         <div className="lg:col-span-7">
-          <ProductImageGallery images={galleryImages} />
+          <ProductImageGallery images={galleryImages} activeImage={jumpToImage} />
         </div>
 
         {/* Right Column: Selections and Details */}

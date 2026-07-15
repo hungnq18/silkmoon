@@ -58,9 +58,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
   };
 
   const handleCustomSizeChange = (field, value) => {
-    if (value === '' || Number(value) >= 0) {
-      setCustomSize((current) => ({ ...current, [field]: value }));
-    }
+    setCustomSize((current) => ({ ...current, [field]: value }));
   };
 
   const preventNegativeInput = (e) => {
@@ -69,7 +67,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
 
   const handleAddToCart = () => {
     try {
-      const missingCustomFields = selectedSize === 'custom' ? customSizeFields.filter((field) => !Number(customSize[field.id])) : [];
+      const missingCustomFields = selectedSize === 'custom' ? customSizeFields.filter((field) => !customSize[field.id]?.trim()) : [];
       if (missingCustomFields.length) {
         alert(`Vui lòng nhập đủ thông số size riêng: ${missingCustomFields.map((field) => field.label).join(', ')}.`);
         return;
@@ -78,8 +76,8 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         sizeId: selectedSize,
         sizeLabel: selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo),
         sizeMeasurements: selectedSize === 'custom' ? [] : getSizeMeasurements(selectedSizeInfo),
-        customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, Number(customSize[field.id]) || 0])) : null,
-        customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: Number(customSize[field.id]) || 0 })) : [],
+        customSize: selectedSize === 'custom' ? Object.fromEntries(customSizeFields.map((field) => [field.id, customSize[field.id]])) : null,
+        customMeasurements: selectedSize === 'custom' ? customSizeFields.map((field) => ({ ...field, value: customSize[field.id] })) : [],
         embroidery: embroideryText.trim() || null,
       });
       
@@ -115,9 +113,16 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         </div>
 
         {/* Price */}
-        <p className="product-detail-price font-headline-sm text-headline-sm text-slate-deep mt-stack-md">
-          {selectedPrice.toLocaleString('vi-VN')} VNĐ
-        </p>
+        <div className="product-detail-price flex items-baseline gap-3 mt-stack-md">
+          <p className="font-headline-sm text-headline-sm text-slate-deep">
+            {selectedPrice.toLocaleString('vi-VN')} VNĐ
+          </p>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <p className="font-body-md text-slate-deep/50 line-through">
+              {(product.originalPrice + (selectedPrice - product.price)).toLocaleString('vi-VN')} VNĐ
+            </p>
+          )}
+        </div>
       </div>
 
       {/* AR Preview Trigger */}
@@ -171,7 +176,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
             <div className="mt-4 rounded-lg border border-slate-deep/10 bg-bone/35 p-4 animate-fade-in">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><strong className="text-sm text-slate-deep">Thông số may size riêng</strong><p className="mt-0.5 text-[11px] text-slate-deep/60">Nhập đầy đủ số đo theo yêu cầu của sản phẩm.</p></div>{product.customSizePrice > 0 && <span className="rounded-full bg-sand-silk/15 px-3 py-1 text-[11px] font-medium text-slate-deep">+{product.customSizePrice.toLocaleString('vi-VN')} VNĐ</span>}</div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {customSizeFields.map((field) => <label className="block" key={field.id}><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-deep/70">{field.label} ({field.unit})</span><div className="relative"><input type="number" min="0" placeholder={`Nhập ${field.label.toLowerCase()}`} className="w-full rounded-md border border-slate-deep/20 bg-white px-3 py-3 pr-12 text-sm text-slate-deep focus:border-slate-deep focus:outline-none" value={customSize[field.id] ?? ''} onKeyDown={preventNegativeInput} onChange={(event) => handleCustomSizeChange(field.id, event.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-deep/45">{field.unit}</span></div></label>)}
+                {customSizeFields.map((field) => <label className="block" key={field.id}><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-deep/70">{field.label} ({field.unit})</span><div className="relative"><input type="text" placeholder={`Nhập ${field.label.toLowerCase()}`} className="w-full rounded-md border border-slate-deep/20 bg-white px-3 py-3 pr-12 text-sm text-slate-deep focus:border-slate-deep focus:outline-none" value={customSize[field.id] ?? ''} onChange={(event) => handleCustomSizeChange(field.id, event.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-deep/45">{field.unit}</span></div></label>)}
               </div>
             </div>
           )}

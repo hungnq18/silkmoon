@@ -493,6 +493,24 @@ select.customization-filter {
 .admin-notification-toast strong { font-size: 12px; }
 .admin-notification-toast small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .admin-notification-toast>.material-symbols-outlined:last-child { font-size: 18px; }
+
+.toast-viewport { position: fixed; right: 22px; top: 22px; z-index: 1000; display: grid; width: min(390px, calc(100vw - 32px)); gap: 10px; pointer-events: none; }
+.action-toast { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) 26px; align-items: start; gap: 10px; overflow: hidden; padding: 14px 12px 15px; border: 1px solid var(--line); border-left: 4px solid #3b82f6; border-radius: 10px; background: #fff; color: var(--navy); box-shadow: 0 16px 48px rgba(15, 34, 63, .2); pointer-events: auto; animation: action-toast-in .24s ease-out; }
+.action-toast.success { border-left-color: #16a34a; }
+.action-toast.error { border-left-color: #dc2626; }
+.action-toast.warning { border-left-color: #d97706; }
+.action-toast .toast-icon { color: #3b82f6; font-size: 23px; }
+.action-toast.success .toast-icon { color: #16a34a; }
+.action-toast.error .toast-icon { color: #dc2626; }
+.action-toast.warning .toast-icon { color: #d97706; }
+.action-toast strong { display: block; margin-bottom: 3px; font-size: 13px; }
+.action-toast p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.action-toast button { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.action-toast button .material-symbols-outlined { font-size: 18px; }
+.toast-progress { position: absolute; right: 0; bottom: 0; left: 0; height: 3px; background: currentColor; opacity: .18; transform-origin: left; animation-name: toast-progress; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes action-toast-in { from { opacity: 0; transform: translateY(-10px) translateX(12px); } }
+@keyframes toast-progress { to { transform: scaleX(0); } }
+@media (max-width: 640px) { .toast-viewport { top: 12px; right: 16px; left: 16px; width: auto; } }
 @keyframes notification-slide-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
 .avatar {

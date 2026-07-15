@@ -35,13 +35,13 @@ class OrderItem {
   sizeLabel: string;
 
   @Prop({ type: [Object], default: [] })
-  sizeMeasurements: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+  sizeMeasurements: Array<{ id?: string; label: string; value?: number | string; unit?: string }>;
 
   @Prop({ type: Object, default: null })
   customSize: { width?: number; length?: number; height?: number } | null;
 
   @Prop({ type: [Object], default: [] })
-  customMeasurements: Array<{ id?: string; label: string; value?: number; unit?: string }>;
+  customMeasurements: Array<{ id?: string; label: string; value?: number | string; unit?: string }>;
 
   @Prop({ default: false })
   isCustomSize: boolean;

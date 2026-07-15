@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 import { Model } from 'mongoose';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { SendCampaignDto } from './dto/send-campaign.dto';
@@ -19,6 +21,7 @@ export class NewsletterService {
     @InjectModel(NewsletterSubscription.name)
     private readonly subscriptionModel: Model<NewsletterSubscriptionDocument>,
     private readonly config: ConfigService,
+    @InjectQueue('newsletter') private readonly newsletterQueue: Queue,
   ) {}
 
   private normalizeContact(raw: string) {
@@ -96,58 +99,59 @@ export class NewsletterService {
       status: NewsletterSubscriptionStatus.ACTIVE,
     };
     if (dto.recipientIds?.length) recipientFilter._id = { $in: dto.recipientIds };
-    const recipients = await this.subscriptionModel.find(recipientFilter).select('contact').lean().exec();
+    
+    const recipients = await this.subscriptionModel.find(recipientFilter).select('_id contact').lean().exec();
     if (!recipients.length) throw new BadRequestException('Chưa có email đang hoạt động để gửi.');
 
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    if (!apiKey) throw new ServiceUnavailableException('RESEND_API_KEY chưa được cấu hình.');
-    const from = this.config.get<string>('MAIL_FROM') || 'Silkmoon <no-reply@silkmoon.vn>';
-    const safeMessage = dto.message.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] || character).replace(/\n/g, '<br/>');
-    let sent = 0;
-
+    // Chia thành các batch tối đa 100 email và đẩy từng batch vào Queue (tránh rate limit)
+    let batches = 0;
     for (let index = 0; index < recipients.length; index += 100) {
-      const batch = recipients.slice(index, index + 100).map((recipient) => ({
-        from,
-        to: [recipient.contact],
+      const batchRecipients = recipients.slice(index, index + 100);
+      await this.newsletterQueue.add('send-campaign-batch', {
         subject: dto.subject,
-        html: `<div style="font-family:Arial,sans-serif;color:#1C2C58;line-height:1.7"><h2>SILKMOON</h2><p>${safeMessage}</p><p style="font-size:12px;color:#64748b">Anh/chị nhận email này vì đã đăng ký nhận ưu đãi tại silkmoon.vn.</p></div>`,
-      }));
-      await this.callResend('/emails/batch', batch);
-      sent += batch.length;
+        message: dto.message,
+        recipients: batchRecipients,
+      }, {
+        attempts: 3, // Thử lại tối đa 3 lần nếu có lỗi
+        backoff: 65000, // Chờ 65 giây trước khi thử lại
+      });
+      batches++;
     }
 
-    await this.subscriptionModel.updateMany(
-      { _id: { $in: recipients.map((recipient) => recipient._id) } },
-      { lastEmailSentAt: new Date() },
-    ).exec();
-    return { sent };
+    return { 
+      message: `Đã đưa chiến dịch vào hàng đợi xử lý (${batches} batch)`, 
+      sent: recipients.length 
+    };
   }
 
   private async sendWelcomeEmail(to: string) {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    const apiKey = this.config.get<string>('MAILERSEND_API_KEY');
     if (!apiKey) return;
-    const from = this.config.get<string>('MAIL_FROM') || 'Silkmoon <no-reply@silkmoon.vn>';
-    await this.callResend('/emails', {
+    const fromStr = this.config.get<string>('MAIL_FROM') || 'Silkmoon <no-reply@silkmoon.vn>';
+    const match = fromStr.match(/^(.*?)\s*<(.+)>$/);
+    const from = match ? { name: match[1].trim(), email: match[2].trim() } : { email: fromStr.trim(), name: 'Silkmoon' };
+
+    await this.callMailerSend('/email', {
       from,
-      to: [to],
+      to: [{ email: to }],
       subject: 'Đăng ký nhận ưu đãi Silkmoon thành công',
       html: '<div style="font-family:Arial,sans-serif;color:#1C2C58;line-height:1.7"><h2>Cảm ơn anh/chị đã đăng ký</h2><p>Silkmoon sẽ gửi những câu chuyện giấc ngủ và chương trình ưu đãi mới nhất tới email này.</p><p><a href="https://silkmoon.vn" style="color:#1C2C58">Khám phá Silkmoon</a></p></div>',
     });
   }
 
-  private async callResend(path: string, body: unknown) {
-    const response = await fetch(`https://api.resend.com${path}`, {
+  private async callMailerSend(path: string, body: unknown) {
+    const response = await fetch(`https://api.mailersend.com/v1${path}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.config.get<string>('RESEND_API_KEY')}`,
+        Authorization: `Bearer ${this.config.get<string>('MAILERSEND_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
       const message = await response.text();
-      throw new ServiceUnavailableException(`Resend trả về ${response.status}: ${message}`);
+      throw new ServiceUnavailableException(`MailerSend trả về ${response.status}: ${message}`);
     }
-    return response.json();
+    return { success: true };
   }
 }

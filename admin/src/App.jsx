@@ -12,6 +12,7 @@ import { AnalyticsManager, ARStudioManager, BannerManager, ChatbotManager, Finan
 import NewsletterManager from './components/NewsletterManager';
 import ProductSizeCategoriesManager from './components/ProductSizeCategoriesManager';
 import AdminNotifications from './components/AdminNotifications';
+import ToastViewport from './components/ToastViewport';
 import silkmoonLogo from '../../frontend/src/assets/xanh_ngang.png';
 
 const navGroups = [
@@ -108,6 +109,7 @@ function App() {
 
   return (
     <div className="admin-layout">
+      <ToastViewport />
       <aside className={`sidebar ${mobileOpen ? 'is-open' : ''}`}>
         <div className="sidebar-top"><Brand /><button className="icon-button close-menu" onClick={() => setMobileOpen(false)} aria-label="Đóng menu"><span className="material-symbols-outlined">close</span></button></div>
         <nav className="nav-links">

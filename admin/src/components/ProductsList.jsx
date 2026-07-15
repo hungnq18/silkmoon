@@ -39,7 +39,7 @@ const EditableSizeMeasurements = ({ size, onChange }) => {
     {!measurements.length && <p>Size này chưa có thông số kích thước.</p>}
     {measurements.map((measurement, index) => <div key={measurement.id || index}>
       <label><span>Tên thông số</span><input value={measurement.label || ''} placeholder="Đường kính" onChange={(event) => update(index, 'label', event.target.value)} /></label>
-      <label><span>Giá trị</span><input type="number" min="0" value={measurement.value ?? ''} placeholder="60" onChange={(event) => update(index, 'value', event.target.value)} /></label>
+      <label><span>Giá trị</span><input type="text" value={measurement.value ?? ''} placeholder="VD: 40-45" onChange={(event) => update(index, 'value', event.target.value)} /></label>
       <label><span>Đơn vị</span><input value={measurement.unit || 'cm'} placeholder="cm" onChange={(event) => update(index, 'unit', event.target.value)} /></label>
       <button type="button" title="Xóa thông số" onClick={() => onChange(measurements.filter((_, itemIndex) => itemIndex !== index))}><span className="material-symbols-outlined">close</span></button>
     </div>)}
@@ -476,7 +476,7 @@ export default function ProductsList() {
           measurements: getSizeMeasurements(item).filter((measurement) => measurement.label?.trim()).map((measurement) => ({
             id: measurement.id || `measurement-${Date.now()}`,
             label: measurement.label.trim(),
-            value: measurement.value === '' || measurement.value == null ? undefined : Number(measurement.value),
+            value: measurement.value === '' || measurement.value == null ? undefined : measurement.value,
             unit: measurement.unit?.trim() || 'cm',
           })),
         })),
