@@ -93,15 +93,15 @@ export default function ProductListGrid({ products }) {
           </div>
 
           {/* Product Details */}
-          <h4 className="type-card-title mb-1 line-clamp-2 text-sm font-semibold leading-5 transition-colors group-hover:text-secondary md:text-[20px] md:leading-7">
+          <h4 className="product-list-card-title mb-1 line-clamp-2 font-semibold transition-colors group-hover:text-secondary">
             {product.name}
           </h4>
-          <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="type-price text-sm font-semibold text-slate-deep md:text-base">
+          <div className="mt-auto flex flex-nowrap items-baseline gap-2">
+            <span className="product-list-card-price shrink-0 font-semibold text-slate-deep">
               {getProductListPrice(product).toLocaleString('vi-VN')}₫
             </span>
             {getProductOriginalPrice(product) !== null && (
-              <span className="text-[10px] text-on-surface-variant/50 line-through md:text-sm">
+              <span className="product-list-card-price shrink-0 font-normal text-on-surface-variant/70 line-through">
                 {getProductOriginalPrice(product).toLocaleString('vi-VN')}₫
               </span>
             )}

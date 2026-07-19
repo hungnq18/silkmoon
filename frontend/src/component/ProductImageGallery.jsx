@@ -61,14 +61,14 @@ export default function ProductImageGallery({ images = [], activeImage = null })
       </div>
 
       {/* Thumbnails Row */}
-      <div className="no-scrollbar flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-4 md:gap-stack-md md:overflow-visible md:px-0 md:pb-0">
+      <div className="no-scrollbar flex flex-nowrap gap-3 overflow-x-auto px-1 pb-2 pt-3">
         {galleryItems.map((img) => {
           const isActive = img.type === 'image' && activeIndex === img.id;
           return (
             <div
               key={img.src}
               onClick={() => handleThumbnailClick(img)}
-              className={`relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md bg-bone group md:h-auto md:w-auto md:aspect-square ${
+              className={`group relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md bg-bone ${
                 isActive ? 'ring-1 ring-slate-deep ring-offset-2' : 'hover:opacity-90'
               }`}
             >

@@ -19,6 +19,14 @@ export class CreateCategoryDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  icon?: string;
+
+  @IsOptional()
+  @IsString()
+  iconUrl?: string;
+
+  @IsOptional()
   parentId?: Types.ObjectId;
 
   @IsOptional()

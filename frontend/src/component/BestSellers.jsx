@@ -144,18 +144,6 @@ export default function BestSellers() {
     );
   };
 
-  // Group products
-  const beddingProducts = products.filter(p => p.category === 'Chăn Ga Gối' || p.category === 'Gối').slice(0, 3);
-  const accessoriesProducts = products.filter(p => p.category === 'Đồ Ngủ' || p.category === 'Phụ kiện').slice(0, 3);
-  
-  // Fallback in case database doesn't have enough matching categories
-  const row1 = beddingProducts.length > 0 ? beddingProducts : products.slice(0, 3);
-  const usedIds = new Set(row1.map((product) => product._id));
-  const row2 = [
-    ...accessoriesProducts,
-    ...products.filter((product) => !usedIds.has(product._id) && !accessoriesProducts.some((item) => item._id === product._id)),
-  ].slice(0, 3);
-
   return (
     <>
       <section className="bg-bone/50 pb-section-gap pt-6 md:pt-10">
@@ -169,22 +157,8 @@ export default function BestSellers() {
             </p>
           </div>
 
-          <div className="space-y-12">
-            {/* Row 1: Bedding */}
-            <div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {row1.map(renderProductCard)}
-              </div>
-            </div>
-
-            {/* Row 2: Sleepwear & Accessories */}
-            {row2.length > 0 && (
-              <div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {row2.map(renderProductCard)}
-                </div>
-              </div>
-            )}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-12 md:gap-x-6 lg:grid-cols-3">
+            {products.map(renderProductCard)}
           </div>
         </div>
       </section>

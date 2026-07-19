@@ -55,7 +55,6 @@ export class ProductsService {
     return this.productModel
       .find({ isBestSeller: true })
       .sort({ 'ratings.count': -1 })
-      .limit(8)
       .lean();
   }
 

@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import FilterSidebar from '../component/FilterSidebar';
 import ProductListGrid from '../component/ProductListGrid';
 import Pagination from '../component/Pagination';
-import { productsApi } from '../services/api';
+import { categoriesApi, productsApi } from '../services/api';
 import { useLocation } from 'react-router-dom';
 import { getProductListPrice, hasProductSale } from '../utils/productPrice';
 
 export default function Shop() {
   const location = useLocation();
   const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCollection, setSelectedCollection] = useState('all');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
@@ -30,6 +31,12 @@ export default function Shop() {
       .then((data) => setAllProducts(data.items || []))
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    categoriesApi.getAll()
+      .then(setCategories)
+      .catch(console.error);
   }, []);
 
   // Filter and Sort logic (client-side on fetched data)
@@ -113,6 +120,7 @@ export default function Shop() {
         {/* Desktop Side Navigation / Filters */}
         <div className="hidden md:block w-64 flex-shrink-0">
           <FilterSidebar
+            categories={categories}
             selectedCollection={selectedCollection}
             onSelectCollection={handleSelectCollection}
             selectedMaterials={selectedMaterials}
@@ -196,6 +204,7 @@ export default function Shop() {
               </button>
             </div>
             <FilterSidebar
+              categories={categories}
               selectedCollection={selectedCollection}
               onSelectCollection={handleSelectCollection}
               selectedMaterials={selectedMaterials}

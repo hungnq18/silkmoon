@@ -140,7 +140,7 @@ export default function ProductDetail() {
       </section>
 
       {/* Tabs description section */}
-      <section className="mx-auto mt-6 max-w-container-max border-t border-slate-deep/5 px-margin-mobile py-8 md:px-margin-desktop md:py-section-gap">
+      <section className="mx-auto mt-6 w-full max-w-container-max border-t border-slate-deep/5 px-margin-mobile py-8 md:px-margin-desktop md:py-section-gap">
         <ProductTabs product={product} />
       </section>
 

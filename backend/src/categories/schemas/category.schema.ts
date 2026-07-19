@@ -17,6 +17,12 @@ export class Category {
   @Prop()
   description?: string;
 
+  @Prop({ default: 'category' })
+  icon?: string;
+
+  @Prop()
+  iconUrl?: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Category', default: null })
   parentId?: Types.ObjectId;
 

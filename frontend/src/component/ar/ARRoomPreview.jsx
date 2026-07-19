@@ -232,32 +232,32 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productCo
 
               {/* Action buttons overlay at bottom center */}
               {aiImage && !isGenerating && !aiError && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 z-30 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-slate-deep/10 px-1.5 py-1.5">
+                <div className="absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-slate-deep/10 bg-white/90 px-1 py-1 shadow-lg backdrop-blur-md md:bottom-6 md:gap-1 md:px-1.5 md:py-1.5">
                   <button
                     onClick={downloadAiImage}
-                    className="px-4 py-1.5 text-[13px] font-medium text-slate-deep hover:bg-slate-deep/5 rounded-full transition-colors flex items-center gap-1.5"
+                    className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-deep transition-colors hover:bg-slate-deep/5 sm:px-4 sm:text-[13px]"
                   >
                     <span className="material-symbols-outlined text-[16px]">download</span>
                     Tải ảnh
                   </button>
-                  <div className="w-[1px] h-4 bg-slate-deep/20 mx-1" />
+                  <div className="mx-0.5 h-4 w-px bg-slate-deep/20 sm:mx-1" />
                   <button
                     onClick={() => {
                       setShareCopied(false);
                       setShareUrl(`${window.location.origin}/ar-share?image=${encodeURIComponent(aiImage)}&fabric=${encodeURIComponent(fabric.label)}`);
                     }}
-                    className="px-4 py-1.5 text-[13px] font-medium text-slate-deep hover:bg-slate-deep/5 rounded-full transition-colors flex items-center gap-1.5"
+                    className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-deep transition-colors hover:bg-slate-deep/5 sm:px-4 sm:text-[13px]"
                   >
                     Chia sẻ
                   </button>
-                  <div className="w-[1px] h-4 bg-slate-deep/20 mx-1" />
+                  <div className="mx-0.5 h-4 w-px bg-slate-deep/20 sm:mx-1" />
                   <button
                     onMouseDown={() => setIsComparing(true)}
                     onMouseUp={() => setIsComparing(false)}
                     onMouseLeave={() => setIsComparing(false)}
                     onTouchStart={() => setIsComparing(true)}
                     onTouchEnd={() => setIsComparing(false)}
-                    className="px-4 py-1.5 text-[13px] font-medium text-slate-deep hover:bg-slate-deep/5 rounded-full transition-colors flex items-center gap-1.5 active:bg-slate-deep/10 select-none cursor-pointer"
+                    className="flex shrink-0 cursor-pointer select-none items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-deep transition-colors hover:bg-slate-deep/5 active:bg-slate-deep/10 sm:px-4 sm:text-[13px]"
                   >
                     So sánh
                   </button>

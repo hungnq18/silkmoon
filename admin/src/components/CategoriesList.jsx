@@ -3,7 +3,8 @@ import { adminApi } from "../services/api";
 import Pagination from "./Pagination";
 import ListSearch, { ListFilter, useListFilter, useListSearch } from "./ListSearch";
 
-const emptyForm = { name: "", slug: "", description: "", isActive: true, isFeatured: false, coverImage: "" };
+const categoryIconOptions = ["category", "bed", "layers", "bedroom_parent", "checkroom", "sell", "local_offer", "apps", "king_bed", "chair", "curtains"];
+const emptyForm = { name: "", slug: "", description: "", icon: "category", iconUrl: "", isActive: true, isFeatured: false, coverImage: "" };
 const makeSlug = (text) =>
   text
     .normalize("NFD")
@@ -25,6 +26,7 @@ export default function CategoriesList() {
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
 
   useEffect(() => {
     load(page);
@@ -55,6 +57,8 @@ export default function CategoriesList() {
         name: form.name.trim(),
         slug: form.slug || makeSlug(form.name),
         description: form.description.trim(),
+        icon: form.icon?.trim() || "category",
+        iconUrl: form.iconUrl?.trim() || "",
         isActive: form.isActive,
         isFeatured: Boolean(form.isFeatured),
         coverImage: form.isFeatured ? (form.coverImage || "") : "",
@@ -85,6 +89,24 @@ export default function CategoriesList() {
       alert(err.message || "Không thể tải ảnh bìa.");
     } finally {
       setUploading(false);
+    }
+  };
+  const uploadIcon = async (file) => {
+    if (!file) return;
+    setUploadingIcon(true);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const iconUrl = await adminApi.uploadProductImage(image);
+      setForm((current) => ({ ...current, iconUrl }));
+    } catch (err) {
+      alert(err.message || "Không thể tải ảnh icon.");
+    } finally {
+      setUploadingIcon(false);
     }
   };
   const remove = async (category) => {
@@ -133,7 +155,7 @@ export default function CategoriesList() {
           <tbody>
             {filteredItems.map((category) => (
               <tr key={category._id}>
-                <td className="cell-primary">{category.name}</td>
+                <td className="cell-primary"><span className="category-name-with-icon">{category.iconUrl ? <img src={category.iconUrl} alt="" /> : <span className="material-symbols-outlined">{category.icon || "category"}</span>}{category.name}</span></td>
                 <td>
                   <span className="category-type">Danh mục sản phẩm</span>
                 </td>
@@ -223,6 +245,37 @@ export default function CategoriesList() {
                   required
                 />
               </label>
+              <label className="modal-field">
+                <span>Icon danh mục</span>
+                <div className="category-icon-field">
+                  <span className="material-symbols-outlined">{form.icon || "category"}</span>
+                  <input
+                    list="category-icon-options"
+                    value={form.icon || ""}
+                    placeholder="Ví dụ: bed, layers, sell"
+                    onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                  />
+                  <datalist id="category-icon-options">
+                    {categoryIconOptions.map((icon) => <option key={icon} value={icon} />)}
+                  </datalist>
+                </div>
+              </label>
+              <div className="category-icon-upload">
+                <span>Ảnh icon riêng</span>
+                <div className="category-icon-preview">
+                  {form.iconUrl ? <img src={form.iconUrl} alt="Icon danh mục" /> : <span className="material-symbols-outlined">{form.icon || "category"}</span>}
+                </div>
+                <div className="category-icon-actions">
+                  <label className={`image-upload-button ${uploadingIcon ? "disabled" : ""}`}>
+                    <span className="material-symbols-outlined">upload</span>
+                    {uploadingIcon ? "Đang tải…" : "Upload ảnh icon"}
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" disabled={uploadingIcon} onChange={(event) => { uploadIcon(event.target.files[0]); event.target.value = ""; }} />
+                  </label>
+                  {form.iconUrl && <button type="button" className="secondary-button danger-button" onClick={() => setForm({ ...form, iconUrl: "" })}>Xóa ảnh</button>}
+                </div>
+                <input value={form.iconUrl || ""} placeholder="Hoặc nhập URL ảnh icon" onChange={(event) => setForm({ ...form, iconUrl: event.target.value })} />
+                <small>Ảnh upload sẽ được ưu tiên; nếu để trống, website dùng Material Symbol phía trên.</small>
+              </div>
               <label className="modal-field">
                 <span>Mô tả</span>
                 <textarea

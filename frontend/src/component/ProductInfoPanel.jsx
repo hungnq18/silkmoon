@@ -128,9 +128,9 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         {discountPercent > 0 && <span className="rounded bg-[#F9E7A5] px-2 py-1 text-xs font-bold text-slate-deep">-{discountPercent}%</span>}
       </div>
 
-      <div className="space-y-5">
+      <div className="flex flex-col gap-5">
         {(productSizeOptions.length > 0 || allowCustomSize) && (
-          <section>
+          <section className="order-2 md:order-1">
             <div className="mb-2.5 flex items-baseline gap-2">
               <strong className="text-sm text-slate-deep">Kích thước:</strong>
               <span className="text-xs text-on-surface-variant">{selectedSize === 'custom' ? 'May size riêng' : sizeDisplayName(selectedSizeInfo)}</span>
@@ -161,9 +161,9 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
                     <span className="text-[11px] text-on-surface-variant">Kích thước chi tiết của sản phẩm</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2">
                   {selectedSizeMeasurements.map((measurement, index) => (
-                    <div className="rounded-md border border-slate-deep/10 bg-white px-3 py-2.5" key={measurement.id || `${measurement.label}-${index}`}>
+                    <div className="rounded-md border border-slate-deep/10 bg-white px-2 py-2 sm:px-3 sm:py-2.5" key={measurement.id || `${measurement.label}-${index}`}>
                       <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-deep/50">{measurement.label}</span>
                       <strong className="mt-1 block text-sm font-medium text-slate-deep">
                         {measurement.value} <small className="font-normal text-on-surface-variant">{measurement.unit || ''}</small>
@@ -193,7 +193,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
           </section>
         )}
 
-        <section>
+        <section className="order-1 md:order-2">
           <div className="mb-3 flex items-baseline gap-2">
             <strong className="text-sm text-slate-deep">Màu:</strong>
             <span className="text-xs text-on-surface-variant">{activeColorInfo?.label}</span>
@@ -217,7 +217,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
         </section>
 
         {allowEmbroidery && (
-          <section className="rounded-md border-l-2 border-sand-silk bg-bone/50 p-4">
+          <section className="order-3 rounded-md border-l-2 border-sand-silk bg-bone/50 p-4">
             <div className="flex items-center gap-2 text-slate-deep">
               <span className="material-symbols-outlined text-[19px]">edit</span>
               <strong className="text-xs uppercase tracking-wider">Tùy chọn may tên cá nhân</strong>
@@ -230,7 +230,7 @@ export default function ProductInfoPanel({ product, onOpenAR, onColorChange, arE
           </section>
         )}
 
-        <section className="space-y-2.5 pt-1">
+        <section className="order-4 space-y-2.5 pt-1">
           <div className="grid grid-cols-[112px_1fr] gap-2.5">
             <div className="grid grid-cols-[34px_1fr_34px] overflow-hidden rounded-md border border-slate-deep/20 bg-white">
               <button type="button" className="text-lg text-slate-deep hover:bg-bone" onClick={() => setQuantity((current) => Math.max(1, current - 1))} aria-label="Giảm số lượng">−</button>
