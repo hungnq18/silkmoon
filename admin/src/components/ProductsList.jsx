@@ -149,6 +149,30 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
     } else if (name === "justifyLeft" && range) {
       const center = range.startContainer.parentElement?.closest("center");
       if (center) center.replaceWith(...center.childNodes);
+    } else if (name === "lineHeight" && range) {
+      const blocks = Array.from(editorRef.current.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote'));
+      let applied = false;
+      const selection = window.getSelection();
+      blocks.forEach(b => {
+        if (selection.containsNode(b, true) || (selection.anchorNode && b.contains(selection.anchorNode)) || (selection.focusNode && b.contains(selection.focusNode))) {
+          b.style.lineHeight = commandValue;
+          applied = true;
+        }
+      });
+      if (!applied) {
+        let node = range.commonAncestorContainer;
+        if (node.nodeType === 3) node = node.parentNode;
+        const block = node.closest('p, div, h1, h2, h3, h4, h5, h6, li, blockquote');
+        if (block && editorRef.current.contains(block)) {
+          block.style.lineHeight = commandValue;
+        } else if (node === editorRef.current || editorRef.current.contains(node)) {
+          const p = document.createElement('p');
+          p.style.lineHeight = commandValue;
+          p.appendChild(range.extractContents());
+          range.insertNode(p);
+          range.selectNodeContents(p);
+        }
+      }
     } else {
       document.execCommand(name, false, commandValue);
     }
@@ -276,6 +300,28 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
           <select aria-label="Kiểu đoạn" defaultValue="P" onChange={(event) => command("formatBlock", event.target.value)}><option value="P">Đoạn văn</option><option value="H1">Tiêu đề 1</option><option value="H2">Tiêu đề 2</option><option value="H3">Tiêu đề 3</option><option value="BLOCKQUOTE">Trích dẫn</option></select>
           <select aria-label="Phông chữ" defaultValue="Arial" onChange={(event) => command("fontName", event.target.value)}><option>Arial</option><option>Manrope</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select>
           <select aria-label="Cỡ chữ" defaultValue="3" onChange={(event) => command("fontSize", event.target.value)}><option value="2">12</option><option value="3">14</option><option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option></select>
+          <select aria-label="Giãn dòng" defaultValue="1.5" onChange={(event) => {
+            let val = event.target.value;
+            if (val === "custom") {
+              const input = prompt("Nhập khoảng cách giãn dòng (ví dụ: 1.2, 1.8, 2.5):", "1.5");
+              if (!input || isNaN(Number(input))) {
+                event.target.value = "1.5";
+                return;
+              }
+              val = input;
+            }
+            command("lineHeight", val);
+          }}>
+            <option value="1">Giãn dòng 1.0</option>
+            <option value="1.15">Giãn dòng 1.15</option>
+            <option value="1.2">Giãn dòng 1.2</option>
+            <option value="1.5">Giãn dòng 1.5</option>
+            <option value="1.8">Giãn dòng 1.8</option>
+            <option value="2">Giãn dòng 2.0</option>
+            <option value="2.5">Giãn dòng 2.5</option>
+            <option value="3">Giãn dòng 3.0</option>
+            <option value="custom">Tuỳ chỉnh...</option>
+          </select>
           <label className="rich-color-tool" title="Màu chữ"><span className="material-symbols-outlined">format_color_text</span><input type="color" defaultValue="#1c2c58" onChange={(event) => command("foreColor", event.target.value)} /></label>
         </>}
         {tools.map(([name, commandValue, title, icon]) => (

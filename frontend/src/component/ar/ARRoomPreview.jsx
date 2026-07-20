@@ -205,19 +205,18 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productCo
       </div>
 
       {/* ── BODY ── */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
         {/* ── AI mode: show generated image or upload prompt ── */}
         {mode === MODES.AI ? (
           roomImg ? (
-            <div className="flex-1 flex items-center justify-center p-6 md:p-8 bg-bone/50 overflow-hidden relative min-h-[350px] md:min-h-0">
-            <div className="relative inline-block rounded shadow-xl overflow-hidden" style={{ maxHeight: 'calc(100vh - 140px)' }}>
+            <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-bone/50 overflow-hidden relative min-h-[40vh] md:min-h-0">
               {/* Always show room image as base */}
               <img
                 src={roomImgSrc}
                 alt="Room"
-                className="block select-none pointer-events-none"
-                style={{ maxHeight: 'calc(100vh - 140px)', maxWidth: '100%', width: 'auto', display: (aiImage && !isComparing) ? 'none' : 'block' }}
+                className="block select-none pointer-events-none max-w-full max-h-full rounded shadow-xl object-contain"
+                style={{ display: (aiImage && !isComparing) ? 'none' : 'block' }}
               />
 
               {/* AI-generated overlay */}
@@ -225,14 +224,14 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productCo
                 <img
                   src={aiImage}
                   alt="AI Preview"
-                  className="block select-none pointer-events-none"
-                  style={{ maxHeight: 'calc(100vh - 140px)', maxWidth: '100%', width: 'auto', display: 'block' }}
+                  className="block select-none pointer-events-none max-w-full max-h-full rounded shadow-xl object-contain"
+                  style={{ display: 'block' }}
                 />
               )}
 
               {/* Action buttons overlay at bottom center */}
               {aiImage && !isGenerating && !aiError && (
-                <div className="absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-slate-deep/10 bg-white/90 px-1 py-1 shadow-lg backdrop-blur-md md:bottom-6 md:gap-1 md:px-1.5 md:py-1.5">
+                <div className="absolute bottom-6 md:bottom-8 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-slate-deep/10 bg-white/90 px-1 py-1 shadow-lg backdrop-blur-md md:gap-1 md:px-1.5 md:py-1.5">
                   <button
                     onClick={downloadAiImage}
                     className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-deep transition-colors hover:bg-slate-deep/5 sm:px-4 sm:text-[13px]"
@@ -263,8 +262,6 @@ export default function ARRoomPreview({ isOpen, onClose, productColor, productCo
                   </button>
                 </div>
               )}
-
-              </div>
               
               {/* Generating spinner */}
               {isGenerating && (

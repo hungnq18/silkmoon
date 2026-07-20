@@ -34,6 +34,9 @@ export class Category {
 
   @Prop()
   coverImage?: string;
+
+  @Prop({ default: 0 })
+  sortOrder?: number;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

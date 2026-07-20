@@ -40,4 +40,7 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   coverImage?: string;
+
+  @IsOptional()
+  sortOrder?: number;
 }

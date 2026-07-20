@@ -15,7 +15,7 @@ export default function ARSidebar({
   const isAIMode = mode === 'ai';
 
   return (
-    <div className="w-full md:w-72 flex-shrink-0 flex flex-col bg-linen-white border-l border-slate-deep/10 overflow-y-auto">
+    <div className="w-full md:w-72 flex-shrink-0 flex flex-col bg-linen-white border-l border-slate-deep/10 overflow-y-auto max-h-[50vh] md:max-h-full">
 
       {/* ── Active fabric ── */}
       <div className="px-6 pt-6 pb-5 border-b border-slate-deep/10">

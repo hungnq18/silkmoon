@@ -34,6 +34,9 @@ const apiRequest = async (path, options = {}) => {
     cache: options.cache || "no-store",
   });
   if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng mở tab mới đăng nhập lại, sau đó quay lại ấn Lưu.");
+    }
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Thao tác không thành công");
   }
@@ -77,34 +80,34 @@ export const adminApi = {
   getBlogPosts: ({ page = 1, limit = 10 } = {}) =>
     apiRequest(`/blog/admin/posts?page=${page}&limit=${limit}`),
   createBlogPost: (data) =>
-    apiRequest("/blog/posts", { method: "POST", body: JSON.stringify(data) }),
+    apiRequest("/blog/admin/posts", { method: "POST", body: JSON.stringify(data) }),
   updateBlogPost: (id, data) =>
-    apiRequest(`/blog/posts/${id}`, {
+    apiRequest(`/blog/admin/posts/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
-  deleteBlogPost: (id) => apiRequest(`/blog/posts/${id}`, { method: "DELETE" }),
-  getBlogCategories: () => apiRequest("/blog/categories"),
+  deleteBlogPost: (id) => apiRequest(`/blog/admin/posts/${id}`, { method: "DELETE" }),
+  getBlogCategories: () => apiRequest("/blog/admin/categories"),
   createBlogCategory: (data) =>
-    apiRequest("/blog/categories", {
+    apiRequest("/blog/admin/categories", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   updateBlogCategory: (id, data) =>
-    apiRequest(`/blog/categories/${id}`, {
+    apiRequest(`/blog/admin/categories/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
   deleteBlogCategory: (id) =>
-    apiRequest(`/blog/categories/${id}`, { method: "DELETE" }),
+    apiRequest(`/blog/admin/categories/${id}`, { method: "DELETE" }),
   getBlogComments: () => apiRequest("/blog/admin/comments"),
   updateBlogComment: (id, data) =>
-    apiRequest(`/blog/comments/${id}`, {
+    apiRequest(`/blog/admin/comments/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
   deleteBlogComment: (id) =>
-    apiRequest(`/blog/comments/${id}`, { method: "DELETE" }),
+    apiRequest(`/blog/admin/comments/${id}`, { method: "DELETE" }),
   login: async (email, password) => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",

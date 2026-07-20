@@ -24,7 +24,7 @@ export class CategoriesService {
     if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === 'true';
     if (query.isActive !== undefined) filter.isActive = query.isActive === 'true';
     const [items, total] = await Promise.all([
-      this.categoryModel.find(filter).populate('parentId').skip(skip).limit(limitNum).exec(),
+      this.categoryModel.find(filter).sort({ sortOrder: 1, createdAt: -1 }).populate('parentId').skip(skip).limit(limitNum).exec(),
       this.categoryModel.countDocuments(filter),
     ]);
 

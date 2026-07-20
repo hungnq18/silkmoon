@@ -4,7 +4,7 @@ import Pagination from "./Pagination";
 import ListSearch, { ListFilter, useListFilter, useListSearch } from "./ListSearch";
 
 const categoryIconOptions = ["category", "bed", "layers", "bedroom_parent", "checkroom", "sell", "local_offer", "apps", "king_bed", "chair", "curtains"];
-const emptyForm = { name: "", slug: "", description: "", icon: "category", iconUrl: "", isActive: true, isFeatured: false, coverImage: "" };
+const emptyForm = { name: "", slug: "", description: "", icon: "category", iconUrl: "", isActive: true, isFeatured: false, coverImage: "", sortOrder: 0 };
 const makeSlug = (text) =>
   text
     .normalize("NFD")
@@ -62,6 +62,7 @@ export default function CategoriesList() {
         isActive: form.isActive,
         isFeatured: Boolean(form.isFeatured),
         coverImage: form.isFeatured ? (form.coverImage || "") : "",
+        sortOrder: Number(form.sortOrder || 0),
       };
       if (form._id) await adminApi.updateCategory(form._id, payload);
       else await adminApi.createCategory(payload);
@@ -147,6 +148,7 @@ export default function CategoriesList() {
               <th>LOẠI DANH MỤC</th>
               <th>ĐƯỜNG DẪN</th>
               <th>MÔ TẢ</th>
+              <th>THỨ TỰ</th>
               <th>TRẠNG THÁI</th>
               <th>NỔI BẬT</th>
               <th>THAO TÁC</th>
@@ -161,6 +163,7 @@ export default function CategoriesList() {
                 </td>
                 <td className="cell-muted">/{category.slug}</td>
                 <td>{category.description || "—"}</td>
+                <td>{category.sortOrder || 0}</td>
                 <td>
                   <span
                     className={`status ${category.isActive !== false ? "completed" : "cancelled"}`}
@@ -283,6 +286,16 @@ export default function CategoriesList() {
                   value={form.description || ""}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
+                  }
+                />
+              </label>
+              <label className="modal-field">
+                <span>Thứ tự hiển thị (Số nhỏ xếp trước)</span>
+                <input
+                  type="number"
+                  value={form.sortOrder ?? 0}
+                  onChange={(e) =>
+                    setForm({ ...form, sortOrder: Number(e.target.value) })
                   }
                 />
               </label>
