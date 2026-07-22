@@ -70,6 +70,12 @@ function App() {
     setMobileOpen(false);
   }, [activeMenu]);
 
+  useEffect(() => {
+    const handleUnauthorized = () => setIsAuthenticated(false);
+    window.addEventListener('admin:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('admin:unauthorized', handleUnauthorized);
+  }, []);
+
   if (!isAuthenticated) return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
 
   const logout = () => {

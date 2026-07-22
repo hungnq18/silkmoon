@@ -69,7 +69,7 @@ export default function CategoriesList() {
       setForm(null);
       load();
     } catch (err) {
-      alert(Array.isArray(err.message) ? err.message.join("\n") : err.message);
+      if (err.status !== 401) alert(Array.isArray(err.message) ? err.message.join("\n") : err.message);
     } finally {
       setSaving(false);
     }
@@ -121,7 +121,7 @@ export default function CategoriesList() {
       await adminApi.deleteCategory(category._id);
       load(page);
     } catch (err) {
-      alert(err.message);
+      if (err.status !== 401) alert(err.message);
     }
   };
 

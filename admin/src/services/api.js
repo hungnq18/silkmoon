@@ -35,7 +35,11 @@ const apiRequest = async (path, options = {}) => {
   });
   if (!res.ok) {
     if (res.status === 401) {
-      throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng mở tab mới đăng nhập lại, sau đó quay lại ấn Lưu.");
+      localStorage.removeItem("admin_token");
+      window.dispatchEvent(new Event("admin:unauthorized"));
+      const error = new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      error.status = 401;
+      throw error;
     }
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Thao tác không thành công");
@@ -145,52 +149,24 @@ export const adminApi = {
     if (!res.ok) throw new Error("Failed to fetch products");
     return res.json();
   },
-  getCategories: async ({ page, limit } = {}) => {
+  getCategories: ({ page, limit } = {}) => {
     const params = new URLSearchParams();
     if (page) params.set('page', String(page));
     if (limit) params.set('limit', String(limit));
     const qs = params.toString() ? `?${params}` : '';
-    const res = await fetch(`${API_URL}/categories${qs}`, { headers: getHeaders() });
-    if (!res.ok) throw new Error("Không thể tải danh mục");
-    const data = await res.json();
-    // if paginated return as-is, else wrap for backward compat
-    return data;
+    return apiRequest(`/categories${qs}`);
   },
-  createCategory: async (data) => {
-    const res = await fetch(`${API_URL}/categories`, {
+  createCategory: (data) =>
+    apiRequest("/categories", {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const error = await res.json().catch(() => null);
-      throw new Error(error?.message || "Không thể tạo danh mục");
-    }
-    return res.json();
-  },
-  updateCategory: async (id, data) => {
-    const res = await fetch(`${API_URL}/categories/${id}`, {
+    }),
+  updateCategory: (id, data) =>
+    apiRequest(`/categories/${id}`, {
       method: "PATCH",
-      headers: getHeaders(),
       body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const error = await res.json().catch(() => null);
-      throw new Error(error?.message || "Không thể cập nhật danh mục");
-    }
-    return res.json();
-  },
-  deleteCategory: async (id) => {
-    const res = await fetch(`${API_URL}/categories/${id}`, {
-      method: "DELETE",
-      headers: getHeaders(),
-    });
-    if (!res.ok) {
-      const error = await res.json().catch(() => null);
-      throw new Error(error?.message || "Không thể xóa danh mục");
-    }
-    return res.json().catch(() => null);
-  },
+    }),
+  deleteCategory: (id) => apiRequest(`/categories/${id}`, { method: "DELETE" }),
   createProduct: async (productData) => {
     const res = await fetch(`${API_URL}/products`, {
       method: "POST",
