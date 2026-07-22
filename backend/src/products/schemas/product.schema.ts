@@ -137,6 +137,9 @@ export class Product {
   @Prop({ required: true })
   category: string;
 
+  @Prop({ type: [String], default: [] })
+  categories: string[];
+
   @Prop({ type: Object, default: { average: 0, count: 0 } })
   ratings: RatingInfo;
 }
@@ -144,6 +147,7 @@ export class Product {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
 ProductSchema.index({ category: 1 });
+ProductSchema.index({ categories: 1 });
 ProductSchema.index({ isBestSeller: 1, 'ratings.count': -1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ name: 'text', description: 'text', material: 'text' });

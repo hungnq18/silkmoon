@@ -132,7 +132,7 @@ export default function CategoriesList() {
           <h2>Danh mục sản phẩm</h2>
           <p>{total} danh mục trong cửa hàng{totalPages > 1 ? ` — trang ${page}/${totalPages}` : ""}</p>
         </div>
-        <div className="list-controls"><ListSearch value={query} onChange={setQuery} placeholder="Tìm danh mục…" /><ListFilter value={filter} onChange={setFilter} options={[{value:"featured",label:"Nổi bật"},{value:"normal",label:"Thông thường"}]} /></div>
+        <div className="list-controls"><ListSearch value={query} onChange={setQuery} placeholder="Tìm danh mục…" /><ListFilter value={filter} onChange={setFilter} options={[{ value: "featured", label: "Nổi bật" }, { value: "normal", label: "Thông thường" }]} /></div>
         <button
           className="primary-button"
           onClick={() => setForm({ ...emptyForm })}

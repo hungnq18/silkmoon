@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import chatLogoImg from '../assets/no-bg.png';
 import { analyticsApi, assistantApi, settingsApi } from '../services/api';
+import ChatMessageContent from './ChatMessageContent';
 
 export default function Chatbot() {
   const [isVisible, setIsVisible] = useState(true);
@@ -140,7 +141,7 @@ export default function Chatbot() {
           </div>
           <div>
             <p className="font-body-md font-semibold text-linen-white leading-tight">Silkmoon Concierge</p>
-            <p className="text-[10px] uppercase tracking-widest text-linen-white/60">Tư vấn giấc ngủ AI</p>
+            <p className="text-[10px] uppercase tracking-widest text-linen-white/60">Hỗ trợ tư vấn sản phẩm 24/7</p>
           </div>
           <button
             className="ml-auto text-linen-white/80 hover:text-linen-white p-1"
@@ -155,7 +156,7 @@ export default function Chatbot() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex flex-col gap-1 max-w-[80%] ${msg.sender === 'user' ? 'self-end items-end' : 'self-start items-start'
+              className={`flex flex-col gap-1 ${msg.sender === 'user' ? 'max-w-[80%] self-end items-end' : 'max-w-[92%] self-start items-start'
                 }`}
             >
               <div
@@ -164,7 +165,7 @@ export default function Chatbot() {
                     : 'bg-linen-white text-slate-deep rounded-tl-none'
                   }`}
               >
-                {msg.text}
+                {msg.sender === 'bot' ? <ChatMessageContent text={msg.text} /> : msg.text}
               </div>
             </div>
           ))}

@@ -5,9 +5,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AiUsage, AiUsageSchema } from './ai-usage.schema';
 import { SettingsModule } from '../settings/settings.module';
 import { AssistantController } from './assistant.controller';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: AiUsage.name, schema: AiUsageSchema }]), SettingsModule],
+  imports: [MongooseModule.forFeature([{ name: AiUsage.name, schema: AiUsageSchema }]), SettingsModule, ProductsModule],
   controllers: [ARController, AssistantController],
   providers: [ARService],
   exports: [ARService],

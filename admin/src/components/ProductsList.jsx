@@ -11,6 +11,11 @@ const currency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const getAssignedCategories = (product = {}) => [...new Set([
+  product.category,
+  ...(Array.isArray(product.categories) ? product.categories : []),
+].map((category) => String(category || '').trim()).filter(Boolean))];
+
 const getSizeMeasurements = (size = {}) => {
   if (Array.isArray(size.measurements)) return size.measurements;
   return [['width', 'Rộng'], ['length', 'Dài'], ['height', 'Dày/Cao']]
@@ -155,7 +160,8 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
       const selection = window.getSelection();
       blocks.forEach(b => {
         if (selection.containsNode(b, true) || (selection.anchorNode && b.contains(selection.anchorNode)) || (selection.focusNode && b.contains(selection.focusNode))) {
-          b.style.lineHeight = commandValue;
+          if (commandValue) b.style.lineHeight = commandValue;
+          else b.style.removeProperty('line-height');
           applied = true;
         }
       });
@@ -164,8 +170,10 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
         if (node.nodeType === 3) node = node.parentNode;
         const block = node.closest('p, div, h1, h2, h3, h4, h5, h6, li, blockquote');
         if (block && editorRef.current.contains(block)) {
-          block.style.lineHeight = commandValue;
+          if (commandValue) block.style.lineHeight = commandValue;
+          else block.style.removeProperty('line-height');
         } else if (node === editorRef.current || editorRef.current.contains(node)) {
+          if (!commandValue) return;
           const p = document.createElement('p');
           p.style.lineHeight = commandValue;
           p.appendChild(range.extractContents());
@@ -300,22 +308,24 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
           <select aria-label="Kiểu đoạn" defaultValue="P" onChange={(event) => command("formatBlock", event.target.value)}><option value="P">Đoạn văn</option><option value="H1">Tiêu đề 1</option><option value="H2">Tiêu đề 2</option><option value="H3">Tiêu đề 3</option><option value="BLOCKQUOTE">Trích dẫn</option></select>
           <select aria-label="Phông chữ" defaultValue="Arial" onChange={(event) => command("fontName", event.target.value)}><option>Arial</option><option>Manrope</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select>
           <select aria-label="Cỡ chữ" defaultValue="3" onChange={(event) => command("fontSize", event.target.value)}><option value="2">12</option><option value="3">14</option><option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option></select>
-          <select aria-label="Giãn dòng" defaultValue="1.5" onChange={(event) => {
+          <select aria-label="Giãn dòng" defaultValue="" onChange={(event) => {
             let val = event.target.value;
             if (val === "custom") {
-              const input = prompt("Nhập khoảng cách giãn dòng (ví dụ: 1.2, 1.8, 2.5):", "1.5");
+              const input = prompt("Nhập khoảng cách giãn dòng (ví dụ: 1.2, 1.8, 2.5):", "1.7");
               if (!input || isNaN(Number(input))) {
-                event.target.value = "1.5";
+                event.target.value = "";
                 return;
               }
               val = input;
             }
             command("lineHeight", val);
           }}>
+            <option value="">Giãn dòng: theo nội dung</option>
             <option value="1">Giãn dòng 1.0</option>
             <option value="1.15">Giãn dòng 1.15</option>
             <option value="1.2">Giãn dòng 1.2</option>
             <option value="1.5">Giãn dòng 1.5</option>
+            <option value="1.7">Giãn dòng 1.7</option>
             <option value="1.8">Giãn dòng 1.8</option>
             <option value="2">Giãn dòng 2.0</option>
             <option value="2.5">Giãn dòng 2.5</option>
@@ -404,6 +414,16 @@ export function RichTextEditor({ value, onChange, wordMode = false, placeholder 
           rememberSelection();
           commit(event.currentTarget.innerHTML);
         }}
+        onPaste={(event) => {
+          if (Array.from(event.clipboardData.types).includes("text/html")) return;
+          const text = event.clipboardData.getData("text/plain");
+          if (!text) return;
+          event.preventDefault();
+          const holder = document.createElement("div");
+          holder.textContent = text;
+          document.execCommand("insertHTML", false, holder.innerHTML.replace(/\r?\n/g, "<br>"));
+          commit(editorRef.current?.innerHTML || "");
+        }}
         onMouseUp={rememberSelection}
         onMouseDownCapture={(event) => selectEditorImage(event.target)}
         onClick={(event) => selectEditorImage(event.target)}
@@ -432,7 +452,7 @@ export default function ProductsList() {
   const excelInputRef = useRef(null);
   const productModalRef = useRef(null);
   const { query, setQuery, filteredItems: searchedProducts } = useListSearch(products);
-  const { filter, setFilter, filteredItems: filteredProducts } = useListFilter(searchedProducts, (item) => item.category);
+  const { filter, setFilter, filteredItems: filteredProducts } = useListFilter(searchedProducts, getAssignedCategories);
 
   useEffect(() => {
     adminApi
@@ -487,6 +507,8 @@ export default function ProductsList() {
     event.preventDefault();
     setSaving(true);
     try {
+      const assignedCategories = getAssignedCategories(editingProduct);
+      if (!assignedCategories.length) throw new Error('Vui lòng chọn ít nhất một danh mục sản phẩm.');
       const normalizedSizes = (editingProduct.sizes || []).map((item) => ({
         id: item.id,
         label: item.label?.trim() || sizeOptions.find((size) => size.id === item.id)?.label || 'Size',
@@ -513,7 +535,8 @@ export default function ProductsList() {
       const payload = {
         sku: editingProduct.sku?.trim().toUpperCase() || undefined,
         name: editingProduct.name.trim(),
-        category: editingProduct.category.trim(),
+        category: assignedCategories[0],
+        categories: assignedCategories,
         material: editingProduct.material.trim(),
         description: editingProduct.description.trim(),
         materialCare: (editingProduct.materialCare || "").trim(),
@@ -556,7 +579,7 @@ export default function ProductsList() {
   };
 
   const downloadTemplate = () => {
-    const rows = [{ sku: "SM-001", name: "Bộ chăn ga mẫu", category: "Chăn Ga", material: "Tencel", description: "Mô tả sản phẩm", price: 2500000, costPrice: 1400000, stock: 20, images: "https://example.com/anh-1.jpg,https://example.com/anh-2.jpg", isBestSeller: true }];
+    const rows = [{ sku: "SM-001", name: "Bộ chăn ga mẫu", category: "Chăn", categories: "Chăn|Ga|Gối", material: "Tencel", description: "Mô tả sản phẩm", price: 2500000, costPrice: 1400000, stock: 20, images: "https://example.com/anh-1.jpg,https://example.com/anh-2.jpg", isBestSeller: true }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "San pham");
     XLSX.writeFile(workbook, "mau-import-san-pham.xlsx");
@@ -714,6 +737,7 @@ export default function ProductsList() {
                 name: "",
                 sku: "",
                 category: "",
+                categories: [],
                 material: "",
                 description: "",
                 materialCare: "",
@@ -756,7 +780,7 @@ export default function ProductsList() {
               <tr key={product._id}>
                 <td className="cell-primary">{product.name}</td>
                 <td>
-                  <span className="status">{product.category}</span>
+                  <span className="status">{getAssignedCategories(product).join(', ')}</span>
                 </td>
                 <td>{currency(product.price)}</td>
                 <td><label className="compact-toggle" title="Đánh dấu sản phẩm bán chạy"><input type="checkbox" checked={Boolean(product.isBestSeller)} onChange={() => toggleBestSeller(product)} /><span className="toggle-ui" /></label></td>
@@ -767,10 +791,11 @@ export default function ProductsList() {
                     onClick={() =>
                       setEditingProduct({
                         ...product,
+                        categories: getAssignedCategories(product),
                         showArButton: product.showArButton !== false,
                         allowEmbroidery:
                           product.allowEmbroidery ??
-                          product.category === "Đồ Ngủ",
+                          getAssignedCategories(product).includes("Đồ Ngủ"),
                         embroideryMaxLength: product.embroideryMaxLength ?? 12,
                         allowCustomSize: product.allowCustomSize ?? true,
                         customSizePrice: product.customSizePrice ?? 0,
@@ -851,36 +876,30 @@ export default function ProductsList() {
                   required
                 />
               </label>
-              <label className="modal-field">
+              <div className="modal-field full">
                 <span>Danh mục</span>
-                <select
-                  value={editingProduct.category || ""}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      category: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="" disabled>
-                    Chọn danh mục
-                  </option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category.name}>
-                      {category.name}
-                    </option>
-                  ))}
-                  {editingProduct.category &&
-                    !categories.some(
-                      (category) => category.name === editingProduct.category,
-                    ) && (
-                      <option value={editingProduct.category}>
-                        {editingProduct.category} (danh mục cũ)
-                      </option>
-                    )}
-                </select>
-              </label>
+                <div className="product-size-picker compact-product-size-picker">
+                  {[...new Set([...categories.map((category) => category.name), ...getAssignedCategories(editingProduct)])].map((categoryName) => {
+                    const selected = getAssignedCategories(editingProduct).includes(categoryName);
+                    return <label key={categoryName} className={selected ? "selected" : ""}>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={(event) => {
+                          const current = getAssignedCategories(editingProduct);
+                          const next = event.target.checked
+                            ? [...new Set([...current, categoryName])]
+                            : current.filter((category) => category !== categoryName);
+                          setEditingProduct({ ...editingProduct, category: next[0] || "", categories: next });
+                        }}
+                      />
+                      <span>{categoryName}</span>
+                      <small>{selected && editingProduct.category === categoryName ? "Danh mục chính" : selected ? "Danh mục phụ" : "Chưa chọn"}</small>
+                    </label>;
+                  })}
+                </div>
+                <small className="compact-size-hint">Danh mục được chọn đầu tiên là danh mục chính. Có thể chọn nhiều danh mục cho cùng một sản phẩm.</small>
+              </div>
               <label className="modal-field">
                 <span>Chất liệu</span>
                 <input

@@ -53,40 +53,86 @@ function SafeArticle({ html }) {
   }, [html]);
   return <div className="blog-article-content">{nodes}</div>;
 }
-function DocumentArticle({ html }) {
-  const safeHtml = useMemo(() => {
-    if (!html) return "";
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    doc.querySelectorAll("script, iframe, object, embed, form, input, button").forEach((node) => node.remove());
-    doc.querySelectorAll("*").forEach((node) => {
-      [...node.attributes].forEach((attribute) => {
-        if (attribute.name.toLowerCase().startsWith("on")) node.removeAttribute(attribute.name);
-      });
-      if (node.hasAttribute("href") && /^javascript:/i.test(node.getAttribute("href") || "")) node.removeAttribute("href");
-      if (node.tagName === "IMG" && !/^https:\/\//i.test(node.getAttribute("src") || "")) node.remove();
+const sanitizeDocumentHtml = (html) => {
+  if (!html) return "";
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script, iframe, object, embed, form, input, button").forEach((node) => node.remove());
+  doc.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      if (attribute.name.toLowerCase().startsWith("on")) node.removeAttribute(attribute.name);
     });
-    return doc.body.innerHTML;
-  }, [html]);
+    if (node.hasAttribute("href") && /^javascript:/i.test(node.getAttribute("href") || "")) node.removeAttribute("href");
+    if (node.tagName === "IMG" && !/^https:\/\//i.test(node.getAttribute("src") || "")) node.remove();
+  });
+  doc.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((heading) => {
+    const separator = heading.querySelector("br");
+    if (separator) {
+      const bodyRange = doc.createRange();
+      bodyRange.setStartAfter(separator);
+      bodyRange.setEnd(heading, heading.childNodes.length);
+      const bodyContent = bodyRange.extractContents();
+      separator.remove();
+      if (bodyContent.textContent?.trim() || bodyContent.querySelector?.("img, table, ul, ol")) {
+        const normalizedHeading = doc.createElement("h3");
+        [...heading.attributes].forEach((attribute) => normalizedHeading.setAttribute(attribute.name, attribute.value));
+        while (heading.firstChild) normalizedHeading.appendChild(heading.firstChild);
+        normalizedHeading.querySelectorAll("span, b, strong, em, i").forEach((node) => {
+          if (!node.textContent?.trim() && !node.children.length) node.remove();
+        });
+        const paragraph = doc.createElement("p");
+        if (heading.style.textAlign) paragraph.style.textAlign = heading.style.textAlign;
+        if (heading.style.lineHeight) paragraph.style.lineHeight = heading.style.lineHeight;
+        paragraph.appendChild(bodyContent);
+        heading.replaceWith(normalizedHeading, paragraph);
+        heading = normalizedHeading;
+      }
+    }
+    const onlyInlineChild = heading.children.length === 1 ? heading.firstElementChild : null;
+    const inlineFontSize = Number.parseFloat(onlyInlineChild?.style.fontSize || "");
+    const inlineFontWeight = onlyInlineChild?.style.fontWeight;
+    const isParagraphStoredAsHeading =
+      heading.tagName === "H1" &&
+      onlyInlineChild?.tagName === "SPAN" &&
+      Number.isFinite(inlineFontSize) &&
+      inlineFontSize <= 16 &&
+      (inlineFontWeight === "400" || inlineFontWeight === "normal");
+    if (isParagraphStoredAsHeading) {
+      const paragraph = doc.createElement("p");
+      [...heading.attributes].forEach((attribute) => paragraph.setAttribute(attribute.name, attribute.value));
+      while (heading.firstChild) paragraph.appendChild(heading.firstChild);
+      heading.replaceWith(paragraph);
+      return;
+    }
+    const nestedLists = [...heading.querySelectorAll("ul, ol")];
+    if (!nestedLists.length || !heading.parentNode) return;
+    let insertionPoint = heading;
+    nestedLists.forEach((list) => {
+      insertionPoint.parentNode.insertBefore(list, insertionPoint.nextSibling);
+      insertionPoint = list;
+    });
+    if (!heading.textContent?.trim() && !heading.querySelector("img, table, hr")) heading.remove();
+  });
+  doc.querySelectorAll("li > p").forEach((paragraph) => {
+    paragraph.style.removeProperty("margin-top");
+    paragraph.style.removeProperty("margin-bottom");
+  });
+  doc.querySelectorAll("p, div").forEach((node) => {
+    const hasVisibleMedia = node.querySelector("img, table, hr, video");
+    if (!node.textContent?.trim() && !hasVisibleMedia) node.classList.add("blog-empty-line");
+  });
+  return doc.body.innerHTML;
+};
+
+function DocumentArticle({ html }) {
+  const safeHtml = useMemo(() => sanitizeDocumentHtml(html), [html]);
   return <div className="blog-article-content blog-document-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />;
 }
 function DocumentFrame({ html, title }) {
   const frameRef = useRef(null);
   const [height, setHeight] = useState(640);
-  const safeHtml = useMemo(() => {
-    if (!html) return "";
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    doc.querySelectorAll("script, iframe, object, embed, form, input, button").forEach((node) => node.remove());
-    doc.querySelectorAll("*").forEach((node) => {
-      [...node.attributes].forEach((attribute) => {
-        if (attribute.name.toLowerCase().startsWith("on")) node.removeAttribute(attribute.name);
-      });
-      if (node.hasAttribute("href") && /^javascript:/i.test(node.getAttribute("href") || "")) node.removeAttribute("href");
-      if (node.tagName === "IMG" && !/^https:\/\//i.test(node.getAttribute("src") || "")) node.remove();
-    });
-    return doc.body.innerHTML;
-  }, [html]);
+  const safeHtml = useMemo(() => sanitizeDocumentHtml(html), [html]);
   const srcDoc = useMemo(() => `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    *{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#1c2c58}body{padding:36px 42px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65}p{margin:0 0 12px}h1{font-size:38px;line-height:1.2;margin:0 0 20px}h2{font-size:28px;line-height:1.3;margin:30px 0 12px}h3{font-size:21px;margin:22px 0 10px}img{display:inline-block;max-width:100%;height:auto;object-fit:contain;vertical-align:middle}.word-document-import{position:relative;width:100%;margin:0 auto}.word-document-import:after{content:'';display:table;clear:both}img.word-image-inline{width:auto;max-width:55%;margin:4px 8px}img.word-image-wrap-left{float:left;width:min(46%,360px);margin:6px 18px 12px 0}img.word-image-wrap-right{float:right;width:min(46%,360px);margin:6px 0 12px 18px}img.word-image-break{display:block;clear:both;width:100%;margin:20px auto}img.word-image-behind{position:absolute;left:32px;top:64px;z-index:0;width:45%;opacity:.4}img.word-image-front{position:absolute;left:32px;top:64px;z-index:10;width:45%;filter:drop-shadow(0 5px 10px rgba(15,34,63,.2))}.word-document-import>*:not(img){position:relative;z-index:1}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{border:1px solid rgba(28,44,88,.2);padding:10px;vertical-align:top}ul,ol{padding-left:24px}blockquote{margin:18px 0;padding:12px 16px;border-left:4px solid #1c2c58;background:#f3f6f8}@media(max-width:640px){body{padding:20px 16px;font-size:15px}img.word-image-wrap-left,img.word-image-wrap-right{float:none;display:block;width:100%;margin:16px auto}}
+    *{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#1c2c58}body{padding:36px 42px;font-family:Arial,Helvetica,sans-serif;font-size:16px;overflow-wrap:anywhere}.blog-empty-line{min-height:.4em!important;margin:0!important}p{margin:0 0 .77em}li>p{margin-top:0!important;margin-bottom:0!important}h1{font-size:38px;margin:0 0 20px}h2{font-size:28px;margin:30px 0 12px}h3{font-size:21px;margin:22px 0 10px}img{display:inline-block;max-width:100%;height:auto;object-fit:contain;vertical-align:middle}.word-document-import{position:relative;width:100%;margin:0 auto}.word-document-import:after{content:'';display:table;clear:both}img.word-image-inline{display:inline-block;width:auto;max-width:55%;margin:4px 8px}img.word-image-wrap-left{float:left;width:min(46%,360px);margin:6px 18px 12px 0}img.word-image-wrap-right{float:right;width:min(46%,360px);margin:6px 0 12px 18px}img.word-image-break{display:block;clear:both;width:100%;margin:20px auto}img.word-image-behind{position:absolute;left:32px;top:64px;z-index:0;width:45%;opacity:.4}img.word-image-front{position:absolute;left:32px;top:64px;z-index:10;width:45%;filter:drop-shadow(0 5px 10px rgba(15,34,63,.2))}.word-document-import>*:not(img){position:relative;z-index:1}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{border:1px solid rgba(28,44,88,.2);padding:10px;vertical-align:top}ul,ol{padding-left:24px}blockquote{margin:18px 0;padding:12px 16px;border-left:4px solid #1c2c58;background:#f3f6f8}@media(max-width:640px){body{padding:20px 16px;font-size:15px}img.word-image-wrap-left,img.word-image-wrap-right{float:none;display:block;width:100%;margin:16px auto}}
   </style></head><body>${safeHtml}</body></html>`, [safeHtml]);
   const resize = () => {
     const documentNode = frameRef.current?.contentDocument;

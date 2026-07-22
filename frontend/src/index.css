@@ -234,7 +234,8 @@
   }
 
   .blog-detail-header h1 {
-    @apply text-3xl md:text-5xl font-light leading-tight text-slate-deep mt-4;
+    @apply text-3xl md:text-5xl font-light text-slate-deep mt-4;
+    line-height: 1.15;
   }
 
   .blog-detail-header p {
@@ -250,7 +251,20 @@
   }
 
   .blog-article-content {
-    @apply max-w-3xl mx-auto text-slate-deep/80 text-base md:text-lg leading-relaxed;
+    @apply max-w-3xl mx-auto text-slate-deep/80;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 768px) {
+    .blog-article-content {
+      font-size: 1.125rem;
+    }
+  }
+
+  .blog-article-content p:empty,
+  .blog-article-content div:empty {
+    min-height: 1.625em;
   }
 
   .blog-article-content p {
@@ -371,7 +385,7 @@
   }
 
   .silkmoon-product-document .blog-article-content {
-    @apply max-w-none text-sm leading-relaxed md:text-base;
+    @apply max-w-none text-sm md:text-base;
   }
 
   .silkmoon-product-document .blog-article-content h2 {
@@ -392,6 +406,36 @@
 
   .blog-document-content {
     font-family: inherit;
+  }
+
+  .blog-layout .blog-document-content>p {
+    min-height: 1.7em;
+    margin: 0 0 .77em;
+  }
+
+  .blog-layout .blog-document-content>div {
+    min-height: 1.7em;
+  }
+
+  .blog-layout .blog-document-content .blog-empty-line {
+    min-height: .4em;
+    margin: 0;
+  }
+
+  .blog-layout .blog-document-content li>p {
+    min-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .blog-layout .blog-document-content>h2 {
+    margin: .92em 0 .54em;
+    font-size: 1.54em;
+  }
+
+  .blog-layout .blog-document-content>ul,
+  .blog-layout .blog-document-content>ol {
+    margin: .62em 0;
   }
 
   .blog-document-content table {
@@ -422,14 +466,12 @@
   .word-document-import h1 {
     margin: 0 0 1.25rem;
     font-size: clamp(1.8rem, 4vw, 2.6rem);
-    line-height: 1.2;
     font-weight: 700;
   }
 
   .word-document-import h2 {
     margin: 2rem 0 .75rem;
     font-size: clamp(1.35rem, 3vw, 1.8rem);
-    line-height: 1.3;
     font-weight: 700;
   }
 
@@ -637,7 +679,6 @@
   max-width: none;
   color: inherit;
   font-size: inherit;
-  line-height: inherit;
 }
 
 .silkmoon-document-exact .word-document-import {

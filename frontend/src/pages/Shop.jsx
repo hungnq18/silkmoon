@@ -5,6 +5,7 @@ import Pagination from '../component/Pagination';
 import { categoriesApi, productsApi } from '../services/api';
 import { useLocation } from 'react-router-dom';
 import { getProductListPrice, hasProductSale } from '../utils/productPrice';
+import { productMatchesCategory } from '../utils/productCategory';
 
 export default function Shop() {
   const location = useLocation();
@@ -27,7 +28,7 @@ export default function Shop() {
   }, [location.search]);
 
   useEffect(() => {
-    productsApi.getAll()
+    productsApi.getAll({ limit: '100' })
       .then((data) => setAllProducts(data.items || []))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -46,9 +47,7 @@ export default function Shop() {
     if (selectedCollection === 'sale') {
       result = result.filter((product) => hasProductSale(product) || String(product.tag || '').toLowerCase() === 'sale');
     } else if (selectedCollection && selectedCollection !== 'all') {
-      result = result.filter((p) =>
-        p.category?.toLowerCase().includes(selectedCollection.toLowerCase())
-      );
+      result = result.filter((product) => productMatchesCategory(product, selectedCollection));
     }
 
     if (saleOnly) result = result.filter((product) => hasProductSale(product) || String(product.tag || '').toLowerCase() === 'sale');

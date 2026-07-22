@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "../services/api";
-import { RichTextEditor } from "./ProductsList";
 import BlogPostPreview from "./BlogPostPreview";
+import BlogPostEditor from "./BlogPostEditor";
 import Pagination from "./Pagination";
 import ListSearch, { ListFilter, useListFilter, useListSearch } from "./ListSearch";
 const slugify = (text) =>
@@ -15,6 +15,61 @@ const slugify = (text) =>
 
 const PAGE_SIZE_POSTS = 10;
 const PAGE_SIZE_CATS = 15;
+
+const normalizeBlogDocumentStructure = (documentNode) => {
+  documentNode.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((heading) => {
+    const separator = heading.querySelector("br");
+    if (separator) {
+      const bodyRange = documentNode.createRange();
+      bodyRange.setStartAfter(separator);
+      bodyRange.setEnd(heading, heading.childNodes.length);
+      const bodyContent = bodyRange.extractContents();
+      separator.remove();
+      if (bodyContent.textContent?.trim() || bodyContent.querySelector?.("img, table, ul, ol")) {
+        const normalizedHeading = documentNode.createElement("h3");
+        [...heading.attributes].forEach((attribute) => normalizedHeading.setAttribute(attribute.name, attribute.value));
+        while (heading.firstChild) normalizedHeading.appendChild(heading.firstChild);
+        normalizedHeading.querySelectorAll("span, b, strong, em, i").forEach((node) => {
+          if (!node.textContent?.trim() && !node.children.length) node.remove();
+        });
+        const paragraph = documentNode.createElement("p");
+        if (heading.style.textAlign) paragraph.style.textAlign = heading.style.textAlign;
+        if (heading.style.lineHeight) paragraph.style.lineHeight = heading.style.lineHeight;
+        paragraph.appendChild(bodyContent);
+        heading.replaceWith(normalizedHeading, paragraph);
+        heading = normalizedHeading;
+      }
+    }
+    const onlyInlineChild = heading.children.length === 1 ? heading.firstElementChild : null;
+    const inlineFontSize = Number.parseFloat(onlyInlineChild?.style.fontSize || "");
+    const inlineFontWeight = onlyInlineChild?.style.fontWeight;
+    const isParagraphStoredAsHeading =
+      heading.tagName === "H1" &&
+      onlyInlineChild?.tagName === "SPAN" &&
+      Number.isFinite(inlineFontSize) &&
+      inlineFontSize <= 16 &&
+      (inlineFontWeight === "400" || inlineFontWeight === "normal");
+    if (isParagraphStoredAsHeading) {
+      const paragraph = documentNode.createElement("p");
+      [...heading.attributes].forEach((attribute) => paragraph.setAttribute(attribute.name, attribute.value));
+      while (heading.firstChild) paragraph.appendChild(heading.firstChild);
+      heading.replaceWith(paragraph);
+      return;
+    }
+    const nestedLists = [...heading.querySelectorAll("ul, ol")];
+    if (!nestedLists.length || !heading.parentNode) return;
+    let insertionPoint = heading;
+    nestedLists.forEach((list) => {
+      insertionPoint.parentNode.insertBefore(list, insertionPoint.nextSibling);
+      insertionPoint = list;
+    });
+    if (!heading.textContent?.trim() && !heading.querySelector("img, table, hr")) heading.remove();
+  });
+  documentNode.querySelectorAll("li > p").forEach((paragraph) => {
+    paragraph.style.removeProperty("margin-top");
+    paragraph.style.removeProperty("margin-bottom");
+  });
+};
 
 export function BlogPostsManager() {
   const [posts, setPosts] = useState([]),
@@ -45,6 +100,7 @@ export function BlogPostsManager() {
 
   const normalizeBlogContent = async (html) => {
     const documentNode = new DOMParser().parseFromString(html || "", "text/html");
+    normalizeBlogDocumentStructure(documentNode);
     const images = [...documentNode.querySelectorAll("img")];
     for (const image of images) {
       const source = image.getAttribute("src") || "";
@@ -165,100 +221,7 @@ export function BlogPostsManager() {
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-      {form && (
-        <div
-          className="modal-backdrop"
-          onMouseDown={(e) => e.target === e.currentTarget && setForm(null)}
-        >
-          <form className="product-modal" onSubmit={save}>
-            <div className="modal-header">
-              <div>
-                <span className="login-eyebrow">BLOG</span>
-                <h2>{form._id ? "Chỉnh sửa bài viết" : "Thêm bài viết"}</h2>
-              </div>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => setForm(null)}
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-form-grid">
-              <label className="modal-field full">
-                <span>Tiêu đề</span>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="modal-field">
-                <span>Danh mục blog</span>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) =>
-                    setForm({ ...form, categoryId: e.target.value })
-                  }
-                  required
-                >
-                  <option value="">Chọn danh mục</option>
-                  {categories.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="blog-cover-field full"><div><strong>Ảnh bìa bài viết</strong><span>JPG, PNG hoặc WebP, tối đa 8 MB.</span></div>{form.featuredImage && <img src={form.featuredImage} alt="Ảnh bìa"/>}<label className="image-upload-button">{uploading ? "Đang tải…" : form.featuredImage ? "Thay ảnh bìa" : "Tải ảnh bìa"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e)=>{uploadCover(e.target.files[0]);e.target.value=""}}/></label></div>
-              <label className="modal-field">
-                <span>Trạng thái</span>
-                
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                >
-                  <option value="draft">Bản nháp</option>
-                  <option value="published">Đăng bài</option>
-                </select>
-              </label>
-              <label className="modal-field full">
-                <span>Mô tả ngắn</span>
-                <textarea
-                  rows="3"
-                  value={form.excerpt}
-                  onChange={(e) =>
-                    setForm({ ...form, excerpt: e.target.value })
-                  }
-                  required
-                />
-              </label>
-              <div className="modal-field full">
-                <span>Nội dung bài viết</span>
-                <RichTextEditor
-                  value={form.content}
-                  wordMode
-                  placeholder="Soạn nội dung bài viết như trên Word…"
-                  onChange={(content) =>
-                    setForm((current) => ({ ...current, content }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="secondary-button" onClick={() => setPreview(true)}><span className="material-symbols-outlined">visibility</span>Xem trước</button>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setForm(null)}
-              >
-                Hủy
-              </button>
-              <button className="primary-button">Lưu bài viết</button>
-            </div>
-          </form>
-        </div>
-      )}
+      {form && <BlogPostEditor form={form} categories={categories} uploading={uploading} onChange={setForm} onClose={() => setForm(null)} onPreview={() => setPreview(true)} onSave={save} onUploadCover={uploadCover} />}
       {preview && form && <BlogPostPreview post={form} categoryName={categories.find(c => c._id === form.categoryId)?.name} onClose={() => setPreview(false)} />}
     </div>
   );

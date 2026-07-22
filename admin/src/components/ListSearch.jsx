@@ -14,7 +14,10 @@ export function useListSearch(items) {
 
 export function useListFilter(items, getValue) {
   const [filter, setFilter] = useState("all");
-  const filteredItems = useMemo(() => filter === "all" ? items : items.filter((item) => String(getValue(item)) === filter), [items, filter, getValue]);
+  const filteredItems = useMemo(() => filter === "all" ? items : items.filter((item) => {
+    const value = getValue(item);
+    return Array.isArray(value) ? value.some((entry) => String(entry) === filter) : String(value) === filter;
+  }), [items, filter, getValue]);
   return { filter, setFilter, filteredItems };
 }
 

@@ -916,8 +916,14 @@ select.customization-filter {
   overflow-y: auto;
   color: var(--navy);
   font-size: 13px;
-  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   outline: none;
+}
+
+.rich-content p:empty,
+.rich-content div:empty {
+  min-height: 1.7em;
 }
 
 .rich-content table {
@@ -962,7 +968,6 @@ select.customization-filter {
 .rich-content .word-document-import h1 {
   margin: 0 0 18px;
   font-size: 28px;
-  line-height: 1.25;
 }
 
 .rich-content .word-document-import h2 {
@@ -1121,6 +1126,14 @@ select.customization-filter {
 .rich-content a {
   color: var(--blue);
   text-decoration: underline;
+}
+
+.blog-content-editor-field .rich-content {
+  font-size: 16px;
+}
+
+.blog-content-editor-field .rich-content p {
+  margin: 0 0 .77em;
 }
 
 .option-card {

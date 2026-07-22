@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { getProductListPrice } from '../utils/productPrice';
 import { getOptimizedProductImage } from '../utils/productImage';
+import { isBeddingSetProduct, productMatchesCategory } from '../utils/productCategory';
 
 const defaultHeader = {
   logoUrl: '',
@@ -41,6 +42,11 @@ export default function Header() {
   const params = new URLSearchParams(location.search);
   const mainMenu = parseHeaderLinks(headerContent.mainLinks);
   const topLinks = parseHeaderLinks(headerContent.topLinks);
+  const hoveredMenuProducts = hoveredMenu?.category
+    ? menuProducts
+        .filter((product) => productMatchesCategory(product, hoveredMenu.category))
+        .sort((first, second) => Number(isBeddingSetProduct(second)) - Number(isBeddingSetProduct(first)))
+    : [];
   const isMenuActive = (item) => item.category
     ? location.pathname === '/shop' && params.get('category') === item.category
     : item.sale
@@ -57,7 +63,7 @@ export default function Header() {
     loadHeader();
     window.addEventListener('focus', loadHeader);
     const timer = window.setInterval(loadHeader, 5000);
-    productsApi.getAll().then((data) => setMenuProducts(data?.items || [])).catch(() => setMenuProducts([]));
+    productsApi.getAll({ limit: '100' }).then((data) => setMenuProducts(data?.items || [])).catch(() => setMenuProducts([]));
     return () => { window.removeEventListener('focus', loadHeader); window.clearInterval(timer); };
   }, []);
 
@@ -138,7 +144,7 @@ export default function Header() {
             </button>
           </div>
         </div>
-        {hoveredMenu?.category && <div className="header-mega-menu absolute left-0 top-full hidden w-full border-t border-slate-deep/10 bg-white text-slate-deep shadow-2xl md:block"><div className="mx-auto max-w-container-max px-margin-desktop py-7"><div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-medium">{hoveredMenu.label}</h2><Link to={hoveredMenu.to} onClick={() => setHoveredMenu(null)} className="rounded-full bg-slate-deep px-6 py-2.5 text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-md">Xem tất cả</Link></div><div className="grid grid-cols-4 gap-5">{menuProducts.filter((product) => product.category?.toLowerCase().includes(hoveredMenu.category.toLowerCase())).slice(0,4).map((product)=><Link key={product._id} to={`/product/${product._id}`} onClick={()=>setHoveredMenu(null)} className="group"><div className="aspect-[4/3] overflow-hidden rounded-lg bg-bone"><img src={getOptimizedProductImage(product.images?.[0], { width: 480, height: 360 })} alt={product.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"/></div><h3 className="mt-3 truncate text-sm font-semibold transition-colors duration-200 group-hover:text-secondary">{product.name}</h3><p className="mt-1 text-xs text-on-surface-variant">{getProductListPrice(product).toLocaleString('vi-VN')}₫</p></Link>)}</div></div></div>}
+        {hoveredMenu?.category && <div className="header-mega-menu absolute left-0 top-full hidden w-full border-t border-slate-deep/10 bg-white text-slate-deep shadow-2xl md:block"><div className="mx-auto max-w-container-max px-margin-desktop py-7"><div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-medium">{hoveredMenu.label}</h2><Link to={hoveredMenu.to} onClick={() => setHoveredMenu(null)} className="rounded-full bg-slate-deep px-6 py-2.5 text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-md">Xem tất cả</Link></div><div className="grid grid-cols-4 gap-5">{hoveredMenuProducts.slice(0,4).map((product)=><Link key={product._id} to={`/product/${product._id}`} onClick={()=>setHoveredMenu(null)} className="group"><div className="aspect-[4/3] overflow-hidden rounded-lg bg-bone"><img src={getOptimizedProductImage(product.images?.[0], { width: 480, height: 360 })} alt={product.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"/></div><h3 className="mt-3 truncate text-sm font-semibold transition-colors duration-200 group-hover:text-secondary">{product.name}</h3><p className="mt-1 text-xs text-on-surface-variant">{getProductListPrice(product).toLocaleString('vi-VN')}₫</p></Link>)}</div></div></div>}
       </div>
 
       {/* Mobile Drawer */}
