@@ -18,14 +18,14 @@ export default function FilterSidebar({ categories = [], selectedCollection, onS
                 <button
                   type="button"
                   onClick={() => onSelectCollection(category.id)}
-                  className={`flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left font-body-md text-body-md transition-all ${
+                  className={`category-filter-button flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left font-body-md text-body-md transition-all ${
                     isActive
                       ? 'bg-slate-deep text-white font-bold'
                       : 'text-on-surface-variant hover:bg-slate-deep hover:text-white'
                   }`}
                 >
                   {category.iconUrl
-                    ? <img src={category.iconUrl} alt="" className="h-[18px] w-[18px] shrink-0 object-contain" />
+                    ? <img src={category.iconUrl} alt="" className={`category-upload-icon h-[18px] w-[18px] shrink-0 object-contain ${isActive ? 'is-active' : ''}`} />
                     : <span className="material-symbols-outlined shrink-0 text-[18px]">{category.icon}</span>}
                   {category.label}
                 </button>

@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.category-upload-icon {
+  transition: filter .2s ease;
+}
+
+.category-filter-button:hover .category-upload-icon,
+.category-upload-icon.is-active {
+  filter: brightness(0) invert(1) drop-shadow(0 0 .65px #fff) drop-shadow(0 0 .65px #fff);
+}
+
 .location-combobox { position: relative; width: 100%; text-transform: none; letter-spacing: normal; }
 .location-combobox-trigger { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px !important; font-weight: 400; line-height: 1.5; text-align: left; cursor: pointer; }
 .location-combobox-trigger:disabled { cursor: not-allowed; opacity: .55; }
